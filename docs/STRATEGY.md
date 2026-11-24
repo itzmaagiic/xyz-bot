@@ -12,12 +12,12 @@ Zähler sind danach identisch. 280 Bosskämpfe dauern etwa 60 ms, 68 Routen × 8
 **Fairness:** Simuliert wird nur mit eigenen Seeds, also über die Verteilung möglicher Gegner und Kampfverläufe. Der Bot
 sagt nie den echten nächsten Gegner oder Kampfausgang aus dem gesäten Zufall voraus.
 
-| Simulation | Wofür |
-|---|---|
-| `simulatePaths` | **Route.** Jeder Pfad bis zum Boss wird Knoten für Knoten durchgespielt: Gegner werden so erzeugt wie im Spiel (Level-Formel, Artenpool, Trainergröße, Spezialtyp), HP und Ohnmachten übertragen sich, nach jedem Sieg gibt es +2 Level für Lebende, Fänge kommen aus dem echten Pool, das Pokécenter heilt, „?“ mit den echten Wahrscheinlichkeiten. Ergebnis: P(Pfad überleben **und** Boss schlagen) und danach die Chance gegen den **nächsten** Boss (Heilung plus 6 Level angenommen). |
-| `simulateBoss` (Reihenfolgen) | **Boss-Vorbereitung.** Kandidaten-Reihenfolgen (jeder als Lead, nach Level, nach HP) × 40 Kämpfe. Die beste wird über Shift+Slot-Tausche hergestellt (jede Permutation ist so erreichbar, erschöpfend getestet). |
-| `simulateCatch` | **Fang.** Für jedes Angebot und für „keins“ wird das Team gegen den aktuellen und den nächsten Boss simuliert. |
-| `simulateNodes` | Schnelle Vorsortierung, wenn es mehr als 36 Routen gibt. |
+| Simulation                    | Wofür                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `simulatePaths`               | **Route.** Jeder Pfad bis zum Boss wird Knoten für Knoten durchgespielt: Gegner werden so erzeugt wie im Spiel (Level-Formel, Artenpool, Trainergröße, Spezialtyp), HP und Ohnmachten übertragen sich, nach jedem Sieg gibt es +2 Level für Lebende, Fänge kommen aus dem echten Pool, das Pokécenter heilt, „?“ mit den echten Wahrscheinlichkeiten. Ergebnis: P(Pfad überleben **und** Boss schlagen) und danach die Chance gegen den **nächsten** Boss (Heilung plus 6 Level angenommen). |
+| `simulateBoss` (Reihenfolgen) | **Boss-Vorbereitung.** Kandidaten-Reihenfolgen (jeder als Lead, nach Level, nach HP) × 40 Kämpfe. Die beste wird über Shift+Slot-Tausche hergestellt (jede Permutation ist so erreichbar, erschöpfend getestet).                                                                                                                                                                                                                                                                             |
+| `simulateCatch`               | **Fang.** Für jedes Angebot und für „keins“ wird das Team gegen den aktuellen und den nächsten Boss simuliert.                                                                                                                                                                                                                                                                                                                                                                               |
+| `simulateNodes`               | Schnelle Vorsortierung, wenn es mehr als 36 Routen gibt.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 Bewertung einer Route: `P·100 + 60·P·P(nächster Boss) + Boni (Item 4, Move-Tutor 5, Shiny 6, „?“ 2) + 0,5·Ø-Level`.
 
@@ -42,15 +42,41 @@ Bewertung einer Route: `P·100 + 60·P·P(nächster Boss) + Boni (Item 4, Move-T
 
 ## Messwerte (Live, Kanto Classic, bereinigter echter Spielstand)
 
-| Stand | Ergebnis |
-|---|---|
-| erste Version (Typ-Parser-Bug, falsche Teamgrenze) | fast nur Solo-Starter, ≈ 0–0,3 Orden pro Run |
-| + Bugfixes und Heuristiken | Ø 0,5–1,1 Orden, Brock oft Endstation |
-| + Knoten- und Boss-Simulation | Brock in 8 von 11 Runs, Misty wird die Wand |
-| **+ Pfadsimulation mit HP und Ohnmachten** | 10-Minuten-Lauf: **4 und 4 Orden** (bis einschließlich Erika). Gestorben wird jetzt auf Map 5 unterwegs, nicht mehr am Boss |
+| Stand                                                                                         | Ergebnis                                                                                                                                                                                                         |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| erste Version (Typ-Parser-Bug, falsche Teamgrenze)                                            | fast nur Solo-Starter, ≈ 0–0,3 Orden pro Run                                                                                                                                                                     |
+| + Bugfixes und Heuristiken                                                                    | Ø 0,5–1,1 Orden, Brock oft Endstation                                                                                                                                                                            |
+| + Knoten- und Boss-Simulation                                                                 | Brock in 8 von 11 Runs, Misty wird die Wand                                                                                                                                                                      |
+| + Pfadsimulation mit HP und Ohnmachten                                                        | Läufe mit 4, 4, 5, 7 und 8 Orden                                                                                                                                                                                 |
+| **Variante A** (Pfadsimulation, Level-Gewichtung 2,5, Gauntlet, Beutel, Fänge per Simulation) | 12 Runs Ø **3,2 Orden**: [2,3,5,8,3,1,5,1,5,3,1,1]; der 8-Orden-Run schlug Lorelei, Bruno, Agatha und Lance und gewann den fünften Kampf gegen Gary (+2 Level danach, kein Game Over) → **erster Champion-Sieg** |
+
+### A/B-Tests (je etwa 30 Minuten, parallel)
+
+| Variante                                               | Runs | Ø Orden |
+| ------------------------------------------------------ | ---- | ------- |
+| A (Standard)                                           | 12   | **3,2** |
+| B: Level-Gewichtung 0,5                                | 10   | 2,1     |
+| C: + gemeinsame Reihenfolgensuche, Top-3-Level, Tausch | 10   | 1,8     |
+| D: C + multiplikative Bewertung                        | 8    | 2,5     |
+| E: multiplikativ ohne C-Neuerungen                     | 10   | 2,5     |
+
+Die Varianten C–E stecken hinter Flags (`src/core/flags.ts`, Build mit `PKBOT_FLAGS='{"…":true}'`) und sind aus.
+Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze Laufzeit stabil.
+
+## Was einen Run killt (Auswertung aller Live-Tode)
+
+- **Die meisten Tode passieren unterwegs, fast immer bei Trainern** (2–3 Pokémon auf Trainerlevel bei gleicher XP wie
+  ein Wildkampf). Am Boss wird seltener verloren.
+- Oft hatte die Simulation dort schon 0 % gezeigt: Das Team war durch Abnutzung (Besiegte bleiben bis zum Pokécenter K.o.)
+  oder fehlende Level schon in einer aussichtslosen Lage.
+- Die Gesamtchance ist ein Produkt über 9 Maps (0,95⁹ ≈ 63 %). Zuverlässigkeit braucht ≥ 99 % pro Map.
+- Vor jedem Top-4-Mitglied erscheint die Boss-Vorbereitung; die Reihenfolge-Simulation hob die Kettenchance dort
+  z. B. von 3 % auf 65–78 %.
 
 ## Offene Hebel
 
-1. Tode unterwegs auf Map 5 (Koga): Abnutzung über viele Kämpfe. Mehr Stichproben und stärkere Gewichtung des Pokécenters nötig.
-2. Relic-/Passive-, Shop- und Entwicklungs-Dialoge sind live noch nicht gesehen. Der Bot pausiert dort.
-3. Top-4-Gauntlet: Die Simulation deckt das aktuelle Mitglied ab. Die Folgekämpfe ohne Heilung sind noch nicht modelliert.
+1. Abnutzung früher erkennen: Pokécenter und Sacred Ash gezielter, Trainer meiden, wenn die Mannschaft angeschlagen ist.
+2. Fänge auf Kurs halten: späte Fänge kommen auf Map-Level und ersetzen abgehängte Mitglieder.
+3. Mehr Stichproben auf der Endmap (die Kettenwahrscheinlichkeit ist dort klein und verrauscht).
+4. Challenges/Battle Tower: Traits, Augments und Relics (`buildTraitsConfig` speist die Kampf-Engine, die Simulation lässt
+   sich dort weiterverwenden).
