@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   chooseCatchSim,
+  levelFactor,
   chooseRouteSim,
   evaluatePath,
   rateAt,
@@ -122,5 +123,43 @@ describe('catch by simulation', () => {
     ];
     expect(chooseCatchSim(opts, offer, 3, 6).index).toBe(1);
     expect(chooseCatchSim(opts, offer, 6, 6).index).toBe(-1);
+  });
+});
+
+describe('multiplicative risk value (run success is a product over maps)', () => {
+  const map: GameMap = {
+    mapIndex: 0,
+    nodes: {
+      a: { id: 'a', type: 'battle', layer: 1, col: 0, visited: false, accessible: true },
+      b: { id: 'b', type: 'battle', layer: 1, col: 1, visited: false, accessible: true },
+      x: { id: 'x', type: 'boss', layer: 2, col: 0, visited: false, accessible: false },
+    },
+    edges: [
+      { from: 'a', to: 'x' },
+      { from: 'b', to: 'x' },
+    ],
+  };
+  const ctx = { teamSize: 4, maxTeamSize: 6, nuzlocke: false };
+  const base = { nodeRates: {}, bossNoHeal: {}, bossHeal: {}, bossName: 'X' };
+  it('level factor saturates above the target', () => {
+    expect(levelFactor(15, 15)).toBeCloseTo(0.6);
+    expect(levelFactor(60, 15)).toBe(1.3);
+    expect(levelFactor(0, 30)).toBe(0.2);
+  });
+  it('under the curve a little risk for levels pays off', () => {
+    const sim: SimData = {
+      ...base,
+      targetLevel: 20,
+      pathSim: { 'a>x': { success: 1, next: 0, avgLevel: 14 }, 'b>x': { success: 0.95, next: 0, avgLevel: 18 } },
+    };
+    expect(chooseRouteSim(map, ['a', 'b'], ctx, sim)!.nodeId).toBe('b');
+  });
+  it('above the curve safety wins', () => {
+    const sim: SimData = {
+      ...base,
+      targetLevel: 20,
+      pathSim: { 'a>x': { success: 1, next: 0, avgLevel: 35 }, 'b>x': { success: 0.95, next: 0, avgLevel: 39 } },
+    };
+    expect(chooseRouteSim(map, ['a', 'b'], ctx, sim)!.nodeId).toBe('a');
   });
 });
