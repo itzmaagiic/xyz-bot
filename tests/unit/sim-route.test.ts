@@ -170,3 +170,31 @@ describe('multiplicative risk value (run success is a product over maps)', () =>
     expect(chooseRouteSim(map, ['a', 'b'], ctx, sim)!.nodeId).toBe('a');
   });
 });
+
+describe('hopeless chains', () => {
+  it('with 0 % everywhere the route that gets furthest into the chain wins', () => {
+    const map: GameMap = {
+      mapIndex: 8,
+      nodes: {
+        t: { id: 't', type: 'trainer', layer: 1, col: 0, visited: false, accessible: true },
+        c: { id: 'c', type: 'pokecenter', layer: 1, col: 1, visited: false, accessible: true },
+        x: { id: 'x', type: 'boss', layer: 2, col: 0, visited: false, accessible: false },
+      },
+      edges: [
+        { from: 't', to: 'x' },
+        { from: 'c', to: 'x' },
+      ],
+    };
+    const sim: SimData = {
+      nodeRates: {},
+      bossNoHeal: {},
+      bossHeal: {},
+      bossName: 'Lorelei +4',
+      pathSim: {
+        't>x': { success: 0, next: 0, avgLevel: 0, progress: 0.1 },
+        'c>x': { success: 0, next: 0, avgLevel: 0, progress: 0.55 },
+      },
+    };
+    expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 6, maxTeamSize: 6, nuzlocke: false }, sim)!.nodeId).toBe('c');
+  });
+});

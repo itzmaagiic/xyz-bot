@@ -441,7 +441,7 @@ export interface PathSimRequest {
 }
 
 export interface PathSimResult {
-  results: { path: string[]; success: number; next: number; avgLevel: number; avgAlive: number }[];
+  results: { path: string[]; success: number; next: number; avgLevel: number; avgAlive: number; progress: number }[];
   /** level the core should reach on this map: max wild level of the next map (champion level on the last map) */
   targetLevel: number | null;
   restored: boolean;
@@ -523,8 +523,17 @@ async function legendaryEnemy(node: any, team: any[]): Promise<any | null> {
 
 /** Fights a chain in a row (no healing in between); true only if every fight is won. */
 function fightChain(team: any[], teams: any[][]): boolean {
-  for (const enemy of teams) if (!fightInto(team, enemy)) return false;
-  return true;
+  return fightChainCount(team, teams) === teams.length;
+}
+
+/** Number of chain fights won before the first loss. */
+function fightChainCount(team: any[], teams: any[][]): number {
+  let won = 0;
+  for (const enemy of teams) {
+    if (!fightInto(team, enemy)) return won;
+    won++;
+  }
+  return won;
 }
 
 async function sampleCatch(node: any): Promise<any | null> {
@@ -647,6 +656,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
       let nextWins = 0;
       let lvlSum = 0;
       let aliveSum = 0;
+      let progSum = 0;
       for (let k = 0; k < n; k++) {
         seedRng((seed0 ^ Math.imul(k + 1, 0x27d4eb2f) ^ Math.imul(pi + 1, 0x165667b1)) >>> 0);
         const base: any[] = s.team ?? [];
@@ -690,8 +700,11 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
           } else if (kind === 'pokecenter') {
             team.forEach((m) => (m.currentHp = m.maxHp));
           } else if (kind === 'boss') {
-            if (!boss || !fightChain(team, boss.teams)) {
-              alive = !boss;
+            if (!boss) break;
+            const won = fightChainCount(team, boss.teams);
+            progSum += won / boss.teams.length;
+            if (won < boss.teams.length) {
+              alive = false;
               break;
             }
           }
@@ -725,6 +738,8 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
         next: ok ? nextWins / ok : 0,
         avgLevel: ok ? lvlSum / ok : 0,
         avgAlive: ok ? aliveSum / ok : 0,
+        // share of the boss chain won on average (incl. failed runs): separates routes when a full clear is unlikely
+        progress: progSum / n,
       });
     }
     return out;
