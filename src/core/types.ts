@@ -159,12 +159,20 @@ export interface GameState {
   settings: Record<string, unknown> | null;
   /** true when the page bridge answered; false = DOM-only fallback */
   bridge: boolean;
+  /** simulation results from the game's own battle engine (map screen) */
+  sim?: import('./strategy/sim-route').SimData | null;
+  /** evaluated battle orders for the upcoming boss (elite-prep screen) */
+  orderSim?: { order: number[]; winRate: number; avgAlive: number }[] | null;
+  /** simulated value of each catch option (index -1 = skip) */
+  catchSim?: { index: number; current: number; next: number; value: number }[] | null;
 }
 
 /** What the bot decided to do. */
 export type Decision =
   | { kind: 'click'; selector: string; index?: number; why: string }
   | { kind: 'swapTeam'; from: number; to: number; where: 'map' | 'elite-prep'; why: string }
+  /** sequence of "swap lead with slot k" presses (Shift+k) realising a full battle order */
+  | { kind: 'reorder'; swaps: number[]; target: number[]; why: string }
   | { kind: 'wait'; ms: number; why: string }
   | { kind: 'pause'; why: string }
   | { kind: 'stop'; why: string; result?: 'win' | 'loss' };

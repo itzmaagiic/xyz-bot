@@ -16,11 +16,11 @@ Begründung, die im Overlay und im Log steht.
 Alle Pfade von den erreichbaren Knoten bis zum Boss werden aufgezählt (max. 5000). Gewählt wird der erste Schritt des
 Pfads mit der höchsten Summe. Unterwegs wird mitgerechnet:
 
-| Knoten | Wert |
-|---|---|
-| Fang | 6 + 9·(1 − Teamgröße/6), ab 3 Mitgliedern geteilt durch √(1 + XP-Bedarf), solange Platz ist |
-| Kampf / Trainer | 3 bzw. 4 × (1 + XP-Bedarf); bei < 45 % HP 1 bzw. 0 (Nuzlocke negativ) |
-| Pokécenter | 9 bei < 60 % HP, 3 bei < 85 %, sonst 0,5 |
+| Knoten                                                                             | Wert                                                                                        |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Fang                                                                               | 6 + 9·(1 − Teamgröße/6), ab 3 Mitgliedern geteilt durch √(1 + XP-Bedarf), solange Platz ist |
+| Kampf / Trainer                                                                    | 3 bzw. 4 × (1 + XP-Bedarf); bei < 45 % HP 1 bzw. 0 (Nuzlocke negativ)                       |
+| Pokécenter                                                                         | 9 bei < 60 % HP, 3 bei < 85 %, sonst 0,5                                                    |
 | Item 5 · Move-Tutor 4,5 · Event 3,5 · Shiny 7 · Legendär 8 · Tausch 1,5 · Mart 2,5 |
 
 - **Projektion:** Fänge erhöhen die Teamgröße, Kämpfe kosten HP (8 % bzw. 14 %), das Pokécenter füllt auf.
@@ -46,12 +46,12 @@ Pfads mit der höchsten Summe. Unterwegs wird mitgerechnet:
 
 ## Messwerte (Live, Kanto Classic, bereinigter echter Spielstand, je 6 Minuten)
 
-| Stand | Orden pro Run |
-|---|---|
-| erste Version (Typ-Parser-Bug, Teamgrenze falsch) | ≈ 0,1–0,3, fast nur Solo-Starter |
-| + Typ-Parser, Starterwahl, Teamgrenze 6 | 6 von 9 Runs schlagen Brock, Ende meist bei Misty |
-| + XP-Bedarf (auch bei Mini-Team) | 7 Runs: Ø 1,1, bester Run 3 Orden (Brock, Misty, Surge) |
-| **aktueller Build** (+ Fang-Vorrang bis 3 Mitglieder) | 10 Runs: [0,0,2,0,1,1,1,0,0,0] ⇒ Ø 0,5 |
+| Stand                                                 | Orden pro Run                                           |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| erste Version (Typ-Parser-Bug, Teamgrenze falsch)     | ≈ 0,1–0,3, fast nur Solo-Starter                        |
+| + Typ-Parser, Starterwahl, Teamgrenze 6               | 6 von 9 Runs schlagen Brock, Ende meist bei Misty       |
+| + XP-Bedarf (auch bei Mini-Team)                      | 7 Runs: Ø 1,1, bester Run 3 Orden (Brock, Misty, Surge) |
+| **aktueller Build** (+ Fang-Vorrang bis 3 Mitglieder) | 10 Runs: [0,0,2,0,1,1,1,0,0,0] ⇒ Ø 0,5                  |
 
 Die Stichproben sind klein (7–10 Runs), der Unterschied der letzten beiden Zeilen ist **nicht belastbar**. Konstant zeigt
 sich: Runs, die Brock mit Führungs-Level 6–9 erreichen, verlieren. Das Balancing XP ↔ Teamgröße ist der wichtigste

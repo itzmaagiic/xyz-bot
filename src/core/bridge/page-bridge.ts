@@ -4,6 +4,16 @@
  * isolated world with plain JSON strings. It never mutates game state; the only write is `saveSettings`
  * restricted to WRITABLE_SETTINGS.
  */
+import {
+  simulateBoss,
+  simulateCatch,
+  simulateNodes,
+  simulatePaths,
+  type CatchSimRequest,
+  type NodeSimRequest,
+  type PathSimRequest,
+  type SimRequest,
+} from './simulator';
 import type { BridgeSnapshot, Mon, RunState, GameMap, MapNode } from '../types';
 import {
   BRIDGE_VERSION,
@@ -155,9 +165,17 @@ function doSaveSettings(patch: Record<string, unknown>): Record<string, unknown>
   return { ...getSettings() };
 }
 
-export function handle(req: BridgeRequest): BridgeResponse {
+export async function handle(req: BridgeRequest): Promise<BridgeResponse> {
   try {
     switch (req.cmd) {
+      case 'simulatePaths':
+        return { id: req.id, ok: true, result: await simulatePaths((req.args ?? {}) as unknown as PathSimRequest) };
+      case 'simulateCatch':
+        return { id: req.id, ok: true, result: await simulateCatch((req.args ?? {}) as CatchSimRequest) };
+      case 'simulateNodes':
+        return { id: req.id, ok: true, result: await simulateNodes((req.args ?? {}) as unknown as NodeSimRequest) };
+      case 'simulateBoss':
+        return { id: req.id, ok: true, result: await simulateBoss((req.args ?? {}) as SimRequest) };
       case 'ping':
         return { id: req.id, ok: true, result: BRIDGE_VERSION };
       case 'snapshot':
@@ -184,8 +202,7 @@ export function installBridge(): void {
     } catch {
       return;
     }
-    const res = handle(req);
-    document.dispatchEvent(new CustomEvent(RES_EVENT, { detail: JSON.stringify(res) }));
+    void handle(req).then((res) => document.dispatchEvent(new CustomEvent(RES_EVENT, { detail: JSON.stringify(res) })));
   });
   root.setAttribute(READY_ATTR, BRIDGE_VERSION);
 }

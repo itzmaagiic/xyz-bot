@@ -1,33 +1,40 @@
 <!doctype html>
 <html lang="de">
-<head>
-<meta charset="utf-8">
-<title>Pokelike Bot</title>
-<link rel="stylesheet" href="ui.css">
-</head>
-<body class="popup">
-  <h1>Pokelike Bot</h1>
-  <section id="nogame">
-    <p>Öffne pokelike.xyz in diesem Tab, um den Bot zu steuern.</p>
-    <button id="open" class="primary">pokelike.xyz öffnen</button>
-  </section>
-  <section id="game" hidden>
-    <div class="row">
-      <button id="toggle" class="primary">Start</button>
-      <button id="step">Schritt</button>
-      <button id="overlay">Overlay</button>
-    </div>
-    <dl>
-      <dt>Status</dt><dd id="status">–</dd>
-      <dt>Bildschirm</dt><dd id="screen">–</dd>
-      <dt>Entscheidung</dt><dd id="decision">–</dd>
-      <dt>Pause-Grund</dt><dd id="reason"></dd>
-      <dt>Daten</dt><dd id="data">–</dd>
-      <dt>Version</dt><dd id="version">–</dd>
-      <dt>Runs</dt><dd id="runs">–</dd>
-    </dl>
-  </section>
-  <button id="options">Einstellungen …</button>
-  <script src="popup.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Pokelike Bot</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="popup">
+    <h1>Pokelike Bot</h1>
+    <section id="nogame">
+      <p>Öffne pokelike.xyz in diesem Tab, um den Bot zu steuern.</p>
+      <button id="open" class="primary">pokelike.xyz öffnen</button>
+    </section>
+    <section id="game" hidden>
+      <div class="row">
+        <button id="toggle" class="primary">Start</button>
+        <button id="step">Schritt</button>
+        <button id="overlay">Overlay</button>
+      </div>
+      <dl>
+        <dt>Status</dt>
+        <dd id="status">–</dd>
+        <dt>Bildschirm</dt>
+        <dd id="screen">–</dd>
+        <dt>Entscheidung</dt>
+        <dd id="decision">–</dd>
+        <dt>Pause-Grund</dt>
+        <dd id="reason"></dd>
+        <dt>Daten</dt>
+        <dd id="data">–</dd>
+        <dt>Version</dt>
+        <dd id="version">–</dd>
+        <dt>Runs</dt>
+        <dd id="runs">–</dd>
+      </dl>
+    </section>
+    <button id="options">Einstellungen …</button>
+    <script src="popup.js"></script>
+  </body>
 </html>

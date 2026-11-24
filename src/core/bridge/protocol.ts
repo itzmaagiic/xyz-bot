@@ -4,7 +4,8 @@ export const RES_EVENT = 'pkbot:response';
 export const READY_ATTR = 'data-pkbot-bridge';
 export const BRIDGE_VERSION = '1';
 
-export type BridgeCommand = 'ping' | 'snapshot' | 'saveSettings';
+export type BridgeCommand =
+  'ping' | 'snapshot' | 'saveSettings' | 'simulateBoss' | 'simulateNodes' | 'simulateCatch' | 'simulatePaths';
 
 export interface BridgeRequest {
   id: number;
