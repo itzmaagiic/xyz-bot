@@ -1,6 +1,10 @@
 /** Bot settings – identical for overlay, Chrome popup/options and userscript. */
 export interface BotSettings {
-  mode: 'story' | 'tower';
+  mode: 'story' | 'tower' | 'challenge';
+  /** which challenge to start from the challenge screen */
+  chalKind: 'arena' | 'daily' | 'weekly';
+  /** arena challenge badge level 0..7; null = the game's preselection (next badge to earn) */
+  chalLevel: number | null;
   storyVariant: 'classic' | 'nuzlocke';
   /** 1 = Kanto … 6 = Kalos */
   region: number;
@@ -25,6 +29,8 @@ export interface BotSettings {
 
 export const DEFAULT_SETTINGS: BotSettings = {
   mode: 'story',
+  chalKind: 'arena',
+  chalLevel: null,
   storyVariant: 'classic',
   region: 1,
   trainer: 'boy',
@@ -54,7 +60,9 @@ export function normalizeSettings(raw: unknown): BotSettings {
     if (v === undefined) continue;
     if (d === null ? v === null || typeof v === 'number' || typeof v === 'string' : typeof v === typeof d) o[k] = v;
   }
-  if (out.mode !== 'story' && out.mode !== 'tower') out.mode = 'story';
+  if (out.mode !== 'story' && out.mode !== 'tower' && out.mode !== 'challenge') out.mode = 'story';
+  if (!['arena', 'daily', 'weekly'].includes(out.chalKind)) out.chalKind = 'arena';
+  if (out.chalLevel !== null) out.chalLevel = Math.min(7, Math.max(0, Math.round(Number(out.chalLevel) || 0)));
   if (out.storyVariant !== 'classic' && out.storyVariant !== 'nuzlocke') out.storyVariant = 'classic';
   out.region = Math.min(6, Math.max(1, Math.round(out.region)));
   out.actionDelayMs = Math.min(5000, Math.max(150, Math.round(out.actionDelayMs)));

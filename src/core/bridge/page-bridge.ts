@@ -116,7 +116,7 @@ export function readRun(s: any): RunState | null {
   const team = Array.isArray(s.team) ? (s.team.map(serializeMon).filter(Boolean) as Mon[]) : [];
   const gen = s.gen6Mode ? 6 : s.gen5Mode ? 5 : s.gen4Mode ? 4 : s.gen3Mode ? 3 : s.gen2Mode ? 2 : 1;
   const challenge = Object.keys(s).some((k) => k.startsWith('challenge') && s[k] && k !== 'challengeGenRange');
-  const mode = s.isEndlessMode ? 'tower' : challenge ? 'challenge' : team.length ? 'story' : 'none';
+  const mode = s.challengeId || challenge ? 'challenge' : s.isEndlessMode ? 'tower' : team.length ? 'story' : 'none';
   const cur = s.currentNode;
   const sc = s.savedCatch;
   return {
@@ -174,6 +174,23 @@ declare function openItemEquipModal(item: any, opts: any): void;
  * setPointerCapture, which synthetic events cannot satisfy – so this is the one UI opener the bot calls directly.
  * It does not change any game data by itself; the choice is then clicked in the dialog like a human would.
  */
+declare const __POKEDEX__: Record<string, any>;
+
+/** Base stat totals and types from the game's own Pokédex table (for the PC starter choice). */
+function speciesStats(ids: number[]): Record<number, { bst: number; types: string[] }> {
+  const out: Record<number, { bst: number; types: string[] }> = {};
+  for (const id of ids.slice(0, 1000)) {
+    const e = (typeof __POKEDEX__ !== 'undefined' && __POKEDEX__?.[id]) || null;
+    if (!e?.baseStats) continue;
+    const b = e.baseStats;
+    out[id] = {
+      bst: num(b.hp) + num(b.atk) + num(b.def) + num(b.speed) + num(b.special) + num(b.spdef),
+      types: (e.types ?? []).map(String),
+    };
+  }
+  return out;
+}
+
 function openBagItem(index: number, expectId: string): boolean {
   const it = state?.items?.[index];
   if (!it || (expectId && itemId(it) !== expectId)) throw new Error('bag item changed');
@@ -197,6 +214,8 @@ export async function handle(req: BridgeRequest): Promise<BridgeResponse> {
         return { id: req.id, ok: true, result: BRIDGE_VERSION };
       case 'snapshot':
         return { id: req.id, ok: true, result: snapshot(!!req.args?.typeChart) };
+      case 'speciesStats':
+        return { id: req.id, ok: true, result: speciesStats((req.args?.ids as number[]) ?? []) };
       case 'openBagItem':
         return { id: req.id, ok: true, result: openBagItem(Number(req.args?.index), String(req.args?.itemId ?? '')) };
       case 'saveSettings':
