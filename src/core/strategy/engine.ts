@@ -5,13 +5,7 @@
 import { bossTypesFor } from '../data/bosses';
 import type { BotSettings } from '../settings';
 import { isShown } from '../screens/detector';
-import {
-  itemIdFromCard,
-  parsePokeCard,
-  readCards,
-  readClickableMapNodes,
-  speciesFromSprite,
-} from '../state/dom-reader';
+import { itemIdFromCard, parsePokeCard, readCards, readClickableMapNodes } from '../state/dom-reader';
 import type { Decision, GameState, Mon, RunState } from '../types';
 import {
   chooseCatch,
@@ -23,9 +17,11 @@ import {
   nextBossTypes,
   teamWeakness,
 } from './choices';
-import { hpRatio } from './evaluate';
+import { hpRatio, monScore } from './evaluate';
 import { chooseRoute, xpNeed } from './map';
 import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
+import { chooseBagUse, chooseEquipHolder, chooseUsableTarget } from './items';
+import { normalizeItemId } from './choices';
 
 export interface EngineMemory {
   /** signature on which a team reorder was already attempted (avoid loops) */
@@ -34,10 +30,23 @@ export interface EngineMemory {
   endReported: string | null;
   /** consecutive failed reorders – after 2 the bot stops trying for this run */
   reorderFailures: number;
+  /** bag item the bot just opened */
+  pendingBag: { index: number; itemId: string } | null;
+  /** "itemId|bagIndex" with no valid target on this map */
+  bagBlocked: Set<string>;
+  /** map index the blocked list belongs to */
+  bagMap: number;
 }
 
 export function newMemory(): EngineMemory {
-  return { reorderTried: new Set(), endReported: null, reorderFailures: 0 };
+  return {
+    reorderTried: new Set(),
+    endReported: null,
+    reorderFailures: 0,
+    pendingBag: null,
+    bagBlocked: new Set(),
+    bagMap: -1,
+  };
 }
 
 const shown = (doc: Document, sel: string) => isShown(doc.querySelector(sel));
@@ -64,6 +73,10 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       case 'move-tutor':
       case 'item-equip':
         return decideEquip(doc, run, screen.overlay);
+      case 'usable-item':
+        return decideUsable(doc, run, mem);
+      case 'evolution':
+        return decideEvolution(doc, run);
       default:
         return { kind: 'pause', why: `unrecognised dialog "${screen.overlayId}" – please handle it manually` };
     }
@@ -225,6 +238,17 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
       return { kind: 'swapTeam', from: sw.from, to: sw.to, where: 'map', why: sw.why };
     }
   }
+  if (run?.bag?.length) {
+    if (mem.bagMap !== run.currentMap) {
+      mem.bagBlocked.clear();
+      mem.bagMap = run.currentMap;
+    }
+    const use = chooseBagUse(run.bag, run.team, mem.bagBlocked);
+    if (use) {
+      mem.pendingBag = { index: use.index, itemId: use.itemId };
+      return { kind: 'openBag', index: use.index, itemId: use.itemId, why: use.why };
+    }
+  }
   if (!run?.map) {
     return {
       kind: 'click',
@@ -242,7 +266,9 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
         kind: 'click',
         selector: `.map-node--clickable[data-node-id="${r.nodeId}"]`,
         why:
-          `sim route ${types}: survive ${pct(r.survive)}, ${state.sim.bossName ?? 'boss'} ${pct(r.boss)} at +${r.boost.toFixed(0)} lv` +
+          (state.sim.pathSim
+            ? `sim route ${types}: survive + beat ${state.sim.bossName ?? 'boss'} ${pct(r.boss)}, team Ø Lv ${r.boost.toFixed(0)}`
+            : `sim route ${types}: survive ${pct(r.survive)}, ${state.sim.bossName ?? 'boss'} ${pct(r.boss)} at +${r.boost.toFixed(0)} lv`) +
           (state.sim.nextBossName ? `, then ${state.sim.nextBossName} ~${pct(r.next)}` : ''),
       };
     }
@@ -308,36 +334,80 @@ function decideSwap(state: GameState, doc: Document): Decision {
 }
 
 function decideEquip(doc: Document, run: RunState | null, kind: 'move-tutor' | 'item-equip'): Decision {
-  const rows = Array.from(doc.querySelectorAll('#item-equip-modal .equip-pokemon-row'));
-  const skip = doc.querySelector('#btn-skip-tutor') ? '#btn-skip-tutor' : null;
-  if (!rows.length) return { kind: 'pause', why: `${kind} dialog without choices` };
-  const eligible = rows
-    .map((row, i) => {
-      const sp = speciesFromSprite(row.querySelector('img')?.getAttribute('src'));
-      const btn = row.querySelector('button:not([disabled])');
-      const mon = run?.team.find((m) => m.speciesId === sp?.id) ?? null;
-      return { i, mon, btn };
-    })
-    .filter((r) => r.btn);
+  // buttons carry the team index: data-tutor (move tutor) / data-idx (equip). data-unequip must never be clicked.
+  const attr = kind === 'move-tutor' ? 'data-tutor' : 'data-idx';
+  const btns = Array.from(doc.querySelectorAll(`#item-equip-modal button[${attr}]:not([disabled])`));
+  const eligible = btns.map((b) => Number(b.getAttribute(attr))).filter((n) => Number.isInteger(n) && n >= 0);
+  const skip = kind === 'move-tutor' ? '#btn-skip-tutor' : '#btn-equip-to-bag';
   if (!eligible.length) {
-    return skip
-      ? { kind: 'click', selector: skip, why: 'nobody can use it' }
+    return shown(doc, skip)
+      ? { kind: 'click', selector: skip, why: `${kind}: nobody can use it` }
       : { kind: 'pause', why: `${kind}: no usable button` };
   }
-  const withMon = eligible.filter((r) => r.mon);
-  let pickRow = eligible[0]!.i;
+  const team = run?.team ?? [];
+  let pick = eligible[0]!;
   let why = `${kind}: first eligible member (no team data)`;
-  if (withMon.length) {
-    const c = chooseHolder(
-      withMon.map((r) => r.mon!),
-      'offense',
-    );
-    pickRow = withMon[c.index]!.i;
-    why = `${kind}: ${c.why}`;
+  if (team.length) {
+    if (kind === 'move-tutor') {
+      const mons = eligible.map((i) => team[i]).filter((m): m is Mon => !!m);
+      if (mons.length === eligible.length) {
+        const c = chooseHolder(mons, 'offense');
+        pick = eligible[c.index]!;
+        why = `move tutor: ${c.why}`;
+      }
+    } else {
+      const header = doc.querySelector('#item-equip-modal .equip-item-header');
+      const itemId = header ? itemIdFromCard(header) : null;
+      const c = chooseEquipHolder(itemId ?? 'unknown', team, eligible);
+      if (c) {
+        pick = c.index;
+        why = `equip: ${c.why}`;
+      }
+    }
   }
+  return { kind: 'click', selector: `#item-equip-modal button[${attr}="${pick}"]`, why };
+}
+
+/** Evolution animation: let it evolve (Skip = skip the animation, NOT the "Stop" button). Branching: best card. */
+function decideEvolution(doc: Document, run: RunState | null): Decision {
+  const cards = Array.from(doc.querySelectorAll('#eevee-choice-overlay .evo-choice-card'));
+  if (cards.length && isShown(doc.getElementById('eevee-choice-overlay'))) {
+    const parsed = cards.map((c) => parsePokeCard(c));
+    const vs = vsTypes(run);
+    let best = 0;
+    parsed.forEach((m, i) => {
+      const cur = parsed[best];
+      if (m && (!cur || monScore(m, vs) > monScore(cur, vs))) best = i;
+    });
+    const name = parsed[best]?.name ?? `option ${best + 1}`;
+    return {
+      kind: 'click',
+      selector: '#eevee-choice-overlay .evo-choice-card',
+      index: best,
+      why: `branching evolution → ${name}`,
+    };
+  }
+  if (shown(doc, '#evo-overlay .evo-skip-btn'))
+    return { kind: 'click', selector: '#evo-overlay .evo-skip-btn', why: 'evolve (skip animation)' };
+  return { kind: 'wait', ms: 400, why: 'evolution animation' };
+}
+
+function decideUsable(doc: Document, run: RunState | null, mem: EngineMemory): Decision {
+  const rows = Array.from(doc.querySelectorAll('#usable-item-modal .equip-pokemon-row[data-idx]'));
+  // the game marks valid targets with a keyboard shortcut attribute
+  const targetable = rows.filter((r) => r.hasAttribute('data-shortcut')).map((r) => Number(r.getAttribute('data-idx')));
+  const header = doc.querySelector('#usable-item-modal .equip-item-header');
+  const itemId = (header && itemIdFromCard(header)) || mem.pendingBag?.itemId || 'unknown';
+  const c = run ? chooseUsableTarget(itemId, run.team, targetable) : null;
+  if (!c) {
+    if (mem.pendingBag) mem.bagBlocked.add(`${normalizeItemId(mem.pendingBag.itemId)}|${mem.pendingBag.index}`);
+    mem.pendingBag = null;
+    return { kind: 'click', selector: '#btn-cancel-use', why: `${itemId}: no valid target right now` };
+  }
+  mem.pendingBag = null;
   return {
     kind: 'click',
-    selector: `#item-equip-modal .equip-pokemon-row:nth-of-type(${pickRow + 1}) button:not([disabled])`,
-    why,
+    selector: `#usable-item-modal .equip-pokemon-row[data-idx="${c.index}"]`,
+    why: `use ${c.why}`,
   };
 }

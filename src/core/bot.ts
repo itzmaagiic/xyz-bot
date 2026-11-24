@@ -350,8 +350,32 @@ export class BotController {
       case 'reorder':
         await this.doReorder(d);
         return d;
+      case 'openBag':
+        await this.doOpenBag(d);
+        return d;
     }
     return d;
+  }
+
+  private async doOpenBag(d: Extract<Decision, { kind: 'openBag' }>): Promise<void> {
+    this.log.log('decision', d.why, { bag: d.index, item: d.itemId });
+    const block = (): void => {
+      this.mem.bagBlocked.add(`${d.itemId}|${d.index}`);
+    };
+    if (!this.bridge) return block();
+    try {
+      await this.bridge.request('openBagItem', { index: d.index, itemId: d.itemId }, 3000);
+    } catch (e) {
+      this.log.warn('could not open bag item', String(e));
+      return block();
+    }
+    for (let i = 0; i < 15; i++) {
+      await sleep(120);
+      const ov = detectScreen(this.doc).overlay;
+      if (ov === 'usable-item' || ov === 'item-equip') return;
+    }
+    this.log.warn('bag dialog did not appear');
+    block();
   }
 
   /** Realises a full battle order with the game's Shift+<slot> shortcut, verifying every single swap. */

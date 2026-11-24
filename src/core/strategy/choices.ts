@@ -44,51 +44,68 @@ export function chooseRelease(incoming: Mon | null, team: readonly Mon[]): Choic
   return { index: wi, why: `release weakest ${weak.name} (score ${fmt(monScore(weak))})` };
 }
 
-/** Item ids are sprite basenames (e.g. "expert-belt"). Higher = better. Unknown items: neutral 3. */
+/**
+ * Item values for the game's real item ids (ITEM_POOL / USABLE_ITEM_POOL of v3.8, see docs/GAME_RECON.md).
+ * Sprite basenames use dashes ("expert-belt"), the game ids underscores – normalizeItemId maps both.
+ */
 export const ITEM_VALUES: Record<string, number> = {
-  'life-orb': 9,
-  'expert-belt': 8.5,
-  'choice-band': 8,
-  'choice-specs': 8,
-  leftovers: 7.5,
-  'focus-sash': 7,
-  'shell-bell': 6.5,
-  'scope-lens': 6,
-  'quick-claw': 6,
-  'muscle-band': 6,
-  'wise-glasses': 6,
-  'rare-candy': 6,
-  'sitrus-berry': 5,
-  'lagging-tail': 2,
+  rare_candy: 8, // +3 levels right now
+  tm_normal: 8, // move tier +1 (big damage jump) – only offered while someone is below tier 2
+  sacred_ash: 6, // full heal + revive one member (raised below when someone is down)
+  expert_belt: 7.5,
+  choice_band: 7,
+  wide_lens: 6.5,
+  metronome: 6,
+  leftovers: 6.5,
+  choice_specs: 6.5,
+  lucky_egg: 6,
+  assault_vest: 5.5,
+  shell_bell: 5,
+  scope_lens: 5,
+  quick_claw: 5,
+  kings_rock: 5,
+  choice_scarf: 5,
+  moon_stone: 5,
+  red_card: 4.5,
+  loaded_dice: 4,
+  rocky_helmet: 4,
+  eviolite: 3.5, // stops evolutions
+  lagging_tail: 3,
+  amulet_coin: 1.5,
 };
 
 export const TYPE_BOOST_ITEMS: Record<string, string> = {
   charcoal: 'Fire',
-  'mystic-water': 'Water',
-  'miracle-seed': 'Grass',
+  mystic_water: 'Water',
+  miracle_seed: 'Grass',
   magnet: 'Electric',
-  'never-melt-ice': 'Ice',
-  'black-belt': 'Fighting',
-  'poison-barb': 'Poison',
-  'soft-sand': 'Ground',
-  'sharp-beak': 'Flying',
-  'twisted-spoon': 'Psychic',
-  'silver-powder': 'Bug',
-  'hard-stone': 'Rock',
-  'spell-tag': 'Ghost',
-  'dragon-fang': 'Dragon',
-  'black-glasses': 'Dark',
-  'metal-coat': 'Steel',
-  'silk-scarf': 'Normal',
-  'fairy-feather': 'Fairy',
+  never_melt_ice: 'Ice',
+  black_belt: 'Fighting',
+  poison_barb: 'Poison',
+  soft_sand: 'Ground',
+  sharp_beak: 'Flying',
+  twisted_spoon: 'Psychic',
+  silver_powder: 'Bug',
+  hard_stone: 'Rock',
+  spell_tag: 'Ghost',
+  dragon_fang: 'Dragon',
+  black_glasses: 'Dark',
+  metal_coat: 'Steel',
+  silk_scarf: 'Normal',
+  pixie_plate: 'Fairy',
 };
 
-export function itemValue(id: string, team: readonly Mon[]): number {
+export const normalizeItemId = (id: string): string => id.trim().toLowerCase().replace(/-/g, '_');
+
+export function itemValue(rawId: string, team: readonly Mon[]): number {
+  const id = normalizeItemId(rawId);
   const t = TYPE_BOOST_ITEMS[id];
   if (t) {
     const users = team.filter((m) => moveOf(m).type === t).length;
     return users ? 5 + users : 2;
   }
+  if (id === 'sacred_ash' && team.some((m) => m.currentHp <= 0)) return 9;
+  if (id === 'tm_normal' && !team.some((m) => m.moveTier < 2)) return 2;
   return ITEM_VALUES[id] ?? 3;
 }
 

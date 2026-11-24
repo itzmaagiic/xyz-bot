@@ -13,6 +13,7 @@ function gs(doc: Document, run: RunState | null = null): GameState {
 const baseRun = (p: Partial<RunState> = {}): RunState => ({
   team: [mon({ speciesId: 1, types: ['Grass', 'Poison'] })],
   items: [],
+  bag: [],
   badges: 0,
   maxTeamSize: 6,
   currentMap: 0,
@@ -83,7 +84,19 @@ describe('DecisionEngine on real snapshots', () => {
     const doc = loadFixture('map-move-tutor');
     const d = decide(gs(doc), doc, s, newMemory());
     expect(d.kind).toBe('click');
-    expect((d as { selector: string }).selector).toContain('equip-pokemon-row');
+    expect((d as { selector: string }).selector).toMatch(/^#item-equip-modal button\[data-tutor="\d"\]$/);
+  });
+  it('evolution overlay → Skip (evolve), never Stop', () => {
+    const doc = loadFixture('map');
+    const ov = doc.createElement('div');
+    ov.id = 'evo-overlay';
+    ov.setAttribute('style', 'display:flex');
+    ov.innerHTML =
+      '<img id="evo-sprite"><div id="evo-msg">…</div><button class="btn-run-panel btn-primary btn-md evo-skip-btn" data-shortcut="Space">Skip</button><button class="btn-run-panel btn-md evo-stop-btn" data-shortcut="B">Stop</button>';
+    doc.body.appendChild(ov);
+    const st = gs(doc);
+    expect(st.screen.overlay).toBe('evolution');
+    expect(decide(st, doc, s, newMemory())).toMatchObject({ kind: 'click', selector: '#evo-overlay .evo-skip-btn' });
   });
   it('unknown modal → pause', () => {
     const doc = loadFixture('settings-modal');

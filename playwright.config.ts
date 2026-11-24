@@ -5,7 +5,7 @@ const live = !!process.env.LIVE;
 export default defineConfig({
   testDir: 'tests/e2e',
   testMatch: live ? /live\.spec\.ts/ : /(extension|userscript)\.spec\.ts/,
-  timeout: live ? 600_000 : 60_000,
+  timeout: live ? (Number(process.env.LIVE_MINUTES ?? 5) * 60 + 240) * 1000 : 60_000,
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],

@@ -122,6 +122,7 @@ export function readRun(s: any): RunState | null {
   return {
     team,
     items: Array.isArray(s.items) ? s.items.map(itemId) : [],
+    bag: Array.isArray(s.items) ? s.items.map((it: any) => ({ id: itemId(it), usable: !!it?.usable })) : [],
     badges: num(s.badges),
     // NOTE: state.maxTeamSize is the largest team size reached so far (starts at 1), NOT the cap.
     // The cap is 6: catching with 6 members opens the swap ("Team full") screen.
@@ -165,6 +166,22 @@ function doSaveSettings(patch: Record<string, unknown>): Record<string, unknown>
   return { ...getSettings() };
 }
 
+declare function openUsableItemModal(item: any, idx: number, cb?: any): void;
+declare function openItemEquipModal(item: any, opts: any): void;
+
+/**
+ * Opens a bag item exactly like a tap on its badge would. The badge only reacts to a pointer gesture that calls
+ * setPointerCapture, which synthetic events cannot satisfy – so this is the one UI opener the bot calls directly.
+ * It does not change any game data by itself; the choice is then clicked in the dialog like a human would.
+ */
+function openBagItem(index: number, expectId: string): boolean {
+  const it = state?.items?.[index];
+  if (!it || (expectId && itemId(it) !== expectId)) throw new Error('bag item changed');
+  if (it.usable) openUsableItemModal(it, index);
+  else openItemEquipModal(it, { fromBagIdx: index });
+  return true;
+}
+
 export async function handle(req: BridgeRequest): Promise<BridgeResponse> {
   try {
     switch (req.cmd) {
@@ -180,6 +197,8 @@ export async function handle(req: BridgeRequest): Promise<BridgeResponse> {
         return { id: req.id, ok: true, result: BRIDGE_VERSION };
       case 'snapshot':
         return { id: req.id, ok: true, result: snapshot(!!req.args?.typeChart) };
+      case 'openBagItem':
+        return { id: req.id, ok: true, result: openBagItem(Number(req.args?.index), String(req.args?.itemId ?? '')) };
       case 'saveSettings':
         return { id: req.id, ok: true, result: doSaveSettings((req.args?.patch as Record<string, unknown>) ?? {}) };
       default:
