@@ -117,6 +117,17 @@ describe('DecisionEngine on real snapshots', () => {
       selector: '#usable-item-modal .equip-pokemon-row[data-idx="1"]',
     });
   });
+  it('trade: only a far-behind member is traded, otherwise skip', () => {
+    const doc = loadFixture('trade');
+    const n = doc.querySelectorAll('#trade-team-list .trade-member-row').length;
+    const team = Array.from({ length: n }, (_, i) => mon({ speciesId: 10 + i, level: 14 }));
+    expect(decide(gs(doc, baseRun({ team })), doc, s, newMemory())).toMatchObject({ selector: '#btn-skip-trade' });
+    team[2] = mon({ speciesId: 99, level: 4 });
+    expect(decide(gs(doc, baseRun({ team })), doc, s, newMemory())).toMatchObject({
+      selector: '#trade-team-list .trade-member-row',
+      index: 2,
+    });
+  });
   it('unknown modal → pause', () => {
     const doc = loadFixture('settings-modal');
     expect(decide(gs(doc), doc, s, newMemory()).kind).toBe('pause');

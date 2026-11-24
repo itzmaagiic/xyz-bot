@@ -14,6 +14,8 @@ export interface SimData {
   /** level boost → win rate vs the boss AFTER this one (full heal assumed; lookahead for levelling) */
   nextBoss?: Record<number, number>;
   nextBossName?: string | null;
+  /** battle order (team indices) that the joint route/order search found better than the current one */
+  mapOrder?: number[] | null;
   /** whole-path simulations, keyed by path.join('>') */
   pathSim?: Record<string, { success: number; next: number; avgLevel: number }>;
 }

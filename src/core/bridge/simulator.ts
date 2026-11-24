@@ -432,6 +432,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
 // ---------------------------------------------------------------------------------------------------------------
 export interface PathSimRequest {
   paths: string[][];
+  /** battle order to start with (indices into state.team); default: current order */
+  order?: number[];
   n?: number;
   /** levels the team is assumed to gain on the next map before the next boss */
   nextGain?: number;
@@ -467,6 +469,53 @@ function fightInto(team: any[], enemy: any[]): boolean {
   const sent: Set<number> | null = r?.playerParticipants instanceof Set ? r.playerParticipants : null;
   team.forEach((m, i) => levelUp(m, 2, !!sent?.has(i)));
   return true;
+}
+
+declare const LEGENDARY_IDS: number[];
+declare const MAP_LEVEL_RANGES: number[][];
+declare const GEN2_MAP_LEVEL_RANGES: number[][];
+declare const GEN3_MAP_LEVEL_RANGES: number[][];
+declare const GEN4_MAP_LEVEL_RANGES: number[][];
+declare const GEN5_MAP_LEVEL_RANGES: number[][];
+declare const GEN6_MAP_LEVEL_RANGES: number[][];
+
+const GEN_ID_RANGE: Record<number, [number, number]> = {
+  1: [1, 151],
+  2: [152, 251],
+  3: [252, 386],
+  4: [387, 493],
+  5: [494, 649],
+  6: [650, 721],
+};
+
+/** Legendary node like doLegendaryNode: a legendary of this generation not in the team, max map level, move tier 2. */
+async function legendaryEnemy(node: any, team: any[]): Promise<any | null> {
+  const s = state;
+  const g = gen(s);
+  const [lo, hi] = GEN_ID_RANGE[g]!;
+  const have = new Set(team.map((m: any) => m.speciesId));
+  const ids = (LEGENDARY_IDS ?? []).filter((id) => id >= lo && id <= hi && !have.has(id));
+  if (!ids.length) return null;
+  const id =
+    node.legendarySpeciesId && ids.includes(node.legendarySpeciesId)
+      ? node.legendarySpeciesId
+      : ids[Math.floor(rng() * ids.length)];
+  const sp = await fetchPokemonById(id);
+  if (!sp) return null;
+  const table =
+    g === 6
+      ? GEN6_MAP_LEVEL_RANGES
+      : g === 5
+        ? GEN5_MAP_LEVEL_RANGES
+        : g === 4
+          ? GEN4_MAP_LEVEL_RANGES
+          : g === 3
+            ? GEN3_MAP_LEVEL_RANGES
+            : g === 2
+              ? GEN2_MAP_LEVEL_RANGES
+              : MAP_LEVEL_RANGES;
+  const lvl = table?.[s.currentMap]?.[1] ?? 50;
+  return createInstance(sp, lvl, false, 2);
 }
 
 /** Fights a chain in a row (no healing in between); true only if every fight is won. */
@@ -513,7 +562,8 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
       let aliveSum = 0;
       for (let k = 0; k < n; k++) {
         seedRng((seed0 ^ Math.imul(k + 1, 0x27d4eb2f) ^ Math.imul(pi + 1, 0x165667b1)) >>> 0);
-        const team: any[] = clone(s.team ?? []);
+        const base: any[] = s.team ?? [];
+        const team: any[] = clone(req.order?.length ? req.order.map((i) => base[i]).filter(Boolean) : base);
         let alive = true;
         for (const id of path) {
           const node = s.map.nodes[id];
@@ -533,6 +583,23 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
           } else if (kind === 'catch' && team.length < 6) {
             const mon = await sampleCatch(node);
             if (mon) team.push(mon);
+          } else if (kind === 'legendary') {
+            const leg = await legendaryEnemy(node, team).catch(() => null);
+            if (leg) {
+              if (!fightInto(team, [leg])) {
+                alive = false;
+                break;
+              }
+              // beaten legendaries join the team (full HP)
+              const m = clone(leg);
+              m.currentHp = m.maxHp;
+              if (team.length < 6) team.push(m);
+              else {
+                let lo = 0;
+                team.forEach((x: any, i: number) => (x.level < team[lo].level ? (lo = i) : 0));
+                team[lo] = m;
+              }
+            }
           } else if (kind === 'pokecenter') {
             team.forEach((m) => (m.currentHp = m.maxHp));
           } else if (kind === 'boss') {
@@ -544,7 +611,12 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
         }
         if (!alive) continue;
         ok++;
-        lvlSum += team.reduce((a, m) => a + m.level, 0) / Math.max(1, team.length);
+        // strength of the core: average level of the three strongest members (fresh low catches don't drag it down)
+        const top = team
+          .map((m) => m.level)
+          .sort((a, b) => b - a)
+          .slice(0, 3);
+        lvlSum += top.reduce((a, b) => a + b, 0) / Math.max(1, top.length);
         aliveSum += team.filter((m) => m.currentHp > 0).length;
         if (next) {
           // next map: assume a heal at some point and `nextGain` levels for everyone still standing
