@@ -73,7 +73,7 @@ const BONUS: Partial<Record<NodeType, number>> = {
 /** Each extra member that joins on the way roughly halves the chance that a lost exchange ends the run. */
 const BACKUP = 0.55;
 /** Small tie-breaker per level gained. */
-const FUTURE_LEVEL = 0.5;
+const FUTURE_LEVEL = 2.5;
 /** Levels a run typically still gains on the next map before its boss (≈ 4 won fights). */
 export const NEXT_MAP_GAIN = 8;
 /** Weight of beating the next boss relative to the current one. */

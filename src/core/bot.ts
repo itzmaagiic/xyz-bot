@@ -255,7 +255,7 @@ export class BotController {
               .map((x) => x.p);
           }
           if (paths.length) {
-            const n = Math.max(8, Math.min(24, Math.floor(480 / paths.length)));
+            const n = Math.max(10, Math.min(30, Math.floor(960 / paths.length)));
             const t0 = Date.now();
             const ps = await this.bridge.request<{
               results: { path: string[]; success: number; next: number; avgLevel: number }[];

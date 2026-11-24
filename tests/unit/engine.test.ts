@@ -98,6 +98,25 @@ describe('DecisionEngine on real snapshots', () => {
     expect(st.screen.overlay).toBe('evolution');
     expect(decide(st, doc, s, newMemory())).toMatchObject({ kind: 'click', selector: '#evo-overlay .evo-skip-btn' });
   });
+  it('usable item (live markup): only clickable rows are targets', () => {
+    const doc = loadFixture('map');
+    const m = doc.createElement('div');
+    m.id = 'usable-item-modal';
+    m.className = 'item-equip-overlay';
+    m.innerHTML =
+      '<div class="item-equip-box"><div class="equip-item-header"><span class="equip-item-icon"><img src="img/sprites/items/rare-candy.png"></span></div><div class="equip-pokemon-list">' +
+      '<div class="equip-pokemon-row" data-idx="0" style="opacity:0.45;cursor:default;pointer-events:none;"><img src="img/sprites/pokemon/1.png"></div>' +
+      '<div class="equip-pokemon-row" data-idx="1" style="cursor:pointer;"><img src="img/sprites/pokemon/4.png"></div>' +
+      '</div><button id="btn-cancel-use">Cancel</button></div>';
+    doc.body.appendChild(m);
+    const run = baseRun({ team: [mon({ speciesId: 1, level: 30 }), mon({ speciesId: 4, level: 10 })] });
+    const st = gs(doc, run);
+    expect(st.screen.overlay).toBe('usable-item');
+    expect(decide(st, doc, s, newMemory())).toMatchObject({
+      kind: 'click',
+      selector: '#usable-item-modal .equip-pokemon-row[data-idx="1"]',
+    });
+  });
   it('unknown modal → pause', () => {
     const doc = loadFixture('settings-modal');
     expect(decide(gs(doc), doc, s, newMemory()).kind).toBe('pause');

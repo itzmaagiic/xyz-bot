@@ -169,6 +169,9 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
     case 'badge':
       return { kind: 'click', selector: '#btn-next-map', why: 'badge earned – next map' };
     case 'elite-prep': {
+      // the boss-prep screen has its own bag: last chance to revive / level up before the fight (no healing in the E4)
+      const bagUse = bagDecision(run, mem);
+      if (bagUse) return bagUse;
       const os = state.orderSim;
       if (s.reorderTeam && os?.length && run) {
         const ident = run.team.map((_, i) => i).join(',');
@@ -238,17 +241,8 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
       return { kind: 'swapTeam', from: sw.from, to: sw.to, where: 'map', why: sw.why };
     }
   }
-  if (run?.bag?.length) {
-    if (mem.bagMap !== run.currentMap) {
-      mem.bagBlocked.clear();
-      mem.bagMap = run.currentMap;
-    }
-    const use = chooseBagUse(run.bag, run.team, mem.bagBlocked);
-    if (use) {
-      mem.pendingBag = { index: use.index, itemId: use.itemId };
-      return { kind: 'openBag', index: use.index, itemId: use.itemId, why: use.why };
-    }
-  }
+  const bagUse = bagDecision(run, mem);
+  if (bagUse) return bagUse;
   if (!run?.map) {
     return {
       kind: 'click',
@@ -392,10 +386,25 @@ function decideEvolution(doc: Document, run: RunState | null): Decision {
   return { kind: 'wait', ms: 400, why: 'evolution animation' };
 }
 
+function bagDecision(run: RunState | null, mem: EngineMemory): Decision | null {
+  if (!run?.bag?.length) return null;
+  const key = run.currentMap * 10 + run.eliteIndex;
+  if (mem.bagMap !== key) {
+    mem.bagBlocked.clear();
+    mem.bagMap = key;
+  }
+  const use = chooseBagUse(run.bag, run.team, mem.bagBlocked);
+  if (!use) return null;
+  mem.pendingBag = { index: use.index, itemId: use.itemId };
+  return { kind: 'openBag', index: use.index, itemId: use.itemId, why: use.why };
+}
+
 function decideUsable(doc: Document, run: RunState | null, mem: EngineMemory): Decision {
   const rows = Array.from(doc.querySelectorAll('#usable-item-modal .equip-pokemon-row[data-idx]'));
-  // the game marks valid targets with a keyboard shortcut attribute
-  const targetable = rows.filter((r) => r.hasAttribute('data-shortcut')).map((r) => Number(r.getAttribute('data-idx')));
+  // valid targets are clickable rows; invalid ones get "pointer-events:none" (live-verified markup)
+  const targetable = rows
+    .filter((r) => !/pointer-events\s*:\s*none/i.test(r.getAttribute('style') ?? ''))
+    .map((r) => Number(r.getAttribute('data-idx')));
   const header = doc.querySelector('#usable-item-modal .equip-item-header');
   const itemId = (header && itemIdFromCard(header)) || mem.pendingBag?.itemId || 'unknown';
   const c = run ? chooseUsableTarget(itemId, run.team, targetable) : null;

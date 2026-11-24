@@ -442,14 +442,15 @@ export interface PathSimResult {
   restored: boolean;
 }
 
-function levelUp(m: any, by: number): void {
-  if (m.currentHp <= 0 || by <= 0) return;
+function levelUp(m: any, by: number, participated = false): void {
+  // applyLevelGain: living members AND everyone who was sent out (even if they fainted) gain the levels
+  if ((m.currentHp <= 0 && !participated) || by <= 0) return;
   const oldMax = m.maxHp;
   m.level = Math.min(100, m.level + by);
   const hpBuff = m.statBuffs?.hp ?? 0;
   const newMax = Math.floor(calcHp(m.baseStats.hp, m.level) * (1 + 0.05 * hpBuff + mutPct(m)) * augMult(m));
   m.maxHp = newMax;
-  m.currentHp = Math.min(newMax, m.currentHp + (newMax - oldMax));
+  if (m.currentHp > 0) m.currentHp = Math.min(newMax, m.currentHp + (newMax - oldMax));
 }
 
 /** One fight; copies HP back onto the persistent team. Returns true on a win. */
@@ -463,7 +464,8 @@ function fightInto(team: any[], enemy: any[]): boolean {
     if (a) m.currentHp = Math.max(0, Math.min(m.maxHp, a.currentHp));
   });
   if (!r?.playerWon) return false;
-  team.forEach((m) => levelUp(m, 2));
+  const sent: Set<number> | null = r?.playerParticipants instanceof Set ? r.playerParticipants : null;
+  team.forEach((m, i) => levelUp(m, 2, !!sent?.has(i)));
   return true;
 }
 
