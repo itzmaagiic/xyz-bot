@@ -25,6 +25,7 @@ import {
 } from './choices';
 import { hpRatio } from './evaluate';
 import { chooseRoute, xpNeed } from './map';
+import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
 
 export interface EngineMemory {
   /** signature on which a team reorder was already attempted (avoid loops) */
@@ -40,6 +41,7 @@ export function newMemory(): EngineMemory {
 }
 
 const shown = (doc: Document, sel: string) => isShown(doc.querySelector(sel));
+const pct = (x: number) => `${Math.round(x * 100)} %`;
 
 /** True when bridge data and DOM cards describe the same species in the same order. */
 export function sameSpecies(a: readonly Mon[], b: readonly Mon[]): boolean {
@@ -154,6 +156,30 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
     case 'badge':
       return { kind: 'click', selector: '#btn-next-map', why: 'badge earned – next map' };
     case 'elite-prep': {
+      const os = state.orderSim;
+      if (s.reorderTeam && os?.length && run) {
+        const ident = run.team.map((_, i) => i).join(',');
+        const cur = os.find((o) => o.order.join(',') === ident);
+        const best = [...os].sort((a, b) => b.winRate - a.winRate || b.avgAlive - a.avgAlive)[0]!;
+        const key = `sim|${screen.signature}|${run.team.map((m) => `${m.speciesId}:${m.level}`).join(',')}`;
+        const gain = best.winRate - (cur?.winRate ?? 0);
+        if (best.order.join(',') !== ident && gain >= 0.04 && !mem.reorderTried.has(key) && mem.reorderFailures < 2) {
+          mem.reorderTried.add(key);
+          const swaps = starSwaps(
+            run.team.map((_, i) => i),
+            best.order,
+          );
+          const names = best.order.map((i) => run.team[i]?.name).join(' → ');
+          return {
+            kind: 'reorder',
+            swaps,
+            target: best.order,
+            why: `boss sim: ${pct(cur?.winRate ?? 0)} → ${pct(best.winRate)} with order ${names}`,
+          };
+        }
+        const wr = cur?.winRate ?? best.winRate;
+        return { kind: 'click', selector: '#btn-elite-prep-continue', why: `FIGHT! (simulated win chance ${pct(wr)})` };
+      }
       const sw = s.reorderTeam && run && mem.reorderFailures < 2 ? leadSwap(run.team, vsTypes(run)) : null;
       const key = `${screen.signature}|${run?.team.map((m) => m.speciesId).join(',')}`;
       if (sw && !mem.reorderTried.has(key)) {
@@ -206,6 +232,21 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
       why: 'no map data (DOM fallback) – first node',
     };
   }
+  if (state.sim) {
+    const acc = clickable.filter((id) => run.map!.nodes[id]);
+    const ctxSim = { teamSize: run.team.length, maxTeamSize: run.maxTeamSize, nuzlocke: run.nuzlocke };
+    const r = chooseRouteSim(run.map, acc, ctxSim, state.sim);
+    if (r) {
+      const types = r.path.map((id) => run.map!.nodes[id]?.type).join('→');
+      return {
+        kind: 'click',
+        selector: `.map-node--clickable[data-node-id="${r.nodeId}"]`,
+        why:
+          `sim route ${types}: survive ${pct(r.survive)}, ${state.sim.bossName ?? 'boss'} ${pct(r.boss)} at +${r.boost.toFixed(0)} lv` +
+          (state.sim.nextBossName ? `, then ${state.sim.nextBossName} ~${pct(r.next)}` : ''),
+      };
+    }
+  }
   const ctx = {
     teamSize: run.team.length,
     maxTeamSize: run.maxTeamSize,
@@ -239,7 +280,14 @@ function decideCatch(state: GameState, doc: Document): Decision {
     return { kind: 'wait', ms: 500, why: 'catch screen loading' };
   }
   const run = state.run;
-  const offer = run?.catchOffer && sameSpecies(run.catchOffer, domCards) ? run.catchOffer : domCards;
+  const bridgeMatches = !!run?.catchOffer && sameSpecies(run.catchOffer, domCards);
+  const offer = bridgeMatches ? run!.catchOffer! : domCards;
+  const sim = bridgeMatches ? state.catchSim : null;
+  if (sim?.length && run) {
+    const pick = chooseCatchSim(sim, offer, run.team.length, run.maxTeamSize);
+    if (pick.index < 0) return { kind: 'click', selector: '#btn-skip-catch', why: pick.why };
+    return { kind: 'click', selector: '#catch-choices .poke-card', index: pick.index, why: pick.why };
+  }
   const c = chooseCatch(offer, run?.team ?? [], run?.maxTeamSize ?? 6, vsTypes(run));
   if (c.index < 0) return { kind: 'click', selector: '#btn-skip-catch', why: c.why };
   return { kind: 'click', selector: '#catch-choices .poke-card', index: c.index, why: c.why };

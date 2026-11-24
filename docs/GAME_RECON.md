@@ -83,3 +83,61 @@ Erkennung: Element am Bildschirmmittelpunkt, das nicht zum aktiven Screen gehör
 - Relic-/Passive-Screen, Shop/Pokémart, Entwicklungs-Overlays, Top 4/Champ und Tower-Stat-Buff noch nicht live gesehen → Bot pausiert dort bis zur Implementierung („niemals raten“).
 - Pokésort: Lösungslogik nicht umgesetzt (Modal `pokechain-modal`).
 - Ob `runBattle` gefahrlos zur Simulation genutzt werden kann (Nebenwirkungen auf `state`/RNG) – bewusst nicht verwendet.
+
+## 8. Spielmechanik (aus dem Spielcode gelesen, v3.8)
+
+Alle Angaben stammen aus den dekodierten Spielfunktionen (Namen in Klammern) und wurden live gegengeprüft.
+
+### Erfahrung und Level
+- **Jeder gewonnene Kampf gibt allen lebenden Mitgliedern +2 Level** (`getLevelGain` liefert konstant 2, `applyLevelGain`),
+  egal ob Wild, Trainer oder Boss. **Besiegte (0 KP) bekommen nichts.** Lucky Egg: 30 % +1. Relic „Exp. Share“: das
+  niedrigste lebende Mitglied +1.
+- Folge: Mehr Mitglieder verwässern keine XP. Wildkämpfe bringen gleich viel XP wie Trainer, sind aber leichter.
+- Entwicklungen erfolgen per Level (`checkAndEvolveTeam`, Tabelle `EVOLUTIONS`). Eviolite verhindert sie.
+
+### Gegnerstärke (Kanto, `MAP_LEVEL_RANGES`)
+| Map | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | Top 4 |
+|---|---|---|---|---|---|---|---|---|---|
+| Wild-Level | 1–5 | 8–15 | 14–21 | 21–29 | 29–37 | 37–43 | 43–47 | 47–52 | 53–64 |
+
+- Innerhalb einer Map steigt das Level mit der Ebene: min + (Ebene−1)/6·(max−min) + Zufall (`getLevelForNode`).
+- Wilde Pokémon ab Map 2 sind 1 Level niedriger. Trainer haben 1 Pokémon auf Map 1, 2 auf Map 2–3, danach 3 (`doTrainerNode`).
+  Trainer mit Spezialtyp (z. B. `fireSpitter`) ziehen aus typisierten Pools.
+- Auf Map 1, Ebene 1 werden nur Wildgegner gewählt, die den Starter nicht sehr effektiv treffen (`doBattleNode`).
+
+### Arenaleiter und Top 4 Kanto (`GYM_LEADERS`, `ELITE_4`)
+| Boss | Team (Level, Item) |
+|---|---|
+| Brock (Gestein) | Geodude 12, Onix 14 |
+| Misty (Wasser) | Staryu 18, Starmie 20 |
+| Lt. Surge (Elektro) | Pikachu 20 (Eviolite), Voltorb 23 (Magnet), Raichu 25 (Life Orb) |
+| Erika (Pflanze) | Tangela 26, Victreebel 31, Vileplume 32 |
+| Koga (Gift) | Koffing 38 ×2, Muk 40, Weezing 44 |
+| Sabrina (Psycho) | Mr. Mime 40, Venomoth 41, Kadabra 42, Alakazam 44 |
+| Blaine (Feuer) | Ponyta 47, Growlithe 47, Rapidash 48, Arcanine 53 |
+| Giovanni (Boden) | Dugtrio 55, Nidoqueen 53, Nidoking 54, Rhyhorn 56, Rhydon 60 |
+| Top 4 | Lorelei (Eis) 53–56, Bruno (Kampf) 53–58, Agatha (Geist) 54–58, Lance (Drache) 56–62 |
+| Champ Gary | Pidgeot 61, Alakazam 59, Rhydon 61, Exeggutor 61, Charizard 65 |
+Die Top 4 kämpfen ohne Heilung dazwischen hintereinander (`doElite4`, `inEliteFourGauntlet`).
+
+### Kampf
+- 1-gegen-1, der jeweils erste lebende Pokémon jeder Seite kämpft (`runBattle`). Der ganze Kampf wird **sofort berechnet**,
+  die Animation läuft danach.
+- Werte wie in Gen 1 ohne IV/EV: ⌊Basis·Level/50⌋+5 (`getEffectiveStat`). Physisch oder speziell nach dem höheren
+  Angriffswert (`usesSpecialAttack`).
+- Schaden: ⌊(2·Lv/5+2)·Stärke·A/V/50+2⌋ × Typ × STAB 1,5. Items: Typ-Booster ×1,4, Choice Band ×1,4 (Vert. ×0,8),
+  Choice Specs ×1,3, Expert Belt ×2 bei sehr effektiv, Lagging Tail ×2 (immer zuletzt), Eviolite Vert./SpVert. ×1,5 bei
+  entwicklungsfähigen Pokémon (`calcDamage`). Items wirken nur gehalten (`heldItem`).
+- Attackenstufe (`getMoveТierForMap`, mit kyrillischem „Т“ im Namen!): Map 1–2 Stufe 0, Map 3–7 Stufe 1, ab Map 8 Stufe 2.
+  Gefangene Pokémon behalten ihre Stufe, der Move-Tutor erhöht sie.
+- Zufall: ein gesäter globaler Generator (`rng`, `seedRng`, `getRngSeed`).
+
+### Knoten
+- Pokécenter: alle Mitglieder voll geheilt, **auch Besiegte** (`doPokeCenterNode`).
+- „?“ (`resolveQuestionMark`): 22 % Wildkampf, 20 % Trainer, 10 % Fang (Nuzlocke: Kampf), 13 % Item, 7 % Shiny, Rest „Mega“.
+
+### Simulation durch den Bot
+Die Bridge ruft `runBattle` mit tiefen Kopien auf und stellt RNG-Seed und `_pokeUidCounter` danach exakt wieder her.
+Live geprüft: `state`, Seed und Zähler waren nach 280 Simulationen identisch, Dauer 57 ms.
+**Bewusste Grenze:** Der Bot simuliert nur mit eigenen Seeds (Verteilung). Den gesäten Zufall nutzt er nie, um den echten
+nächsten Gegner oder Kampfausgang vorherzusagen, denn das wäre Wissen, das kein Mensch hat.

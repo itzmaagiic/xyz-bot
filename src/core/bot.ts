@@ -7,6 +7,7 @@ import { detectScreen, isShown } from './screens/detector';
 import { DEFAULT_SETTINGS, normalizeSettings, SETTINGS_KEY, type BotSettings } from './settings';
 import { StateReader } from './state/reader';
 import { decide, newMemory, type EngineMemory } from './strategy/engine';
+import { enumeratePaths, evaluatePath } from './strategy/sim-route';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
 
@@ -197,8 +198,119 @@ export class BotController {
     await this.platform.notify(title, body);
   }
 
+  private simKey: string | null = null;
+  private simCache: GameState['sim'] = null;
+  private orderKey: string | null = null;
+  private orderCache: GameState['orderSim'] = null;
+  private catchKey: string | null = null;
+  private catchCache: GameState['catchSim'] = null;
+
+  /** Adds simulation data (game's own battle engine, sampled enemies) for map and boss-prep decisions. */
+  private async attachSim(st: GameState): Promise<void> {
+    const run = st.run;
+    if (!this.bridge || !run || run.mode !== 'story') return;
+    const teamSig = run.team.map((m) => `${m.speciesId}:${m.level}:${m.currentHp}`).join(',');
+    try {
+      if (st.screen.kind === 'map' && !st.screen.overlay && run.map) {
+        const key = `${run.gen}|${run.currentMap}|${run.currentNodeId}|${teamSig}`;
+        if (key !== this.simKey) {
+          const nodes = Object.values(run.map.nodes)
+            .filter((n) => !n.visited && (n.type === 'battle' || n.type === 'trainer' || n.type === 'question'))
+            .map((n) => n.id);
+          const ns = await this.bridge.request<{ rates: Record<string, Record<number, number>> }>(
+            'simulateNodes',
+            { nodes, boosts: [0, 4, 8, 12], n: 14 },
+            15000,
+          );
+          const boosts = [0, 2, 4, 6, 8, 10, 12, 14, 16];
+          type BossRes = { boss: { name: string } | null; scenarios: { boost: number; winRate: number }[] };
+          const b0 = await this.bridge.request<BossRes>('simulateBoss', { boosts, n: 24 }, 15000);
+          const b1 = await this.bridge.request<BossRes>('simulateBoss', { boosts, n: 24, heal: true }, 15000);
+          const b2 = await this.bridge.request<BossRes>(
+            'simulateBoss',
+            { boosts: [0, 4, 8, 12, 16, 20, 24, 28], n: 16, heal: true, ahead: 1 },
+            15000,
+          );
+          const tbl = (r: BossRes) =>
+            r.boss ? Object.fromEntries(r.scenarios.map((x) => [x.boost, x.winRate])) : { 0: 1 };
+          this.simCache = {
+            nodeRates: ns.rates,
+            bossNoHeal: tbl(b0),
+            bossHeal: tbl(b1),
+            bossName: b0.boss?.name ?? null,
+            ...(b2.boss ? { nextBoss: tbl(b2), nextBossName: b2.boss.name } : {}),
+          };
+          // whole-path simulation on the most promising routes
+          const base = this.simCache!;
+          const acc = Array.from(this.doc.querySelectorAll('#map-screen .map-node--clickable'))
+            .map((e) => e.getAttribute('data-node-id') ?? '')
+            .filter((id) => id && run.map!.nodes[id]);
+          let paths = enumeratePaths(run.map, acc);
+          if (paths.length > 36) {
+            const ctxSim = { teamSize: run.team.length, maxTeamSize: run.maxTeamSize, nuzlocke: run.nuzlocke };
+            paths = paths
+              .map((p) => ({ p, v: evaluatePath(p, run.map!, ctxSim, base).value }))
+              .sort((a, b) => b.v - a.v)
+              .slice(0, 36)
+              .map((x) => x.p);
+          }
+          if (paths.length) {
+            const n = Math.max(8, Math.min(24, Math.floor(480 / paths.length)));
+            const t0 = Date.now();
+            const ps = await this.bridge.request<{
+              results: { path: string[]; success: number; next: number; avgLevel: number }[];
+            }>('simulatePaths', { paths, n, nextGain: 6 }, 30000);
+            base.pathSim = Object.fromEntries(ps.results.map((r) => [r.path.join('>'), r]));
+            this.log.debug(`path simulation: ${paths.length} routes × ${n} in ${Date.now() - t0} ms`);
+          }
+          this.simKey = key;
+          this.log.debug('map simulation', { boss: this.simCache.bossName, noHeal: this.simCache.bossNoHeal });
+        }
+        st.sim = this.simCache;
+      }
+      if (st.screen.kind === 'catch' && run.catchOffer?.length) {
+        const key = `catch|${run.currentMap}|${run.currentNodeId}|${teamSig}|${run.catchOffer.map((m) => m.speciesId).join(',')}`;
+        if (key !== this.catchKey) {
+          const r = await this.bridge.request<{ options: NonNullable<GameState['catchSim']> }>(
+            'simulateCatch',
+            { boost: 4, n: 20 },
+            20000,
+          );
+          this.catchCache = r.options;
+          this.catchKey = key;
+        }
+        st.catchSim = this.catchCache;
+      }
+      if (st.screen.kind === 'elite-prep' && run.team.length > 1) {
+        const key = `${run.currentMap}|${run.eliteIndex}|${teamSig}`;
+        if (key !== this.orderKey) {
+          const n = run.team.length;
+          const ident = run.team.map((_, i) => i);
+          const cands = new Map<string, number[]>();
+          const add = (o: number[]) => cands.set(o.join(','), o);
+          add(ident);
+          for (let i = 1; i < n; i++) add([i, ...ident.filter((x) => x !== i)]);
+          add([...ident].sort((a, b) => run.team[b]!.level - run.team[a]!.level));
+          add([...ident].sort((a, b) => run.team[a]!.level - run.team[b]!.level));
+          add([...ident].sort((a, b) => run.team[b]!.currentHp - run.team[a]!.currentHp));
+          const r = await this.bridge.request<{ scenarios: { order: number[]; winRate: number; avgAlive: number }[] }>(
+            'simulateBoss',
+            { orders: [...cands.values()], n: 40 },
+            20000,
+          );
+          this.orderCache = r.scenarios.map((x) => ({ order: x.order, winRate: x.winRate, avgAlive: x.avgAlive }));
+          this.orderKey = key;
+        }
+        st.orderSim = this.orderCache;
+      }
+    } catch (e) {
+      this.log.warn('simulation unavailable – using heuristics', String(e));
+    }
+  }
+
   async tick(): Promise<Decision | null> {
     const st = await this.refresh();
+    await this.attachSim(st);
     const d = decide(st, this.doc, this.view.settings, this.mem);
     this.view.lastDecision = `${d.kind}: ${d.why}`;
     this.emit();
@@ -235,7 +347,35 @@ export class BotController {
       case 'swapTeam':
         await this.doSwap(d);
         return d;
+      case 'reorder':
+        await this.doReorder(d);
+        return d;
     }
+    return d;
+  }
+
+  /** Realises a full battle order with the game's Shift+<slot> shortcut, verifying every single swap. */
+  private async doReorder(d: Extract<Decision, { kind: 'reorder' }>): Promise<void> {
+    this.log.log('decision', d.why, { swaps: d.swaps, target: d.target });
+    (this.doc.activeElement as HTMLElement | null)?.blur?.();
+    for (const k of d.swaps) {
+      const before = this.teamOrder();
+      await this.actor.pressKey(this.doc, `Digit${k + 1}`, String(k + 1), { shift: true });
+      let ok = false;
+      for (let i = 0; i < 10 && !ok; i++) {
+        await sleep(120);
+        await this.reader.read();
+        ok = this.teamOrder() !== before;
+      }
+      if (!ok) {
+        this.mem.reorderFailures++;
+        this.log.warn(`reorder step Shift+${k + 1} had no effect – keeping current order`);
+        return;
+      }
+      await sleep(humanDelay(200));
+    }
+    this.mem.reorderFailures = 0;
+    this.log.info('battle order set by simulation');
   }
 
   private async doClick(d: Extract<Decision, { kind: 'click' }>, st: GameState): Promise<void> {
