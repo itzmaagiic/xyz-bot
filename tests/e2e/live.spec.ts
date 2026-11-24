@@ -8,8 +8,8 @@ import { chromium, expect, test } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const EXT = join(import.meta.dirname, '..', '..', 'dist', 'chrome');
-const OUT = join(import.meta.dirname, '..', '..', 'test-results');
+const EXT = process.env.PKBOT_EXT ?? join(import.meta.dirname, '..', '..', 'dist', 'chrome');
+const OUT = process.env.PKBOT_OUT ?? join(import.meta.dirname, '..', '..', 'test-results');
 const MINUTES = Number(process.env.LIVE_MINUTES ?? 5);
 
 test('bot plays the real game without getting stuck', async () => {

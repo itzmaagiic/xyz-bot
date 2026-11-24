@@ -90,7 +90,7 @@ Alle Angaben stammen aus den dekodierten Spielfunktionen (Namen in Klammern) und
 
 ### Erfahrung und Level
 - **Jeder gewonnene Kampf gibt allen lebenden Mitgliedern +2 Level** (`getLevelGain` liefert konstant 2, `applyLevelGain`),
-  egal ob Wild, Trainer oder Boss. **Besiegte (0 KP) bekommen nichts.** Lucky Egg: 30 % +1. Relic „Exp. Share“: das
+  egal ob Wild, Trainer oder Boss (Level-Cap 100). **Besiegte bekommen nichts – außer sie wurden in diesem Kampf eingesetzt** (Teilnehmer leveln mit, bleiben aber K.o.). Lucky Egg: 30 % +1. Relic „Exp. Share“: das
   niedrigste lebende Mitglied +1.
 - Folge: Mehr Mitglieder verwässern keine XP. Wildkämpfe bringen gleich viel XP wie Trainer, sind aber leichter.
 - Entwicklungen erfolgen per Level (`checkAndEvolveTeam`, Tabelle `EVOLUTIONS`). Eviolite verhindert sie.
