@@ -49,6 +49,11 @@ describe('bag use', () => {
     expect(chooseBagUse([{ id: 'rare_candy', usable: true }], [phys], new Set())?.itemId).toBe('rare_candy');
     expect(chooseBagUse([{ id: 'tm_normal', usable: true }], [{ ...phys, moveTier: 2 }], new Set())).toBeNull();
   });
+  it('saves Sacred Ash for the boss-prep screen when asked', () => {
+    const team = [{ ...phys, currentHp: 0 }, spec];
+    expect(chooseBagUse([{ id: 'sacred_ash', usable: true }], team, new Set(), true)).toBeNull();
+    expect(chooseBagUse([{ id: 'sacred_ash', usable: true }], team, new Set(), false)?.index).toBe(0);
+  });
   it('respects blocked entries and equips bag items only when a hand is free', () => {
     expect(chooseBagUse([{ id: 'rare_candy', usable: true }], [phys], new Set(['rare_candy|0']))).toBeNull();
     expect(chooseBagUse([{ id: 'leftovers', usable: false }], [{ ...phys, heldItem: 'x' }], new Set())).toBeNull();

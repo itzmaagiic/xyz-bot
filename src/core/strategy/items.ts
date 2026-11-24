@@ -19,12 +19,15 @@ export function chooseBagUse(
   bag: readonly BagEntry[],
   team: readonly Mon[],
   blocked: ReadonlySet<string>,
+  /** keep revives for the boss-prep screen (between Elite Four fights there is no healing) */
+  saveRevives = false,
 ): { index: number; itemId: string; why: string } | null {
   for (let i = 0; i < bag.length; i++) {
     const id = normalizeItemId(bag[i]!.id);
     if (blocked.has(`${id}|${i}`)) continue;
     if (bag[i]!.usable) {
       if (id === 'sacred_ash') {
+        if (saveRevives) continue;
         const down = team.find((m) => !alive(m));
         const hurt = team.find((m) => alive(m) && m.currentHp / m.maxHp < 0.35);
         if (down || hurt) return { index: i, itemId: id, why: `Sacred Ash: ${(down ?? hurt)!.name} needs it` };

@@ -170,7 +170,7 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       return { kind: 'click', selector: '#btn-next-map', why: 'badge earned – next map' };
     case 'elite-prep': {
       // the boss-prep screen has its own bag: last chance to revive / level up before the fight (no healing in the E4)
-      const bagUse = bagDecision(run, mem);
+      const bagUse = bagDecision(run, mem, true);
       if (bagUse) return bagUse;
       const os = state.orderSim;
       if (s.reorderTeam && os?.length && run) {
@@ -450,14 +450,15 @@ function decideTrade(doc: Document, run: RunState | null): Decision {
   return { kind: 'click', selector: '#btn-skip-trade', why: 'no laggard worth trading' };
 }
 
-function bagDecision(run: RunState | null, mem: EngineMemory): Decision | null {
+function bagDecision(run: RunState | null, mem: EngineMemory, onBossPrep = false): Decision | null {
   if (!run?.bag?.length) return null;
   const key = run.currentMap * 10 + run.eliteIndex;
   if (mem.bagMap !== key) {
     mem.bagBlocked.clear();
     mem.bagMap = key;
   }
-  const use = chooseBagUse(run.bag, run.team, mem.bagBlocked);
+  // from the map before the Elite Four on, revives are saved for the boss-prep screens
+  const use = chooseBagUse(run.bag, run.team, mem.bagBlocked, run.currentMap >= 7 && !onBossPrep);
   if (!use) return null;
   mem.pendingBag = { index: use.index, itemId: use.itemId };
   return { kind: 'openBag', index: use.index, itemId: use.itemId, why: use.why };

@@ -723,12 +723,14 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
             // two-map horizon: play a typical NEXT map from the real end state (HP, faints, levels) – wild and
             // trainer fights of the next map's level table, one Pokécenter, then the next boss
             const t2 = team.map((m) => ({ ...m }));
-            if ((await playNextMap(t2, s.currentMap + 1)) && fightChain(t2, next.teams)) nextWins++;
+            // smooth signal: share of the next boss chain won (a full E4 clear is rare, partial progress still counts)
+            if (await playNextMap(t2, s.currentMap + 1))
+              nextWins += fightChainCount(t2, next.teams) / next.teams.length;
           } else {
             // legacy: heal + `nextGain` levels, then the next boss
             const t2 = team.map((m) => ({ ...m, currentHp: m.maxHp }));
             t2.forEach((m) => levelUp(m, nextGain));
-            if (fightChain(t2, next.teams)) nextWins++;
+            nextWins += fightChainCount(t2, next.teams) / next.teams.length;
           }
         }
       }
