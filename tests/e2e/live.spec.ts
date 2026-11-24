@@ -76,6 +76,17 @@ test('bot plays the real game without getting stuck', async () => {
       `[live] ${Math.round((Date.now() - start) / 1000)}s screen=${st.screen} map=${st.map} node=${st.node} badges=${st.badges} team=${st.team}`,
     );
     console.log(`[live]    decision: ${await page.locator('#pk-decision').textContent()}`);
+    // persistent win/loss counter of the overlay – a champion win can't slip through the 2 s sampling
+    const statsRow = await page
+      .locator('#pkbot-root')
+      .evaluate((h) =>
+        Array.from(h.shadowRoot?.querySelectorAll('.kv span') ?? [])
+          .map((e) => e.textContent)
+          .join('|'),
+      )
+      .catch(() => '');
+    const runsTxt = statsRow.match(/Runs\|([^|]+)/)?.[1];
+    if (runsTxt) console.log(`[live]    stats: ${runsTxt}`);
     const status = await page.locator('#pk-toggle').textContent();
     if (status === 'Start') break; // paused → stop observing
   }

@@ -4,13 +4,16 @@
  */
 declare const __PKBOT_FLAGS__: Partial<typeof DEFAULT_FLAGS> | undefined;
 
+// Defaults = best measured live configuration ("A", docs/STRATEGY.md). The others were not better in live A/B.
 const DEFAULT_FLAGS = {
   /** search alternative battle orders together with the route */
-  jointOrder: true,
+  jointOrder: false,
   /** trade members that fell far behind */
-  trade: true,
+  trade: false,
   /** core strength = top-3 average level (else team average) */
-  top3: true,
+  top3: false,
+  /** route value P × F(level) instead of the additive form */
+  multiplicative: false,
 };
 
 export const FLAGS: typeof DEFAULT_FLAGS = {

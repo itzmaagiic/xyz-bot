@@ -2,6 +2,7 @@
  * Simulation-backed route planning (pure). Inputs come from the page bridge, which runs the game's own battle
  * engine on sampled enemies (never on the real upcoming encounter).
  */
+import { FLAGS } from '../flags';
 import type { GameMap, NodeType } from '../types';
 
 export interface SimData {
@@ -119,7 +120,13 @@ export function evaluatePath(
     // the next map starts with whatever is still standing (no automatic heal after the boss)
     const standing =
       ps.avgAlive === undefined ? 1 : 0.8 + 0.2 * Math.min(1, ps.avgAlive / Math.max(1, Math.min(6, ctx.teamSize + 1)));
-    const value = ps.success * (100 * f * standing + bonus + 10 * ps.next);
+    // live A/B (see docs/STRATEGY.md): the additive form (variant A) beat the multiplicative one so far
+    const value = FLAGS.multiplicative
+      ? ps.success * (100 * f * standing + bonus + 10 * ps.next)
+      : 100 * ps.success +
+        NEXT_WEIGHT * ps.success * ps.next +
+        bonus * ps.success +
+        FUTURE_LEVEL * ps.avgLevel * ps.success;
     return { value, path: [...path], survive: ps.success, boss: ps.success, boost: ps.avgLevel, next: ps.next };
   }
   let boost = 0;
