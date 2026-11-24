@@ -441,6 +441,8 @@ export interface PathSimRequest {
 
 export interface PathSimResult {
   results: { path: string[]; success: number; next: number; avgLevel: number; avgAlive: number }[];
+  /** level the core should reach on this map: max wild level of the next map (champion level on the last map) */
+  targetLevel: number | null;
   restored: boolean;
 }
 
@@ -546,12 +548,31 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
   } catch {
     uid0 = null;
   }
-  const out: PathSimResult = { results: [], restored: false };
+  const out: PathSimResult = { results: [], targetLevel: null, restored: false };
   try {
     const s = state;
     if (!s?.map?.nodes || s.isEndlessMode) return out;
     const boss = await bossChain(0);
     const next = await bossChain(1);
+    {
+      const g = gen(s);
+      const table =
+        g === 6
+          ? GEN6_MAP_LEVEL_RANGES
+          : g === 5
+            ? GEN5_MAP_LEVEL_RANGES
+            : g === 4
+              ? GEN4_MAP_LEVEL_RANGES
+              : g === 3
+                ? GEN3_MAP_LEVEL_RANGES
+                : g === 2
+                  ? GEN2_MAP_LEVEL_RANGES
+                  : MAP_LEVEL_RANGES;
+      const nextMax = table?.[s.currentMap + 1]?.[1];
+      const lastBoss = boss?.teams[boss.teams.length - 1] ?? [];
+      const bossMax = Math.max(0, ...lastBoss.map((m: any) => m.level || 0));
+      out.targetLevel = Math.max(nextMax ?? 0, bossMax) || null;
+    }
     const n = Math.max(2, Math.min(40, req.n ?? 12));
     const nextGain = req.nextGain ?? 6;
     for (let pi = 0; pi < req.paths.length; pi++) {

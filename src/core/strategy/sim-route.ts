@@ -16,6 +16,8 @@ export interface SimData {
   nextBossName?: string | null;
   /** battle order (team indices) that the joint route/order search found better than the current one */
   mapOrder?: number[] | null;
+  /** core level this map should end at (from the game's level tables) */
+  targetLevel?: number | null;
   /** whole-path simulations, keyed by path.join('>') */
   pathSim?: Record<string, { success: number; next: number; avgLevel: number }>;
 }
@@ -81,6 +83,15 @@ export const NEXT_MAP_GAIN = 8;
 /** Weight of beating the next boss relative to the current one. */
 const NEXT_WEIGHT = 60;
 
+/**
+ * Readiness for what comes next: 0.6 at the target level, +1/15 per level above/below, clamped to [0.2, 1.3].
+ * Saturation keeps the bot from taking risks for levels it does not need.
+ */
+export function levelFactor(coreLevel: number, target: number | null): number {
+  if (!target) return 1;
+  return Math.max(0.2, Math.min(1.3, 0.6 + (coreLevel - target) / 15));
+}
+
 export interface SimRouteChoice {
   nodeId: string;
   value: number;
@@ -100,14 +111,12 @@ export function evaluatePath(
 ): Omit<SimRouteChoice, 'nodeId'> {
   const ps = sim.pathSim?.[path.join('>')];
   if (ps) {
-    // full sequential simulation available: P(survive route AND beat boss), then the next boss
+    // Full sequential simulation available. Winning the run is a PRODUCT over all maps, so risk must be
+    // multiplicative: value = P(survive route AND beat boss) × F(core level vs the level curve ahead).
     let bonus = 0;
     for (const id of path) bonus += BONUS[map.nodes[id]?.type ?? ''] ?? 0;
-    const value =
-      100 * ps.success +
-      NEXT_WEIGHT * ps.success * ps.next +
-      bonus * ps.success +
-      FUTURE_LEVEL * ps.avgLevel * ps.success;
+    const f = levelFactor(ps.avgLevel, sim.targetLevel ?? null);
+    const value = ps.success * (100 * f + bonus + 10 * ps.next);
     return { value, path: [...path], survive: ps.success, boss: ps.success, boost: ps.avgLevel, next: ps.next };
   }
   let boost = 0;

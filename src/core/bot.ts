@@ -259,8 +259,10 @@ export class BotController {
             const t0 = Date.now();
             const ps = await this.bridge.request<{
               results: { path: string[]; success: number; next: number; avgLevel: number }[];
+              targetLevel: number | null;
             }>('simulatePaths', { paths, n, nextGain: 6 }, 30000);
             base.pathSim = Object.fromEntries(ps.results.map((r) => [r.path.join('>'), r]));
+            base.targetLevel = ps.targetLevel;
             // joint search: best routes again with alternative battle orders
             const ctxSim = { teamSize: run.team.length, maxTeamSize: run.maxTeamSize, nuzlocke: run.nuzlocke };
             const scoreOf = (sim: typeof base) => (p: string[]) => evaluatePath(p, run.map!, ctxSim, sim).value;
