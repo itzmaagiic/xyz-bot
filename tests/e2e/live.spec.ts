@@ -53,7 +53,12 @@ test('bot plays the real game without getting stuck', async () => {
         badges: s?.badges ?? 0,
         map: s?.currentMap ?? 0,
         node: s?.currentNode?.id ?? null,
-        team: (s?.team ?? []).map((m: { name: string; level: number }) => `${m.name}${m.level}`).join(' '),
+        team: (s?.team ?? [])
+          .map(
+            (m: { name: string; level: number; currentHp: number; maxHp: number }) =>
+              `${m.name}${m.level}${m.currentHp <= 0 ? '✝' : m.currentHp < m.maxHp / 3 ? '!' : ''}`,
+          )
+          .join(' '),
       };
     });
   const first = await readState();

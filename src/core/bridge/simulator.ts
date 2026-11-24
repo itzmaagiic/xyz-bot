@@ -8,6 +8,7 @@
  *  - runBattle itself only reads `state` (verified in docs/GAME_RECON.md §8)
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { FLAGS } from '../flags';
 declare const state: any;
 declare function runBattle(p: any[], e: any[], items: any[], eItems: any[], log: any, cfg: any, passives: any[]): any;
 declare function getRngSeed(): number;
@@ -636,7 +637,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
         const top = team
           .map((m) => m.level)
           .sort((a, b) => b - a)
-          .slice(0, 3);
+          .slice(0, FLAGS.top3 ? 3 : team.length);
         lvlSum += top.reduce((a, b) => a + b, 0) / Math.max(1, top.length);
         aliveSum += team.filter((m) => m.currentHp > 0).length;
         if (next) {

@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS, normalizeSettings, SETTINGS_KEY, type BotSettings } f
 import { StateReader } from './state/reader';
 import { decide, newMemory, type EngineMemory } from './strategy/engine';
 import { enumeratePaths, evaluatePath } from './strategy/sim-route';
+import { FLAGS } from './flags';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
 
@@ -258,7 +259,7 @@ export class BotController {
             const n = Math.max(10, Math.min(30, Math.floor(960 / paths.length)));
             const t0 = Date.now();
             const ps = await this.bridge.request<{
-              results: { path: string[]; success: number; next: number; avgLevel: number }[];
+              results: { path: string[]; success: number; next: number; avgLevel: number; avgAlive: number }[];
               targetLevel: number | null;
             }>('simulatePaths', { paths, n, nextGain: 6 }, 30000);
             base.pathSim = Object.fromEntries(ps.results.map((r) => [r.path.join('>'), r]));
@@ -276,7 +277,7 @@ export class BotController {
             alt.delete(ident.join(','));
             let bestOrder: number[] | null = null;
             let bestVal = Math.max(...top.map(scoreOf(base)));
-            for (const order of alt.values()) {
+            for (const order of FLAGS.jointOrder ? alt.values() : []) {
               if (run.team.length < 2 || !top.length) break;
               const r2 = await this.bridge.request<{
                 results: { path: string[]; success: number; next: number; avgLevel: number }[];
