@@ -1,0 +1,8 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+# private save exports / profiles – never commit
+tests/fixtures/private/
+*.save.json
+.profiles/
