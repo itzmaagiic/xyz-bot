@@ -23,6 +23,7 @@ import { chooseRoute, xpNeed } from './map';
 import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
 import { chooseBagUse, chooseEquipHolder, chooseUsableTarget } from './items';
 import { normalizeItemId } from './choices';
+import { FLAGS } from '../flags';
 
 export interface EngineMemory {
   /** signature on which a team reorder was already attempted (avoid loops) */
@@ -437,7 +438,7 @@ function decideTrade(doc: Document, run: RunState | null): Decision {
     const avg = team.reduce((a, m) => a + m.level, 0) / team.length;
     const wi = weakestIndex(team);
     const weak = team[wi]!;
-    if (weak.level <= avg - 6) {
+    if (FLAGS.trade && weak.level <= avg - 6) {
       return {
         kind: 'click',
         selector: '#trade-team-list .trade-member-row',

@@ -12,7 +12,11 @@ const target = process.argv[2] ?? 'all';
 const dist = join(root, 'dist');
 const MATCHES = ['https://pokelike.xyz/*', 'https://www.pokelike.xyz/*'];
 
+const FLAGS_DEFINE = {
+  __PKBOT_FLAGS__: process.env.PKBOT_FLAGS ? JSON.stringify(JSON.parse(process.env.PKBOT_FLAGS)) : 'undefined',
+};
 const common = {
+  define: FLAGS_DEFINE,
   bundle: true,
   format: 'iife',
   target: ['chrome111', 'safari15'],
@@ -180,7 +184,7 @@ async function buildUserscript() {
     entryPoints: [join(root, 'src/platform/userscript/main.ts')],
     write: false,
     minify: false,
-    define: { __BRIDGE_CODE__: JSON.stringify(bridge) },
+    define: { ...FLAGS_DEFINE, __BRIDGE_CODE__: JSON.stringify(bridge) },
   });
   const meta = [
     '// ==UserScript==',

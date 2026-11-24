@@ -19,7 +19,7 @@ export interface SimData {
   /** core level this map should end at (from the game's level tables) */
   targetLevel?: number | null;
   /** whole-path simulations, keyed by path.join('>') */
-  pathSim?: Record<string, { success: number; next: number; avgLevel: number }>;
+  pathSim?: Record<string, { success: number; next: number; avgLevel: number; avgAlive?: number }>;
 }
 
 /** All paths from the accessible nodes to the end (boss), capped. */
@@ -116,7 +116,10 @@ export function evaluatePath(
     let bonus = 0;
     for (const id of path) bonus += BONUS[map.nodes[id]?.type ?? ''] ?? 0;
     const f = levelFactor(ps.avgLevel, sim.targetLevel ?? null);
-    const value = ps.success * (100 * f + bonus + 10 * ps.next);
+    // the next map starts with whatever is still standing (no automatic heal after the boss)
+    const standing =
+      ps.avgAlive === undefined ? 1 : 0.8 + 0.2 * Math.min(1, ps.avgAlive / Math.max(1, Math.min(6, ctx.teamSize + 1)));
+    const value = ps.success * (100 * f * standing + bonus + 10 * ps.next);
     return { value, path: [...path], survive: ps.success, boss: ps.success, boost: ps.avgLevel, next: ps.next };
   }
   let boost = 0;
