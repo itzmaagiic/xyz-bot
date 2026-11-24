@@ -25,6 +25,8 @@ export const SCREEN_IDS: Record<string, ScreenKind> = {
   'win-screen': 'win',
   'stat-buff-screen': 'stat-buff',
   'endless-stage-complete': 'stage-complete',
+  'challenge-select': 'challenge-select',
+  'weekly-select': 'challenge-level',
 };
 
 /** Fixed-position UI that never blocks the game flow. */

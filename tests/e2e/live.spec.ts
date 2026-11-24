@@ -41,6 +41,8 @@ test('bot plays the real game without getting stuck', async () => {
   await page.locator('#pk-delay').fill('300');
   await page.locator('#pk-delay').dispatchEvent('change');
   await page.locator('#pk-restart').check();
+  if (process.env.LIVE_MODE) await page.locator('#pk-mode').selectOption(process.env.LIVE_MODE);
+  if (process.env.LIVE_CHAL) await page.locator('#pk-chalkind').selectOption(process.env.LIVE_CHAL);
 
   const screens = new Map<string, number>();
   const start = Date.now();

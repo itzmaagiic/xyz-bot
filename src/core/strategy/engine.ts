@@ -22,6 +22,7 @@ import { effectiveness } from '../data/typechart';
 import { chooseRoute, xpNeed } from './map';
 import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
 import { chooseBagUse, chooseEquipHolder, chooseUsableTarget } from './items';
+import { choosePcStarter, chooseRelic, chooseRelicReplace, readPcCards, readRelicCards } from './challenge';
 import { normalizeItemId } from './choices';
 import { FLAGS } from '../flags';
 
@@ -86,6 +87,11 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
 
   switch (screen.kind) {
     case 'title': {
+      if (s.mode === 'challenge') {
+        if (s.resumeRuns && shown(doc, '#btn-continue-challenge'))
+          return { kind: 'click', selector: '#btn-continue-challenge', why: 'resume challenge run' };
+        return { kind: 'click', selector: '#btn-challenges-run', why: 'open challenges' };
+      }
       if (s.mode === 'story') {
         if (s.resumeRuns && shown(doc, '#btn-continue-run'))
           return { kind: 'click', selector: '#btn-continue-run', why: 'resume story run' };
@@ -132,7 +138,36 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         selector: s.trainer === 'girl' ? '#trainer-girl' : '#trainer-boy',
         why: `trainer ${s.trainer}`,
       };
+    case 'challenge-select': {
+      const sel = s.chalKind === 'daily' ? '#chal-daily' : s.chalKind === 'weekly' ? '#chal-weekly' : '#chal-intro';
+      if (!doc.querySelector(sel)) return { kind: 'pause', why: `challenge "${s.chalKind}" not offered` };
+      return { kind: 'click', selector: sel, why: `start ${s.chalKind} challenge` };
+    }
+    case 'challenge-level': {
+      const picks = Array.from(doc.querySelectorAll('#weekly-select .gym-pick'));
+      if (s.chalLevel != null && picks.length) {
+        const p = picks.find((e) => e.getAttribute('data-level') === String(s.chalLevel));
+        if (!p) return { kind: 'pause', why: `badge level ${s.chalLevel} not found` };
+        if (p.classList.contains('is-locked'))
+          return { kind: 'pause', why: `badge level ${s.chalLevel + 1} is locked in your save` };
+        if (!p.classList.contains('is-sel'))
+          return {
+            kind: 'click',
+            selector: `#weekly-select .gym-pick[data-level="${s.chalLevel}"]`,
+            why: `select badge level ${s.chalLevel + 1}`,
+          };
+      }
+      if (shown(doc, '#weekly-select .gym-play'))
+        return { kind: 'click', selector: '#weekly-select .gym-play', why: 'play' };
+      return { kind: 'pause', why: 'challenge setup screen without a play button (not automated yet)' };
+    }
     case 'starter': {
+      if (doc.querySelector('#starter-choices .dex-card')) {
+        const cards = readPcCards(doc);
+        const c = choosePcStarter(cards, state.pcStats ?? {}, s.preferredStarter);
+        if (c.index < 0) return { kind: 'pause', why: c.why };
+        return { kind: 'click', selector: '#starter-choices .dex-card', index: c.index, why: c.why };
+      }
       const cards = readCards(doc, '#starter-choices .poke-card');
       if (!cards.length) return { kind: 'wait', ms: 500, why: 'starters loading' };
       const gen = state.run?.gen && state.run.gen > 1 ? state.run.gen : s.region;
@@ -218,7 +253,25 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         return { kind: 'stop', why: 'champion defeated!', result: 'win' };
       }
       return { kind: 'click', selector: '#btn-win-home', why: 'back to menu for the next run' };
-    case 'passive':
+    case 'passive': {
+      if (doc.querySelector('#passive-choices.is-replace-grid')) {
+        // owned relics are clickable cards, the new one is the non-clickable card before the skip button
+        const all = Array.from(doc.querySelectorAll('#passive-choices .item-card.passive-card'));
+        const isNew = (e: Element) => /cursor:\s*default/.test(e.getAttribute('style') ?? '');
+        const parsed = readRelicCards(doc);
+        const owned = parsed.filter((_, i) => !isNew(all[i]!));
+        const incoming = parsed.find((_, i) => isNew(all[i]!));
+        if (!incoming) return { kind: 'pause', why: 'relic replace dialog without the new relic' };
+        const c = chooseRelicReplace(owned, incoming, run?.team ?? []);
+        if (c.index < 0) return { kind: 'click', selector: '#btn-skip-passive', why: c.why };
+        const ownedIdx = all.map((e, i) => (isNew(e) ? -1 : i)).filter((i) => i >= 0)[c.index]!;
+        return { kind: 'click', selector: '#passive-choices .item-card.passive-card', index: ownedIdx, why: c.why };
+      }
+      const cards = readRelicCards(doc);
+      if (!cards.length) return { kind: 'wait', ms: 500, why: 'relics loading' };
+      const c = chooseRelic(cards, run?.team ?? []);
+      return { kind: 'click', selector: '#passive-choices .item-card.passive-card', index: c.index, why: c.why };
+    }
     case 'stat-buff':
     case 'stage-complete':
       return { kind: 'pause', why: `screen "${screen.screenId}" is not automated yet – please choose manually` };

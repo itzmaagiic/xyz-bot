@@ -9,6 +9,7 @@ import { StateReader } from './state/reader';
 import { decide, newMemory, type EngineMemory } from './strategy/engine';
 import { enumeratePaths, evaluatePath } from './strategy/sim-route';
 import { FLAGS } from './flags';
+import { readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
 
@@ -209,7 +210,15 @@ export class BotController {
   /** Adds simulation data (game's own battle engine, sampled enemies) for map and boss-prep decisions. */
   private async attachSim(st: GameState): Promise<void> {
     const run = st.run;
-    if (!this.bridge || !run || run.mode !== 'story') return;
+    if (this.bridge && st.screen.kind === 'starter' && this.doc.querySelector('#starter-choices .dex-card')) {
+      try {
+        const ids = [...new Set(readPcCards(this.doc).map((c) => c.speciesId))];
+        st.pcStats = await this.bridge.request('speciesStats', { ids }, 5000);
+      } catch (e) {
+        this.log.warn('PC stats unavailable', String(e));
+      }
+    }
+    if (!this.bridge || !run || (run.mode !== 'story' && run.mode !== 'challenge')) return;
     const teamSig = run.team.map((m) => `${m.speciesId}:${m.level}:${m.currentHp}`).join(',');
     try {
       if (st.screen.kind === 'map' && !st.screen.overlay && run.map) {

@@ -138,6 +138,8 @@ export type ScreenKind =
   | 'win'
   | 'stat-buff'
   | 'stage-complete'
+  | 'challenge-select'
+  | 'challenge-level'
   | 'unknown';
 
 export type OverlayKind =
@@ -165,6 +167,8 @@ export interface GameState {
   sim?: import('./strategy/sim-route').SimData | null;
   /** evaluated battle orders for the upcoming boss (elite-prep screen) */
   orderSim?: { order: number[]; winRate: number; avgAlive: number }[] | null;
+  /** species stats for the PC starter grid (challenge starter screen) */
+  pcStats?: Record<number, { bst: number; types: string[] }> | null;
   /** simulated value of each catch option (index -1 = skip) */
   catchSim?: { index: number; current: number; next: number; value: number }[] | null;
 }

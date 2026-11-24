@@ -67,8 +67,30 @@ export function buildSettingsForm(
     [
       ['story', 'Story'],
       ['tower', 'Battle Tower (exp.)'],
+      ['challenge', 'Challenge'],
     ],
     (v) => ({ mode: v as BotSettings['mode'] }),
+  );
+  sel(
+    'pk-chalkind',
+    'Challenge',
+    s.chalKind,
+    [
+      ['arena', 'Arena-Challenge'],
+      ['daily', 'Täglich'],
+      ['weekly', 'Wöchentlich'],
+    ],
+    (v) => ({ chalKind: v as BotSettings['chalKind'] }),
+  );
+  sel(
+    'pk-challevel',
+    'Orden-Stufe',
+    s.chalLevel == null ? 'auto' : String(s.chalLevel),
+    [
+      ['auto', 'Auto (nächster Orden)'],
+      ...Array.from({ length: 8 }, (_, i) => [String(i), `Stufe ${i + 1}`] as [string, string]),
+    ],
+    (v) => ({ chalLevel: v === 'auto' ? null : Number(v) }),
   );
   sel(
     'pk-variant',

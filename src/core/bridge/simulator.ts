@@ -108,6 +108,139 @@ async function bossAt(
   return { name: leader?.name ?? '?', type: leader?.type ?? null, team: enemyTeam };
 }
 
+declare const endlessState: any;
+declare function computeTraitTiers(team: any[], bonus: number, passives?: any[], enemy?: any[]): Record<string, number>;
+declare function computeMirroredTraits(player: any, enemy: any, bonus: number): Record<string, number>;
+declare function chalBadgeRule(n: number): boolean;
+declare function buildEndlessExtraConfig(team: any[], enemy: any[]): any;
+declare function fetchSpeciesForLevel(id: number, lvl: number, keepForm: boolean): Promise<any>;
+declare function makeMegaStoneItem(m: any): any;
+declare function syncMegaForm(m: any): void;
+declare function erModeLevel(l: number): number;
+declare const MEGA_STONE_BY_ID: Record<string, any>;
+declare const ITEM_POOL: any[];
+declare const TRAIT_DESCRIPTIONS: Record<string, unknown>;
+declare const ENDLESS_TEAM_SIZES: number[];
+
+/** What kind of opponent a simulated fight is against (decides the trait setup, like runBattleScreen does). */
+export interface FightMeta {
+  kind: 'wild' | 'trainer' | 'boss';
+  /** enemy trait tiers for bosses (computed like runEndlessTrainerFight) */
+  tiers?: Record<string, number> | null;
+}
+
+/**
+ * Battle config of one fight. Story: Gen-3+ abilities (+ relic-free traits) as before.
+ * Challenge/endless: trait tiers of both sides + relics (passives, run buffs) exactly like runBattleScreen /
+ * runEndlessTrainerFight, so relics and traits change the simulated outcome like they change the real one.
+ */
+function fightConfig(team: any[], enemy: any[], meta?: FightMeta): any {
+  const s = state;
+  if (!s?.isEndlessMode) return battleConfig();
+  try {
+    const passives = s.passives || [];
+    const playerTiers = computeTraitTiers(team, 0, passives, enemy);
+    let enemyTiers: Record<string, number> | null = null;
+    if (meta?.kind === 'boss') enemyTiers = meta.tiers ?? computeTraitTiers(enemy, 0);
+    else if (meta?.kind === 'trainer' && typeof chalBadgeRule === 'function' && chalBadgeRule(1))
+      enemyTiers = computeTraitTiers(enemy, 0);
+    let cfg = buildTraitsConfig(
+      playerTiers,
+      enemyTiers || {},
+      meta?.kind === 'boss' ? [...passives, ...(s.runBuffs || [])] : passives,
+    );
+    if (
+      (s.challengeGen3 || s.challengeGen4 || s.challengeGen5 || s.challengeGen6) &&
+      typeof buildGen3AbilityConfig === 'function'
+    )
+      cfg = mergeBattleConfigs(cfg, buildGen3AbilityConfig());
+    if (meta?.kind !== 'boss' && s.challengeEndless2 && typeof buildEndlessExtraConfig === 'function') {
+      const extra = buildEndlessExtraConfig(team, enemy);
+      if (extra) cfg = mergeBattleConfigs(cfg, extra);
+    }
+    return cfg;
+  } catch {
+    return null;
+  }
+}
+
+/** Challenge/endless boss team built like runEndlessTrainerFight (fusions/mutations/pre-fusion are skipped). */
+async function buildEndlessTrainer(SE: any): Promise<{ team: any[]; tiers: Record<string, number> | null } | null> {
+  const s = state;
+  const base = s.challengeOnlyFight ? Math.round(SE.level * 1.5) : SE.level;
+  const lv = (o: number) =>
+    s.challengeEndless2 && typeof erModeLevel === 'function' ? erModeLevel(base + o) : base + o;
+  const ids: any[] = SE.fetchIds || SE.speciesIds || [];
+  const offs: number[] | null = SE.levelOffsets ?? null;
+  const sps = await Promise.all(
+    ids.map((id: any, i: number) =>
+      SE.fixedForms ? fetchPokemonById(id) : fetchSpeciesForLevel(id, lv(offs?.[i] ?? i), !SE.allowDevolve),
+    ),
+  );
+  const team: any[] = [];
+  sps.forEach((sp: any, i: number) => {
+    if (!sp) return;
+    const shiny = Array.isArray(SE.shinySlots) && SE.shinySlots.includes(i);
+    const m = createInstance(sp, lv(offs?.[i] ?? i), shiny, Math.min(2, SE.moveTier ?? 1));
+    if (Array.isArray(SE.hiddenSlots) && SE.hiddenSlots.includes(i)) m._hiddenAbility = true;
+    const held = SE.heldItems?.[i];
+    if (held && Array.isArray(ITEM_POOL)) {
+      const it = ITEM_POOL.find((x: any) => x.id === held);
+      if (it) m.heldItem = { ...it };
+    }
+    const mega = SE.megaSlots?.[i];
+    if (
+      mega &&
+      typeof MEGA_STONE_BY_ID !== 'undefined' &&
+      MEGA_STONE_BY_ID[mega] &&
+      typeof makeMegaStoneItem === 'function'
+    ) {
+      m.heldItem = makeMegaStoneItem(MEGA_STONE_BY_ID[mega]);
+      if (typeof syncMegaForm === 'function') syncMegaForm(m);
+    }
+    team.push(m);
+  });
+  if (!team.length) return null;
+  let tiers: Record<string, number> | null = null;
+  try {
+    tiers =
+      SE.allTraits != null
+        ? Object.fromEntries(Object.keys(TRAIT_DESCRIPTIONS).map((t) => [t, SE.allTraits]))
+        : SE.specificTraits
+          ? { ...SE.specificTraits }
+          : SE.copyPlayerTraits
+            ? computeMirroredTraits(endlessState.traitTiers, computeTraitTiers(team, 0), SE.copyPlayerTraitsBonus ?? 1)
+            : computeTraitTiers(team, SE.traitBonus ?? 0);
+    if (SE.traitOverrides) {
+      tiers = { ...tiers, ...SE.traitOverrides };
+      for (const [k, v] of Object.entries(SE.traitOverrides)) if (!v) delete tiers![k];
+    }
+    if (SE.maxTraitTier) for (const k of Object.keys(tiers!)) tiers![k] = Math.min(tiers![k]!, SE.maxTraitTier);
+  } catch {
+    tiers = null;
+  }
+  return { team, tiers };
+}
+
+/** Boss (or gauntlet) of the current/next challenge map from endlessState.currentRegion.trainers. */
+async function endlessBossChain(ahead: number): Promise<{ name: string; teams: any[][]; metas: FightMeta[] } | null> {
+  const es = typeof endlessState !== 'undefined' ? endlessState : null;
+  const sp = es?.currentRegion?.trainers?.[(es.mapIndexInRegion ?? 0) + ahead];
+  if (!sp) return null;
+  const list: any[] = sp.gauntlet?.length ? sp.gauntlet : [sp];
+  const teams: any[][] = [];
+  const metas: FightMeta[] = [];
+  for (const spec of list) {
+    const b = await buildEndlessTrainer(spec);
+    if (!b) continue;
+    teams.push(b.team);
+    metas.push({ kind: 'boss', tiers: b.tiers });
+  }
+  if (!teams.length) return null;
+  const name = String(sp.archetype?.name ?? 'Boss');
+  return { name: teams.length > 1 ? `${name} +${teams.length - 1}` : name, teams, metas };
+}
+
 function battleConfig(): any {
   const s = state;
   if (s.isEndlessMode || gen(s) < 3 || typeof buildGen3AbilityConfig !== 'function') return null;
@@ -121,9 +254,10 @@ function battleConfig(): any {
  * The fights that must be won in a row: a single gym leader, or – on the last map – every remaining Elite Four
  * member plus the champion (doElite4 runs them back to back without healing).
  */
-async function bossChain(ahead = 0): Promise<{ name: string; teams: any[][] } | null> {
+async function bossChain(ahead = 0): Promise<{ name: string; teams: any[][]; metas?: FightMeta[] } | null> {
   const s = state;
   if (!s) return null;
+  if (s.isEndlessMode) return endlessBossChain(ahead);
   const g = gen(s);
   const gauntlet = g !== 2 && g !== 6;
   if (s.currentMap < 8 && s.currentMap + ahead < 8) {
@@ -171,8 +305,10 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
   }
   const out: SimResult = { boss: null, scenarios: [], restored: false };
   try {
-    const raw = await bossTeamRaw(req.ahead ?? 0);
     const chain = await bossChain(req.ahead ?? 0);
+    const raw =
+      (await bossTeamRaw(req.ahead ?? 0)) ??
+      (chain ? { name: chain.name, type: null, team: chain.teams[0] ?? [] } : null);
     if (!raw || !chain) return out;
     out.boss = {
       name: chain.name,
@@ -198,7 +334,7 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
         for (let k = 0; k < n; k++) {
           seedRng((seed0 ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0);
           const p = clone(ordered);
-          if (fightChain(p, chain.teams)) wins++;
+          if (fightChain(p, chain.teams, chain.metas)) wins++;
           alive += p.filter((m: any) => m.currentHp > 0).length;
         }
         out.scenarios.push({ boost, order, heal: !!req.heal, winRate: wins / n, avgAlive: alive / n });
@@ -278,7 +414,12 @@ async function trainerEnemies(node: any): Promise<any[] | null> {
   const sprite = node.trainerSprite || 'aceTrainer';
   const cfg = TRAINER_BATTLE_CONFIG?.[sprite] || TRAINER_BATTLE_CONFIG?.aceTrainer;
   if (!cfg) return null;
-  const size = s.currentMap === 0 ? 1 : s.currentMap <= 2 ? 2 : 3;
+  let size = s.currentMap === 0 ? 1 : s.currentMap <= 2 ? 2 : 3;
+  if (s.isEndlessMode && typeof endlessState !== 'undefined' && typeof ENDLESS_TEAM_SIZES !== 'undefined') {
+    // doTrainerNode: endless trainers use ENDLESS_TEAM_SIZES of the stage minus one
+    const idx = (endlessState.regionNumber - 1) * 3 + endlessState.mapIndexInRegion;
+    size = Math.max(1, (ENDLESS_TEAM_SIZES[idx] ?? 4) - 1);
+  }
   const lvl = trainerFightLevel(node);
   const species = await trainerTeamSpecies(sprite, cfg, lvl, size);
   if (!species?.length) return null;
@@ -309,10 +450,9 @@ export async function simulateNodes(req: NodeSimRequest): Promise<NodeSimResult>
   const out: NodeSimResult = { rates: {}, restored: false };
   try {
     const s = state;
-    if (!s?.map?.nodes || s.isEndlessMode) return out;
+    if (!s?.map?.nodes) return out;
     const boosts = req.boosts?.length ? req.boosts : [0];
     const n = Math.max(1, Math.min(60, req.n ?? 12));
-    const cfg = battleConfig();
     const items = s.items || [];
     const passives = s.passives || [];
     for (const id of req.nodes) {
@@ -333,7 +473,9 @@ export async function simulateNodes(req: NodeSimRequest): Promise<NodeSimResult>
           if (!enemy?.length) continue;
           const p = clone(team);
           if (typeof applyMegaEvolution === 'function') p.forEach((m: any) => applyMegaEvolution(m));
-          const r = runBattle(p, clone(enemy), clone(items), [], null, cfg, clone(passives));
+          const e = clone(enemy);
+          const cfg = fightConfig(p, e, { kind: asTrainer ? 'trainer' : 'wild' });
+          const r = runBattle(p, e, clone(items), [], null, cfg, clone(passives));
           done++;
           if (r?.playerWon) wins++;
         }
@@ -369,12 +511,12 @@ export interface CatchSimResult {
   restored: boolean;
 }
 
-function chainRate(team: any[], teams: any[][], n: number, salt: number): number {
+function chainRate(team: any[], teams: any[][], n: number, salt: number, metas?: FightMeta[]): number {
   const base = getRngSeed();
   let wins = 0;
   for (let k = 0; k < n; k++) {
     seedRng((base ^ Math.imul(k + salt, 0xc2b2ae35)) >>> 0);
-    if (fightChain(clone(team), teams)) wins++;
+    if (fightChain(clone(team), teams, metas)) wins++;
   }
   return wins / n;
 }
@@ -408,8 +550,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
           t[lo] = mon;
         }
       }
-      const curRate = chainRate(projectTeam(t, boost, false), cur.teams, n, 11 + c);
-      const nextRate = next ? chainRate(projectTeam(t, boost + 8, true), next.teams, n, 101 + c) : 0;
+      const curRate = chainRate(projectTeam(t, boost, false), cur.teams, n, 11 + c, cur.metas);
+      const nextRate = next ? chainRate(projectTeam(t, boost + 8, true), next.teams, n, 101 + c, next.metas) : 0;
       t = [];
       out.options.push({ index: c, current: curRate, next: nextRate, value: curRate + 0.6 * nextRate });
     }
@@ -459,10 +601,12 @@ function levelUp(m: any, by: number, participated = false): void {
 }
 
 /** One fight; copies HP back onto the persistent team. Returns true on a win. */
-function fightInto(team: any[], enemy: any[]): boolean {
+function fightInto(team: any[], enemy: any[], meta?: FightMeta): boolean {
   const p = clone(team);
   if (typeof applyMegaEvolution === 'function') p.forEach((m: any) => applyMegaEvolution(m));
-  const r = runBattle(p, clone(enemy), clone(state.items || []), [], null, battleConfig(), clone(state.passives || []));
+  const e = clone(enemy);
+  const cfg = fightConfig(p, e, meta);
+  const r = runBattle(p, e, clone(state.items || []), [], null, cfg, clone(state.passives || []));
   const after: any[] = r?.pTeam ?? [];
   team.forEach((m, i) => {
     const a = after[i];
@@ -522,15 +666,15 @@ async function legendaryEnemy(node: any, team: any[]): Promise<any | null> {
 }
 
 /** Fights a chain in a row (no healing in between); true only if every fight is won. */
-function fightChain(team: any[], teams: any[][]): boolean {
-  return fightChainCount(team, teams) === teams.length;
+function fightChain(team: any[], teams: any[][], metas?: FightMeta[]): boolean {
+  return fightChainCount(team, teams, metas) === teams.length;
 }
 
 /** Number of chain fights won before the first loss. */
-function fightChainCount(team: any[], teams: any[][]): number {
+function fightChainCount(team: any[], teams: any[][], metas?: FightMeta[]): number {
   let won = 0;
-  for (const enemy of teams) {
-    if (!fightInto(team, enemy)) return won;
+  for (let i = 0; i < teams.length; i++) {
+    if (!fightInto(team, teams[i]!, metas?.[i] ?? { kind: 'boss' })) return won;
     won++;
   }
   return won;
@@ -609,7 +753,7 @@ async function playNextMap(team: any[], mapIdx: number): Promise<boolean> {
   ];
   for (const [layer, trainer] of plan) {
     const enemy = await enemyOnMap(mapIdx, layer, trainer).catch(() => null);
-    if (enemy?.length && !fightInto(team, enemy)) return false;
+    if (enemy?.length && !fightInto(team, enemy, { kind: trainer ? 'trainer' : 'wild' })) return false;
   }
   team.forEach((m) => (m.currentHp = m.maxHp));
   return true;
@@ -626,7 +770,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
   const out: PathSimResult = { results: [], targetLevel: null, restored: false };
   try {
     const s = state;
-    if (!s?.map?.nodes || s.isEndlessMode) return out;
+    if (!s?.map?.nodes) return out;
     const boss = await bossChain(0);
     const next = await bossChain(1);
     {
@@ -673,7 +817,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
           }
           if (kind === 'battle' || kind === 'trainer') {
             const enemy = kind === 'trainer' ? await trainerEnemies(node) : await wildEnemy(node);
-            if (enemy?.length && !fightInto(team, enemy)) {
+            if (enemy?.length && !fightInto(team, enemy, { kind: kind === 'trainer' ? 'trainer' : 'wild' })) {
               alive = false;
               break;
             }
@@ -683,7 +827,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
           } else if (kind === 'legendary') {
             const leg = await legendaryEnemy(node, team).catch(() => null);
             if (leg) {
-              if (!fightInto(team, [leg])) {
+              if (!fightInto(team, [leg], { kind: 'wild' })) {
                 alive = false;
                 break;
               }
@@ -701,7 +845,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
             team.forEach((m) => (m.currentHp = m.maxHp));
           } else if (kind === 'boss') {
             if (!boss) break;
-            const won = fightChainCount(team, boss.teams);
+            const won = fightChainCount(team, boss.teams, boss.metas);
             progSum += won / boss.teams.length;
             if (won < boss.teams.length) {
               alive = false;
@@ -719,18 +863,18 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
         lvlSum += top.reduce((a, b) => a + b, 0) / Math.max(1, top.length);
         aliveSum += team.filter((m) => m.currentHp > 0).length;
         if (next) {
-          if (FLAGS.nextMapRoute && s.currentMap < 8) {
+          if (FLAGS.nextMapRoute && s.currentMap < 8 && !s.isEndlessMode) {
             // two-map horizon: play a typical NEXT map from the real end state (HP, faints, levels) – wild and
             // trainer fights of the next map's level table, one Pokécenter, then the next boss
             const t2 = team.map((m) => ({ ...m }));
             // smooth signal: share of the next boss chain won (a full E4 clear is rare, partial progress still counts)
             if (await playNextMap(t2, s.currentMap + 1))
-              nextWins += fightChainCount(t2, next.teams) / next.teams.length;
+              nextWins += fightChainCount(t2, next.teams, next.metas) / next.teams.length;
           } else {
             // legacy: heal + `nextGain` levels, then the next boss
             const t2 = team.map((m) => ({ ...m, currentHp: m.maxHp }));
             t2.forEach((m) => levelUp(m, nextGain));
-            nextWins += fightChainCount(t2, next.teams) / next.teams.length;
+            nextWins += fightChainCount(t2, next.teams, next.metas) / next.teams.length;
           }
         }
       }
