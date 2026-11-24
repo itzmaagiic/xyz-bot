@@ -50,7 +50,17 @@ Bewertung einer Route: `P·100 + 60·P·P(nächster Boss) + Boni (Item 4, Move-T
 | + Pfadsimulation mit HP und Ohnmachten                                                        | Läufe mit 4, 4, 5, 7 und 8 Orden                                                                                                                                                                                 |
 | **Variante A** (Pfadsimulation, Level-Gewichtung 2,5, Gauntlet, Beutel, Fänge per Simulation) | 12 Runs Ø **3,2 Orden**: [2,3,5,8,3,1,5,1,5,3,1,1]; der 8-Orden-Run schlug Lorelei, Bruno, Agatha und Lance und gewann den fünften Kampf gegen Gary (+2 Level danach, kein Game Over) → **erster Champion-Sieg** |
 
-### A/B-Tests (je etwa 30 Minuten, parallel)
+### Erster bestätigter Champion-Sieg
+
+Variante H (Commit `1ac0cec`: Pfadsimulation mit Zwei-Map-Horizont und Ketten-Fortschritt), Run 13 einer Session,
+Sieg im dauerhaften Zähler des Overlays („13 · 1 Sieg · 12 Niederlagen“) und Sieg-Bildschirm erkannt.
+
+- Map 9: Legendäres **Lavados** unterwegs gewonnen und ins Team geholt, Pokécenter direkt vor den Top 4.
+- Vor **jedem** Top-4-Kampf hat die Reihenfolge-Simulation umgestellt: 8 % → 57 %, 53 % → 75 % → 85 %, 68 % → 95 %,
+  vor Gary 100 %.
+- Siegerteam: Kingler 76, Lavados 74, Digdri 73, Aerodactyl 72, Amoroso 70, Blitza 65.
+
+## A/B-Tests (je etwa 30 Minuten, parallel)
 
 | Variante                                               | Runs | Ø Orden |
 | ------------------------------------------------------ | ---- | ------- |
