@@ -20,7 +20,7 @@ export interface SimData {
   /** core level this map should end at (from the game's level tables) */
   targetLevel?: number | null;
   /** whole-path simulations, keyed by path.join('>') */
-  pathSim?: Record<string, { success: number; next: number; avgLevel: number; avgAlive?: number }>;
+  pathSim?: Record<string, { success: number; next: number; avgLevel: number; avgAlive?: number; progress?: number }>;
 }
 
 /** All paths from the accessible nodes to the end (boss), capped. */
@@ -84,6 +84,8 @@ export const NEXT_MAP_GAIN = 8;
 /** Weight of beating the next boss relative to the current one. */
 /** Surviving the next map + its boss matters as much as this one (run success is a product over maps). */
 const NEXT_WEIGHT = 100;
+/** Value of the share of the boss chain that is won on average. */
+const PROGRESS_WEIGHT = 40;
 
 /**
  * Readiness for what comes next: 0.6 at the target level, +1/15 per level above/below, clamped to [0.2, 1.3].
@@ -127,7 +129,9 @@ export function evaluatePath(
       : 100 * ps.success +
         NEXT_WEIGHT * ps.success * ps.next +
         bonus * ps.success +
-        FUTURE_LEVEL * ps.avgLevel * ps.success;
+        FUTURE_LEVEL * ps.avgLevel * ps.success +
+        // when a full clear is unlikely (e.g. the Elite Four chain), get as far as possible instead of choosing blindly
+        PROGRESS_WEIGHT * (ps.progress ?? ps.success);
     return { value, path: [...path], survive: ps.success, boss: ps.success, boost: ps.avgLevel, next: ps.next };
   }
   let boost = 0;

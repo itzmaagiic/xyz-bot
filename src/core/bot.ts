@@ -259,7 +259,14 @@ export class BotController {
             const n = Math.max(10, Math.min(30, Math.floor(960 / paths.length)));
             const t0 = Date.now();
             const ps = await this.bridge.request<{
-              results: { path: string[]; success: number; next: number; avgLevel: number; avgAlive: number }[];
+              results: {
+                path: string[];
+                success: number;
+                next: number;
+                avgLevel: number;
+                avgAlive: number;
+                progress: number;
+              }[];
               targetLevel: number | null;
             }>('simulatePaths', { paths, n, nextGain: 6 }, 30000);
             base.pathSim = Object.fromEntries(ps.results.map((r) => [r.path.join('>'), r]));
