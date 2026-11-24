@@ -82,7 +82,8 @@ const FUTURE_LEVEL = 2.5;
 /** Levels a run typically still gains on the next map before its boss (≈ 4 won fights). */
 export const NEXT_MAP_GAIN = 8;
 /** Weight of beating the next boss relative to the current one. */
-const NEXT_WEIGHT = 60;
+/** Surviving the next map + its boss matters as much as this one (run success is a product over maps). */
+const NEXT_WEIGHT = 100;
 
 /**
  * Readiness for what comes next: 0.6 at the target level, +1/15 per level above/below, clamped to [0.2, 1.3].

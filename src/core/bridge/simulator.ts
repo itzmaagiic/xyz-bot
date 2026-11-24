@@ -541,6 +541,71 @@ async function sampleCatch(node: any): Promise<any | null> {
   return createInstance(best, lvl, false, moveTierForMap(s.currentMap));
 }
 
+/** Enemy of map `mapIdx` at `layer`, generated like getLevelForNode/doBattleNode/doTrainerNode for that map. */
+async function enemyOnMap(mapIdx: number, layer: number, trainer: boolean): Promise<any[] | null> {
+  const s = state;
+  const g = gen(s);
+  const table =
+    g === 6
+      ? GEN6_MAP_LEVEL_RANGES
+      : g === 5
+        ? GEN5_MAP_LEVEL_RANGES
+        : g === 4
+          ? GEN4_MAP_LEVEL_RANGES
+          : g === 3
+            ? GEN3_MAP_LEVEL_RANGES
+            : g === 2
+              ? GEN2_MAP_LEVEL_RANGES
+              : MAP_LEVEL_RANGES;
+  const range = table?.[mapIdx];
+  if (!range) return null;
+  const [lo, hi] = range as [number, number];
+  const t = Math.min(1, Math.max(0, (layer - 1) / 6));
+  const lvl0 = Math.min(
+    hi,
+    Math.max(lo, Math.round(lo + t * (hi - lo)) + Math.floor(rng() * Math.max(1, Math.round((hi - lo) / 8)))),
+  );
+  const tier = moveTierForMap(mapIdx);
+  if (trainer) {
+    const keys = Object.keys(TRAINER_BATTLE_CONFIG ?? {}).filter(
+      (k) => !/rocket|boss|leader|elite|champion|rival/i.test(k),
+    );
+    const sprite = keys[Math.floor(rng() * keys.length)] ?? 'aceTrainer';
+    const size = mapIdx === 0 ? 1 : mapIdx <= 2 ? 2 : 3;
+    const species = await trainerTeamSpecies(sprite, TRAINER_BATTLE_CONFIG[sprite], lvl0, size);
+    return species?.length ? species.map((x: any) => createInstance(x, lvl0, false, tier)) : null;
+  }
+  const off = g === 2 || g === 3 ? Math.min(4, Math.floor((mapIdx + 1) / 2)) : mapIdx >= 1 ? 1 : 0;
+  const lvl = Math.max(1, lvl0 - off);
+  const r = getCatchGenRange();
+  let pool = await getCatchChoices(mapIdx, 3, r.maxGenId, true, r.minGenId);
+  const gated = pool.filter((p: any) => minLevelForSpecies(p.id ?? p.speciesId) <= lvl);
+  if (gated.length) pool = gated;
+  const pick = pool[Math.floor(rng() * pool.length)];
+  if (!pick) return null;
+  const id = pick.id ?? pick.speciesId;
+  const evo = resolveEvoForLevel(id, lvl);
+  const sp = (evo !== id && (await fetchPokemonById(evo))) || pick;
+  return [createInstance(sp, lvl, false, tier)];
+}
+
+/** A typical next map: wild, trainer, wild, "?"-fight, trainer, then a Pokécenter (most maps have one late). */
+async function playNextMap(team: any[], mapIdx: number): Promise<boolean> {
+  const plan: [number, boolean][] = [
+    [1, false],
+    [2, true],
+    [3, false],
+    [4, false],
+    [5, true],
+  ];
+  for (const [layer, trainer] of plan) {
+    const enemy = await enemyOnMap(mapIdx, layer, trainer).catch(() => null);
+    if (enemy?.length && !fightInto(team, enemy)) return false;
+  }
+  team.forEach((m) => (m.currentHp = m.maxHp));
+  return true;
+}
+
 export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult> {
   const seed0 = getRngSeed();
   let uid0: number | null = null;
@@ -641,10 +706,17 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
         lvlSum += top.reduce((a, b) => a + b, 0) / Math.max(1, top.length);
         aliveSum += team.filter((m) => m.currentHp > 0).length;
         if (next) {
-          // next map: assume a heal at some point and `nextGain` levels for everyone still standing
-          const t2 = team.map((m) => ({ ...m, currentHp: m.maxHp }));
-          t2.forEach((m) => levelUp(m, nextGain));
-          if (fightChain(t2, next.teams)) nextWins++;
+          if (FLAGS.nextMapRoute && s.currentMap < 8) {
+            // two-map horizon: play a typical NEXT map from the real end state (HP, faints, levels) – wild and
+            // trainer fights of the next map's level table, one Pokécenter, then the next boss
+            const t2 = team.map((m) => ({ ...m }));
+            if ((await playNextMap(t2, s.currentMap + 1)) && fightChain(t2, next.teams)) nextWins++;
+          } else {
+            // legacy: heal + `nextGain` levels, then the next boss
+            const t2 = team.map((m) => ({ ...m, currentHp: m.maxHp }));
+            t2.forEach((m) => levelUp(m, nextGain));
+            if (fightChain(t2, next.teams)) nextWins++;
+          }
         }
       }
       out.results.push({

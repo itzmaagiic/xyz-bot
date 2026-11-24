@@ -14,6 +14,8 @@ const DEFAULT_FLAGS = {
   top3: false,
   /** route value P × F(level) instead of the additive form */
   multiplicative: false,
+  /** lookahead plays a typical next map (from the real end state) before the next boss */
+  nextMapRoute: true,
 };
 
 export const FLAGS: typeof DEFAULT_FLAGS = {
