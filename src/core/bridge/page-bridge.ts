@@ -37,6 +37,8 @@ function num(v: unknown, d = 0): number {
   return typeof v === 'number' && Number.isFinite(v) ? v : d;
 }
 
+const TEAM_CAP = 6;
+
 export function serializeMon(m: any): Mon | null {
   if (!m || typeof m !== 'object') return null;
   const bs = m.baseStats ?? {};
@@ -44,7 +46,9 @@ export function serializeMon(m: any): Mon | null {
   const moveTier = num(m.moveTier);
   const move = g(() => {
     const mv = typeof getBestMove === 'function' ? getBestMove(types, bs, moveTier) : null;
-    return mv ? { name: String(mv.name), power: num(mv.power), type: String(mv.type), isSpecial: !!mv.isSpecial } : null;
+    return mv
+      ? { name: String(mv.name), power: num(mv.power), type: String(mv.type), isSpecial: !!mv.isSpecial }
+      : null;
   });
   return {
     uid: num(m._uid, undefined as unknown as number),
@@ -63,7 +67,12 @@ export function serializeMon(m: any): Mon | null {
       special: num(bs.special),
       spdef: num(bs.spdef),
     },
-    heldItem: m.heldItem == null ? null : typeof m.heldItem === 'string' ? m.heldItem : String(m.heldItem.id ?? m.heldItem.name ?? 'item'),
+    heldItem:
+      m.heldItem == null
+        ? null
+        : typeof m.heldItem === 'string'
+          ? m.heldItem
+          : String(m.heldItem.id ?? m.heldItem.name ?? 'item'),
     moveTier,
     move,
     isStarter: !!m._isStarter,
@@ -94,7 +103,7 @@ function itemId(it: any): string {
 
 export function readRun(s: any): RunState | null {
   if (!s || typeof s !== 'object') return null;
-  const team = Array.isArray(s.team) ? s.team.map(serializeMon).filter(Boolean) as Mon[] : [];
+  const team = Array.isArray(s.team) ? (s.team.map(serializeMon).filter(Boolean) as Mon[]) : [];
   const gen = s.gen6Mode ? 6 : s.gen5Mode ? 5 : s.gen4Mode ? 4 : s.gen3Mode ? 3 : s.gen2Mode ? 2 : 1;
   const challenge = Object.keys(s).some((k) => k.startsWith('challenge') && s[k] && k !== 'challengeGenRange');
   const mode = s.isEndlessMode ? 'tower' : challenge ? 'challenge' : team.length ? 'story' : 'none';
@@ -104,14 +113,17 @@ export function readRun(s: any): RunState | null {
     team,
     items: Array.isArray(s.items) ? s.items.map(itemId) : [],
     badges: num(s.badges),
-    maxTeamSize: num(s.maxTeamSize, 6),
+    // NOTE: state.maxTeamSize is the largest team size reached so far (starts at 1), NOT the cap.
+    // The cap is 6: catching with 6 members opens the swap ("Team full") screen.
+    maxTeamSize: TEAM_CAP,
     currentMap: num(s.currentMap),
     eliteIndex: num(s.eliteIndex),
     nuzlocke: !!s.nuzlockeMode,
     mode,
     gen,
     map: serializeMap(s.map),
-    currentNodeId: cur && typeof cur === 'object' ? String(cur.id) : typeof s.currentNodeId === 'string' ? s.currentNodeId : null,
+    currentNodeId:
+      cur && typeof cur === 'object' ? String(cur.id) : typeof s.currentNodeId === 'string' ? s.currentNodeId : null,
     catchOffer: sc && Array.isArray(sc.instances) ? (sc.instances.map(serializeMon).filter(Boolean) as Mon[]) : null,
   };
 }
@@ -126,7 +138,9 @@ export function snapshot(includeTypeChart: boolean): BridgeSnapshot {
     screenId: g(() => (window as any)._currentScreenId ?? null),
     run: g(() => readRun(typeof state !== 'undefined' ? state : null)),
     settings: g(() => (typeof getSettings === 'function' ? { ...getSettings() } : null)),
-    typeChart: includeTypeChart ? g(() => (typeof TYPE_CHART !== 'undefined' ? JSON.parse(JSON.stringify(TYPE_CHART)) : null)) : null,
+    typeChart: includeTypeChart
+      ? g(() => (typeof TYPE_CHART !== 'undefined' ? JSON.parse(JSON.stringify(TYPE_CHART)) : null))
+      : null,
   };
 }
 

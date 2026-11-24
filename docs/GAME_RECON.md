@@ -71,7 +71,7 @@ Erkennung: Element am Bildschirmmittelpunkt, das nicht zum aktiven Screen gehör
 ## 6. Daten aus `state`
 
 - `state.team[]`: `{_uid, speciesId, name, nickname, level, currentHp, maxHp, isShiny, types[], baseStats{hp,atk,def,speed,special,spdef}, heldItem, megaStone, moveTier}` – Reihenfolge = Kampfreihenfolge.
-- `state.items[]`, `state.badges`, `state.maxTeamSize`, `state.currentMap`, `state.eliteIndex`, `state.nuzlockeMode`, `state.gen2Mode…gen6Mode`, `state.isEndlessMode`.
+- `state.items[]`, `state.badges`, `state.maxTeamSize` (**Achtung:** größte bisher erreichte Teamgröße, beginnt bei 1 – nicht die Grenze; die Grenze ist 6, danach kommt `swap-screen`), `state.currentMap`, `state.eliteIndex`, `state.nuzlockeMode`, `state.gen2Mode…gen6Mode`, `state.isEndlessMode`.
 - `state.map = {nodes{id→{id,type,layer,col,visited,accessible,revealed,trainerSprite?}}, edges[{from,to}], layers[][], mapIndex}`, `state.currentNode`.
 - Knotentypen beobachtet: `start, catch, battle, trainer, question, item, trade, pokecenter, move_tutor, boss` (+ weitere laut Code: legendary, shiny, poke_mart …).
 - `state.savedCatch = {nodeId, instances[], rerollPool, level}` – die angebotenen Fänge.

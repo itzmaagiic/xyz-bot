@@ -41,6 +41,13 @@ describe('DOM reader', () => {
       expect(c.level).toBeGreaterThan(0);
     }
   });
+  it('parses real type names (not the "type-badge" class) and picks Bulbasaur vs Brock/Misty', () => {
+    const cards = readCards(loadFixture('starter-de'), '#starter-choices .poke-card');
+    expect(cards.map((c) => c.types)).toEqual([['Grass', 'Poison'], ['Fire'], ['Water']]);
+    expect(cards.map((c) => c.move?.type)).toEqual(['Grass', 'Fire', 'Water']);
+    const doc = loadFixture('starter-de');
+    expect(decide(gs(doc), doc, DEFAULT_SETTINGS, newMemory())).toMatchObject({ kind: 'click', index: 0 });
+  });
   it('parses the shiny card', () => {
     const m = parsePokeCard(loadFixture('shiny').querySelector('#btn-take-shiny')!)!;
     expect(m.isShiny).toBe(true);
@@ -60,7 +67,9 @@ describe('DecisionEngine on real snapshots', () => {
   });
   it('region select → nuzlocke requested → toggles mode first', () => {
     const doc = loadFixture('region-select');
-    expect(decide(gs(doc), doc, { ...s, storyVariant: 'nuzlocke' }, newMemory())).toMatchObject({ selector: '#btn-history-nuzlocke' });
+    expect(decide(gs(doc), doc, { ...s, storyVariant: 'nuzlocke' }, newMemory())).toMatchObject({
+      selector: '#btn-history-nuzlocke',
+    });
   });
   it('locked region → pause instead of guessing', () => {
     const doc = loadFixture('region-select');
@@ -82,7 +91,10 @@ describe('DecisionEngine on real snapshots', () => {
   });
   it('map without bridge → first clickable node', () => {
     const doc = loadFixture('map');
-    expect(decide(gs(doc), doc, s, newMemory())).toMatchObject({ kind: 'click', selector: '.map-node--clickable[data-node-id="n1_0"]' });
+    expect(decide(gs(doc), doc, s, newMemory())).toMatchObject({
+      kind: 'click',
+      selector: '.map-node--clickable[data-node-id="n1_0"]',
+    });
   });
   it('catch with room → picks a card', () => {
     const doc = loadFixture('catch-en');
@@ -107,7 +119,10 @@ describe('DecisionEngine on real snapshots', () => {
       ['shiny', '#btn-take-shiny'],
     ] as const) {
       const doc = loadFixture(f);
-      expect(decide(gs(doc), doc, { ...s, reorderTeam: false }, newMemory())).toMatchObject({ kind: 'click', selector: sel });
+      expect(decide(gs(doc), doc, { ...s, reorderTeam: false }, newMemory())).toMatchObject({
+        kind: 'click',
+        selector: sel,
+      });
     }
   });
   it('game over → report once, then back to menu', () => {

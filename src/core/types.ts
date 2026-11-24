@@ -52,6 +52,8 @@ export interface Mon {
   /** best move as computed by the game itself (bridge) – optional in DOM fallback */
   move?: Move | null;
   isStarter?: boolean;
+  /** true when baseStats hold the displayed (level-adjusted) stats from a DOM card, not base stats */
+  actualStats?: boolean;
 }
 
 export type NodeType =
@@ -137,13 +139,7 @@ export type ScreenKind =
   | 'unknown';
 
 export type OverlayKind =
-  | 'tutorial'
-  | 'move-tutor'
-  | 'item-equip'
-  | 'evolution'
-  | 'misclick-confirm'
-  | 'unknown-modal'
-  | null;
+  'tutorial' | 'move-tutor' | 'item-equip' | 'evolution' | 'misclick-confirm' | 'unknown-modal' | null;
 
 export interface ScreenInfo {
   kind: ScreenKind;

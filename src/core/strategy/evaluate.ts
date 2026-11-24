@@ -19,6 +19,12 @@ export interface EffStats {
 
 export function effStats(m: Mon): EffStats {
   const b = m.baseStats;
+  if (m.actualStats) {
+    // DOM cards show either ATK or SP.ATK (the one the move uses) – mirror the missing one
+    const atk = b.atk || b.special;
+    const spa = b.special || b.atk;
+    return { hp: b.hp || m.maxHp, atk, def: b.def, spa, spd: b.spdef, spe: b.speed };
+  }
   return {
     hp: statAt(b.hp, m.level, true),
     atk: statAt(b.atk, m.level),

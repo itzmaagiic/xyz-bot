@@ -6,7 +6,10 @@ import type { Mon } from '../../src/core/types';
 /** Loads a real DOM snapshot (scripts stripped) into an isolated happy-dom document. */
 export function loadFixture(name: string): Document {
   const html = readFileSync(join(__dirname, '..', 'fixtures', 'dom', `${name}.html`), 'utf8');
-  const win = new Window({ url: 'https://pokelike.xyz/', settings: { disableJavaScriptEvaluation: true, disableCSSFileLoading: true, disableJavaScriptFileLoading: true } });
+  const win = new Window({
+    url: 'https://pokelike.xyz/',
+    settings: { disableJavaScriptEvaluation: true, disableCSSFileLoading: true, disableJavaScriptFileLoading: true },
+  });
   win.document.write(html);
   return win.document as unknown as Document;
 }
