@@ -261,6 +261,33 @@ export class BotController {
               results: { path: string[]; success: number; next: number; avgLevel: number }[];
             }>('simulatePaths', { paths, n, nextGain: 6 }, 30000);
             base.pathSim = Object.fromEntries(ps.results.map((r) => [r.path.join('>'), r]));
+            // joint search: best routes again with alternative battle orders
+            const ctxSim = { teamSize: run.team.length, maxTeamSize: run.maxTeamSize, nuzlocke: run.nuzlocke };
+            const scoreOf = (sim: typeof base) => (p: string[]) => evaluatePath(p, run.map!, ctxSim, sim).value;
+            const top = [...paths].sort((a, b) => scoreOf(base)(b) - scoreOf(base)(a)).slice(0, 6);
+            const ident = run.team.map((_, i) => i);
+            const alt = new Map<string, number[]>();
+            const byLv = [...ident].sort((a, b) => run.team[b]!.level - run.team[a]!.level || a - b);
+            alt.set(byLv.join(','), byLv);
+            const fodder = [...ident].sort((a, b) => run.team[a]!.level - run.team[b]!.level || a - b);
+            alt.set(fodder.join(','), fodder);
+            alt.delete(ident.join(','));
+            let bestOrder: number[] | null = null;
+            let bestVal = Math.max(...top.map(scoreOf(base)));
+            for (const order of alt.values()) {
+              if (run.team.length < 2 || !top.length) break;
+              const r2 = await this.bridge.request<{
+                results: { path: string[]; success: number; next: number; avgLevel: number }[];
+              }>('simulatePaths', { paths: top, n: 20, nextGain: 6, order }, 30000);
+              const sim2 = { ...base, pathSim: Object.fromEntries(r2.results.map((r) => [r.path.join('>'), r])) };
+              const v = Math.max(...top.map(scoreOf(sim2)));
+              if (v > bestVal * 1.04 + 1) {
+                bestVal = v;
+                bestOrder = order;
+                base.pathSim = { ...base.pathSim, ...sim2.pathSim };
+              }
+            }
+            base.mapOrder = bestOrder;
             this.log.debug(`path simulation: ${paths.length} routes × ${n} in ${Date.now() - t0} ms`);
           }
           this.simKey = key;

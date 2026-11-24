@@ -5,7 +5,7 @@
 import { bossTypesFor } from '../data/bosses';
 import type { BotSettings } from '../settings';
 import { isShown } from '../screens/detector';
-import { itemIdFromCard, parsePokeCard, readCards, readClickableMapNodes } from '../state/dom-reader';
+import { itemIdFromCard, parsePokeCard, readCards, readClickableMapNodes, typeFromClasses } from '../state/dom-reader';
 import type { Decision, GameState, Mon, RunState } from '../types';
 import {
   chooseCatch,
@@ -17,7 +17,8 @@ import {
   nextBossTypes,
   teamWeakness,
 } from './choices';
-import { hpRatio, monScore } from './evaluate';
+import { hpRatio, monScore, weakestIndex } from './evaluate';
+import { effectiveness } from '../data/typechart';
 import { chooseRoute, xpNeed } from './map';
 import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
 import { chooseBagUse, chooseEquipHolder, chooseUsableTarget } from './items';
@@ -163,9 +164,7 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         ? { kind: 'click', selector: '#btn-take-shiny', why: 'take the shiny (2 trait points)' }
         : { kind: 'click', selector: '#btn-skip-shiny', why: 'shiny disabled in settings' };
     case 'trade':
-      if (shown(doc, '#btn-trade-continue'))
-        return { kind: 'click', selector: '#btn-trade-continue', why: 'trade finished' };
-      return { kind: 'click', selector: '#btn-skip-trade', why: 'decline mystery trade (risky)' };
+      return decideTrade(doc, run);
     case 'badge':
       return { kind: 'click', selector: '#btn-next-map', why: 'badge earned – next map' };
     case 'elite-prep': {
@@ -232,7 +231,25 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
   const clickable = readClickableMapNodes(doc);
   if (!clickable.length) return { kind: 'wait', ms: 600, why: 'no clickable node yet' };
   mem.endReported = null;
-  if (run && s.reorderTeam && mem.reorderFailures < 2) {
+  // simulation-backed order for the coming route (joint route/order search) beats the simple heuristic
+  const mo = state.sim?.mapOrder;
+  if (run && s.reorderTeam && mo && mo.length === run.team.length && mem.reorderFailures < 2) {
+    const key = `maporder|${run.currentNodeId}|${run.team.map((m) => `${m.speciesId}:${m.level}`).join(',')}`;
+    if (!mem.reorderTried.has(key)) {
+      mem.reorderTried.add(key);
+      const swaps = starSwaps(
+        run.team.map((_, i) => i),
+        mo,
+      );
+      if (swaps.length)
+        return {
+          kind: 'reorder',
+          swaps,
+          target: mo,
+          why: `sim: route odds better with order ${mo.map((i) => run.team[i]?.name).join(' → ')}`,
+        };
+    }
+  } else if (run && s.reorderTeam && !state.sim && mem.reorderFailures < 2) {
     // on the map the overall strongest member leads (regular fights are not the boss type)
     const sw = leadSwap(run.team, []);
     const key = `map|${run.currentNodeId}|${run.team.map((m) => m.speciesId).join(',')}`;
@@ -384,6 +401,52 @@ function decideEvolution(doc: Document, run: RunState | null): Decision {
   if (shown(doc, '#evo-overlay .evo-skip-btn'))
     return { kind: 'click', selector: '#evo-overlay .evo-skip-btn', why: 'evolve (skip animation)' };
   return { kind: 'wait', ms: 400, why: 'evolution animation' };
+}
+
+/**
+ * Mystery trade: only what a human sees is used (one revealed type + level per offer; the hidden species in
+ * state.savedTrade are deliberately ignored). Trade only a member that fell far behind – all members gain the same
+ * levels per win, so a laggard never catches up.
+ */
+function decideTrade(doc: Document, run: RunState | null): Decision {
+  if (shown(doc, '#btn-trade-continue'))
+    return { kind: 'click', selector: '#btn-trade-continue', why: 'trade finished' };
+  const offers = Array.from(doc.querySelectorAll('#trade-choices .trade-mystery-card'));
+  if (offers.length && shown(doc, '#trade-choices')) {
+    const vs = vsTypes(run);
+    const scored = offers.map((c, i) => {
+      const t = Array.from(c.querySelectorAll('[class*="type-"]'))
+        .map((e) => typeFromClasses(e))
+        .find(Boolean);
+      const lvl = Number((c.textContent ?? '').match(/(\d+)\s*$/)?.[1] ?? (c.textContent ?? '').match(/\d+/)?.[0] ?? 0);
+      const eff = t && vs.length ? effectiveness(t, vs) : 1;
+      return { i, score: lvl * (0.8 + 0.2 * eff), t, lvl };
+    });
+    scored.sort((a, b) => b.score - a.score || a.i - b.i);
+    const best = scored[0]!;
+    return {
+      kind: 'click',
+      selector: '#trade-choices .trade-mystery-card',
+      index: best.i,
+      why: `trade offer ${best.t ?? '?'} Lv ${best.lvl}`,
+    };
+  }
+  const rows = Array.from(doc.querySelectorAll('#trade-team-list .trade-member-row'));
+  const team = run?.team ?? [];
+  if (rows.length && team.length >= 3 && rows.length === team.length) {
+    const avg = team.reduce((a, m) => a + m.level, 0) / team.length;
+    const wi = weakestIndex(team);
+    const weak = team[wi]!;
+    if (weak.level <= avg - 6) {
+      return {
+        kind: 'click',
+        selector: '#trade-team-list .trade-member-row',
+        index: wi,
+        why: `trade laggard ${weak.name} Lv ${weak.level} (team Ø ${avg.toFixed(0)})`,
+      };
+    }
+  }
+  return { kind: 'click', selector: '#btn-skip-trade', why: 'no laggard worth trading' };
 }
 
 function bagDecision(run: RunState | null, mem: EngineMemory): Decision | null {
