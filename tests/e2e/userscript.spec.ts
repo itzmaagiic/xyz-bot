@@ -18,7 +18,9 @@ test.describe('Userscript (GM shim)', () => {
     await injectUserscript(page, browserName);
     await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
     await page.locator('#pk-step').click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks)).toEqual(['btn-history-run']);
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
+      .toEqual(['btn-history-run']);
   });
 
   test('map node click on SVG', async ({ page, browserName }) => {
@@ -27,7 +29,9 @@ test.describe('Userscript (GM shim)', () => {
     await injectUserscript(page, browserName);
     await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
     await page.locator('#pk-step').click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks)).toContain('n1_0');
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
+      .toContain('n1_0');
   });
 
   test('confirmation flow, toast and clipboard', async ({ page, browserName }) => {
@@ -36,7 +40,9 @@ test.describe('Userscript (GM shim)', () => {
     await injectUserscript(page, browserName);
     await page.locator('#pk-speed-ask').click();
     await page.locator('#pk-speed-yes').click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings)).toBe(1);
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings))
+      .toBe(1);
     await page.locator('#pk-copy').click();
     await expect(page.locator('#pkbot-toasts')).toContainText('Log kopiert');
   });

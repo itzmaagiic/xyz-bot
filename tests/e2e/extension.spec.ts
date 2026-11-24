@@ -35,7 +35,9 @@ test.describe('Chrome extension (MV3, unpacked)', () => {
     await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
     await page.locator('#pk-step').click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks)).toEqual(['btn-history-run']);
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
+      .toEqual(['btn-history-run']);
     await expect(page.locator('#pk-screen')).toHaveText('trainer', { timeout: 5000 });
   });
 
@@ -45,7 +47,9 @@ test.describe('Chrome extension (MV3, unpacked)', () => {
     await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
     await page.locator('#pk-step').click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks)).toContain('n1_0');
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
+      .toContain('n1_0');
   });
 
   test('game settings change only after explicit two-step confirmation', async () => {
@@ -53,13 +57,19 @@ test.describe('Chrome extension (MV3, unpacked)', () => {
     const page = await ctx.newPage();
     await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#pk-speed-ask')).toBeVisible({ timeout: 10_000 });
-    expect(await page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings)).toBeUndefined();
+    expect(
+      await page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings),
+    ).toBeUndefined();
     await page.locator('#pk-speed-ask').click();
     await page.locator('#pk-speed-no').click();
-    expect(await page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings)).toBeUndefined();
+    expect(
+      await page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings),
+    ).toBeUndefined();
     await page.locator('#pk-speed-ask').click();
     await page.locator('#pk-speed-yes').click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings)).toBe(1);
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings))
+      .toBe(1);
     await expect(page.locator('#pk-speed')).toHaveCount(0);
   });
 

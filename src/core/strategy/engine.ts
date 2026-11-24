@@ -5,11 +5,26 @@
 import { bossTypesFor } from '../data/bosses';
 import type { BotSettings } from '../settings';
 import { isShown } from '../screens/detector';
-import { itemIdFromCard, parsePokeCard, readCards, readClickableMapNodes, speciesFromSprite } from '../state/dom-reader';
+import {
+  itemIdFromCard,
+  parsePokeCard,
+  readCards,
+  readClickableMapNodes,
+  speciesFromSprite,
+} from '../state/dom-reader';
 import type { Decision, GameState, Mon, RunState } from '../types';
-import { chooseCatch, chooseHolder, chooseItem, chooseRelease, chooseStarter, leadSwap, nextBossTypes, teamWeakness } from './choices';
+import {
+  chooseCatch,
+  chooseHolder,
+  chooseItem,
+  chooseRelease,
+  chooseStarter,
+  leadSwap,
+  nextBossTypes,
+  teamWeakness,
+} from './choices';
 import { hpRatio } from './evaluate';
-import { chooseRoute } from './map';
+import { chooseRoute, xpNeed } from './map';
 
 export interface EngineMemory {
   /** signature on which a team reorder was already attempted (avoid loops) */
@@ -55,32 +70,51 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
   switch (screen.kind) {
     case 'title': {
       if (s.mode === 'story') {
-        if (s.resumeRuns && shown(doc, '#btn-continue-run')) return { kind: 'click', selector: '#btn-continue-run', why: 'resume story run' };
+        if (s.resumeRuns && shown(doc, '#btn-continue-run'))
+          return { kind: 'click', selector: '#btn-continue-run', why: 'resume story run' };
         return { kind: 'click', selector: '#btn-history-run', why: 'start story' };
       }
-      if (s.resumeRuns && shown(doc, '#btn-continue-endless')) return { kind: 'click', selector: '#btn-continue-endless', why: 'resume tower run' };
+      if (s.resumeRuns && shown(doc, '#btn-continue-endless'))
+        return { kind: 'click', selector: '#btn-continue-endless', why: 'resume tower run' };
       return { kind: 'click', selector: '#btn-endless-run', why: 'enter battle tower' };
     }
     case 'region-select': {
       const variantBtn = s.storyVariant === 'nuzlocke' ? '#btn-history-nuzlocke' : '#btn-history-classic';
       const vb = doc.querySelector(variantBtn);
-      if (vb && !/--selected/.test(vb.className)) return { kind: 'click', selector: variantBtn, why: `select ${s.storyVariant}` };
+      if (vb && !/--selected/.test(vb.className))
+        return { kind: 'click', selector: variantBtn, why: `select ${s.storyVariant}` };
       const regions = Array.from(doc.querySelectorAll('#history-region-select .history-region-btn'));
       const r = regions[s.region - 1];
       if (!r) return { kind: 'pause', why: `region ${s.region} not found` };
-      if (r.classList.contains('history-region-btn--locked')) return { kind: 'pause', why: `region ${s.region} is locked in your save` };
-      return { kind: 'click', selector: '#history-region-select .history-region-btn', index: s.region - 1, why: `start region ${s.region}` };
+      if (r.classList.contains('history-region-btn--locked'))
+        return { kind: 'pause', why: `region ${s.region} is locked in your save` };
+      return {
+        kind: 'click',
+        selector: '#history-region-select .history-region-btn',
+        index: s.region - 1,
+        why: `start region ${s.region}`,
+      };
     }
     case 'tower-select': {
       const regions = Array.from(doc.querySelectorAll('#endless-stage-select .history-region-btn'));
       const r = regions[s.region - 1];
-      if (!r || r.classList.contains('history-region-btn--locked')) return { kind: 'pause', why: `tower region ${s.region} unavailable` };
-      return { kind: 'click', selector: '#endless-stage-select .history-region-btn', index: s.region - 1, why: `tower region ${s.region}` };
+      if (!r || r.classList.contains('history-region-btn--locked'))
+        return { kind: 'pause', why: `tower region ${s.region} unavailable` };
+      return {
+        kind: 'click',
+        selector: '#endless-stage-select .history-region-btn',
+        index: s.region - 1,
+        why: `tower region ${s.region}`,
+      };
     }
     case 'trainer':
       mem.reorderFailures = 0;
       mem.reorderTried.clear();
-      return { kind: 'click', selector: s.trainer === 'girl' ? '#trainer-girl' : '#trainer-boy', why: `trainer ${s.trainer}` };
+      return {
+        kind: 'click',
+        selector: s.trainer === 'girl' ? '#trainer-girl' : '#trainer-boy',
+        why: `trainer ${s.trainer}`,
+      };
     case 'starter': {
       const cards = readCards(doc, '#starter-choices .poke-card');
       if (!cards.length) return { kind: 'wait', ms: 500, why: 'starters loading' };
@@ -92,8 +126,10 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
     case 'map':
       return decideMap(state, doc, s, mem);
     case 'battle': {
-      if (shown(doc, '#btn-continue-battle')) return { kind: 'click', selector: '#btn-continue-battle', why: 'battle finished – continue' };
-      if (shown(doc, '#btn-auto-battle')) return { kind: 'click', selector: '#btn-auto-battle', why: 'skip battle animation' };
+      if (shown(doc, '#btn-continue-battle'))
+        return { kind: 'click', selector: '#btn-continue-battle', why: 'battle finished – continue' };
+      if (shown(doc, '#btn-auto-battle'))
+        return { kind: 'click', selector: '#btn-auto-battle', why: 'skip battle animation' };
       return { kind: 'wait', ms: 700, why: 'battle running' };
     }
     case 'catch':
@@ -112,7 +148,8 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         ? { kind: 'click', selector: '#btn-take-shiny', why: 'take the shiny (2 trait points)' }
         : { kind: 'click', selector: '#btn-skip-shiny', why: 'shiny disabled in settings' };
     case 'trade':
-      if (shown(doc, '#btn-trade-continue')) return { kind: 'click', selector: '#btn-trade-continue', why: 'trade finished' };
+      if (shown(doc, '#btn-trade-continue'))
+        return { kind: 'click', selector: '#btn-trade-continue', why: 'trade finished' };
       return { kind: 'click', selector: '#btn-skip-trade', why: 'decline mystery trade (risky)' };
     case 'badge':
       return { kind: 'click', selector: '#btn-next-map', why: 'badge earned – next map' };
@@ -163,7 +200,11 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
     }
   }
   if (!run?.map) {
-    return { kind: 'click', selector: `.map-node--clickable[data-node-id="${clickable[0]}"]`, why: 'no map data (DOM fallback) – first node' };
+    return {
+      kind: 'click',
+      selector: `.map-node--clickable[data-node-id="${clickable[0]}"]`,
+      why: 'no map data (DOM fallback) – first node',
+    };
   }
   const ctx = {
     teamSize: run.team.length,
@@ -171,10 +212,19 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
     hp: hpRatio(run.team),
     nuzlocke: run.nuzlocke,
     weakness: teamWeakness(run.team, run.maxTeamSize),
+    xpNeed: xpNeed(
+      run.team.map((m) => m.level),
+      run.badges,
+    ),
   };
-  const pick = chooseRoute(run.map, clickable.filter((id) => run.map!.nodes[id]), ctx);
+  const pick = chooseRoute(
+    run.map,
+    clickable.filter((id) => run.map!.nodes[id]),
+    ctx,
+  );
   if (!pick) return { kind: 'pause', why: 'map nodes do not match game data' };
-  const types = pick.path.map((id) => run.map!.nodes[id]?.type).join('→');
+  const types =
+    pick.path.map((id) => run.map!.nodes[id]?.type).join('→') + ` [xp need ${(ctx.xpNeed ?? 0).toFixed(1)}]`;
   return {
     kind: 'click',
     selector: `.map-node--clickable[data-node-id="${pick.nodeId}"]`,
@@ -222,15 +272,24 @@ function decideEquip(doc: Document, run: RunState | null, kind: 'move-tutor' | '
     })
     .filter((r) => r.btn);
   if (!eligible.length) {
-    return skip ? { kind: 'click', selector: skip, why: 'nobody can use it' } : { kind: 'pause', why: `${kind}: no usable button` };
+    return skip
+      ? { kind: 'click', selector: skip, why: 'nobody can use it' }
+      : { kind: 'pause', why: `${kind}: no usable button` };
   }
   const withMon = eligible.filter((r) => r.mon);
   let pickRow = eligible[0]!.i;
   let why = `${kind}: first eligible member (no team data)`;
   if (withMon.length) {
-    const c = chooseHolder(withMon.map((r) => r.mon!), 'offense');
+    const c = chooseHolder(
+      withMon.map((r) => r.mon!),
+      'offense',
+    );
     pickRow = withMon[c.index]!.i;
     why = `${kind}: ${c.why}`;
   }
-  return { kind: 'click', selector: `#item-equip-modal .equip-pokemon-row:nth-of-type(${pickRow + 1}) button:not([disabled])`, why };
+  return {
+    kind: 'click',
+    selector: `#item-equip-modal .equip-pokemon-row:nth-of-type(${pickRow + 1}) button:not([disabled])`,
+    why,
+  };
 }

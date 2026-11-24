@@ -67,12 +67,18 @@ test('bot plays the real game without getting stuck', async () => {
     screens.set(st.screen, (screens.get(st.screen) ?? 0) + 1);
     if (st.node !== last.node || st.map !== last.map || st.badges !== last.badges) progressEvents++;
     last = st;
-    console.log(`[live] ${Math.round((Date.now() - start) / 1000)}s screen=${st.screen} map=${st.map} node=${st.node} badges=${st.badges} team=${st.team}`);
+    console.log(
+      `[live] ${Math.round((Date.now() - start) / 1000)}s screen=${st.screen} map=${st.map} node=${st.node} badges=${st.badges} team=${st.team}`,
+    );
     console.log(`[live]    decision: ${await page.locator('#pk-decision').textContent()}`);
     const status = await page.locator('#pk-toggle').textContent();
     if (status === 'Start') break; // paused → stop observing
   }
-  const pauseReason = (await page.locator('#pk-pause').textContent().catch(() => null)) ?? null;
+  const pauseReason =
+    (await page
+      .locator('#pk-pause')
+      .textContent()
+      .catch(() => null)) ?? null;
   const log = await page.evaluate(async () => {
     // overlay log is the source of truth
     const host = document.getElementById('pkbot-root');
@@ -81,7 +87,11 @@ test('bot plays the real game without getting stuck', async () => {
   mkdirSync(OUT, { recursive: true });
   writeFileSync(
     join(OUT, 'live-run.json'),
-    JSON.stringify({ minutes: MINUTES, first, last, progressEvents, screens: Object.fromEntries(screens), pauseReason }, null, 2),
+    JSON.stringify(
+      { minutes: MINUTES, first, last, progressEvents, screens: Object.fromEntries(screens), pauseReason },
+      null,
+      2,
+    ),
   );
   writeFileSync(join(OUT, 'live-run.log'), log);
   await page.screenshot({ path: join(OUT, 'live-run.png') });

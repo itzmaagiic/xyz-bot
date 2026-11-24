@@ -90,7 +90,13 @@ export function detectOverlay(doc: Document): { kind: OverlayKind; id: string | 
     if (!isShown(el)) continue;
     candidates.push(el);
   }
-  for (const id of ['tutorial-overlay', 'item-equip-modal', 'evo-overlay', 'eevee-choice-overlay', 'misclick-confirm-modal']) {
+  for (const id of [
+    'tutorial-overlay',
+    'item-equip-modal',
+    'evo-overlay',
+    'eevee-choice-overlay',
+    'misclick-confirm-modal',
+  ]) {
     const el = doc.getElementById(id);
     if (el && isShown(el) && !candidates.includes(el)) candidates.push(el);
   }

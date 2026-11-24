@@ -19,10 +19,21 @@ function point(el: Element, rng: Rng): { x: number; y: number } {
 
 function fire(el: Element, type: string, x: number, y: number, extra: Partial<PointerEventInit> = {}) {
   const view = el.ownerDocument.defaultView ?? window;
-  const base: MouseEventInit = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, button: 0, view };
+  const base: MouseEventInit = {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    clientX: x,
+    clientY: y,
+    button: 0,
+    view,
+  };
   const isPointer = type.startsWith('pointer');
-  const Ctor: typeof MouseEvent = isPointer && typeof view.PointerEvent === 'function' ? view.PointerEvent : view.MouseEvent;
-  const init = isPointer ? { pointerId: 1, pointerType: 'mouse', isPrimary: true, ...base, ...extra } : { ...base, ...extra };
+  const Ctor: typeof MouseEvent =
+    isPointer && typeof view.PointerEvent === 'function' ? view.PointerEvent : view.MouseEvent;
+  const init = isPointer
+    ? { pointerId: 1, pointerType: 'mouse', isPrimary: true, ...base, ...extra }
+    : { ...base, ...extra };
   el.dispatchEvent(new Ctor(type, init));
 }
 
@@ -71,10 +82,26 @@ export class Actor {
   }
 
   /** Key press like a hardware keyboard: keydown → keyup on the focused element (or body). */
-  async pressKey(doc: Document, code: string, key: string, mods: { shift?: boolean; alt?: boolean } = {}): Promise<void> {
-    const target = (doc.activeElement && doc.activeElement !== doc.documentElement ? doc.activeElement : doc.body) as Element;
+  async pressKey(
+    doc: Document,
+    code: string,
+    key: string,
+    mods: { shift?: boolean; alt?: boolean } = {},
+  ): Promise<void> {
+    const target = (
+      doc.activeElement && doc.activeElement !== doc.documentElement ? doc.activeElement : doc.body
+    ) as Element;
     const view = doc.defaultView ?? window;
-    const init: KeyboardEventInit = { code, key, bubbles: true, cancelable: true, composed: true, shiftKey: !!mods.shift, altKey: !!mods.alt, view };
+    const init: KeyboardEventInit = {
+      code,
+      key,
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      shiftKey: !!mods.shift,
+      altKey: !!mods.alt,
+      view,
+    };
     target.dispatchEvent(new view.KeyboardEvent('keydown', init));
     await sleep(humanDelay(this.micro * 2, this.rng));
     target.dispatchEvent(new view.KeyboardEvent('keyup', init));

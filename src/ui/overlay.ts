@@ -8,7 +8,6 @@ import { PAGE_SHORTCUTS } from '../platform/types';
 import { buildSettingsForm } from './settings-form';
 import { toast } from './toast';
 
-
 const CSS = `
 :host { all: initial; }
 * { box-sizing: border-box; }
@@ -79,7 +78,11 @@ export class Overlay {
     this.host.style.display = this.hidden ? 'none' : '';
   }
 
-  private h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string> = {}, text?: string): HTMLElementTagNameMap[K] {
+  private h<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    attrs: Record<string, string> = {},
+    text?: string,
+  ): HTMLElementTagNameMap[K] {
     const el = this.doc.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
     if (text !== undefined) el.textContent = text;
@@ -98,8 +101,16 @@ export class Overlay {
 
     const header = this.h('header');
     const dot = this.h('span', { class: `dot ${v.status}`, 'aria-hidden': 'true' });
-    const title = this.h('b', {}, `Pokelike Bot · ${v.status === 'running' ? 'läuft' : v.status === 'paused' ? 'pausiert' : 'bereit'}`);
-    const collapse = this.h('button', { id: 'pk-collapse', 'aria-label': 'Ein-/ausklappen' }, v.settings.overlayCollapsed ? '▢' : '–');
+    const title = this.h(
+      'b',
+      {},
+      `Pokelike Bot · ${v.status === 'running' ? 'läuft' : v.status === 'paused' ? 'pausiert' : 'bereit'}`,
+    );
+    const collapse = this.h(
+      'button',
+      { id: 'pk-collapse', 'aria-label': 'Ein-/ausklappen' },
+      v.settings.overlayCollapsed ? '▢' : '–',
+    );
     collapse.onclick = () => void this.bot.updateSettings({ overlayCollapsed: !v.settings.overlayCollapsed });
     header.append(dot, title, collapse);
     this.makeDraggable(header);
@@ -114,11 +125,17 @@ export class Overlay {
     const step = this.h('button', { id: 'pk-step' }, 'Schritt');
     step.onclick = () => void this.bot.step();
     const copy = this.h('button', { id: 'pk-copy' }, 'Log kopieren');
-    copy.onclick = async () => toast((await this.platform.copyText(this.bot.log.toText())) ? 'Log kopiert' : 'Kopieren nicht möglich', 2500, this.doc);
+    copy.onclick = async () =>
+      toast(
+        (await this.platform.copyText(this.bot.log.toText())) ? 'Log kopiert' : 'Kopieren nicht möglich',
+        2500,
+        this.doc,
+      );
     ctr.append(start, step, copy);
     body.appendChild(ctr);
 
-    if (v.pauseReason && v.status !== 'running') body.appendChild(this.h('div', { class: 'warn', id: 'pk-pause' }, `⏸ ${v.pauseReason}`));
+    if (v.pauseReason && v.status !== 'running')
+      body.appendChild(this.h('div', { class: 'warn', id: 'pk-pause' }, `⏸ ${v.pauseReason}`));
     if (v.versionWarning) {
       const w = this.h('div', { class: 'warn bad', id: 'pk-version' }, v.versionWarning + ' ');
       const ack = this.h('button', { id: 'pk-ack-version' }, 'Version bestätigen');
@@ -151,7 +168,11 @@ export class Overlay {
     logBox.appendChild(log);
     body.appendChild(logBox);
     body.appendChild(
-      this.h('div', { class: 'hint' }, `Tasten: ${PAGE_SHORTCUTS.toggle.label} Start/Pause · ${PAGE_SHORTCUTS.step.label} Schritt · ${PAGE_SHORTCUTS.toggleOverlay.label} Overlay`),
+      this.h(
+        'div',
+        { class: 'hint' },
+        `Tasten: ${PAGE_SHORTCUTS.toggle.label} Start/Pause · ${PAGE_SHORTCUTS.step.label} Schritt · ${PAGE_SHORTCUTS.toggleOverlay.label} Overlay`,
+      ),
     );
     if (focusedId) (this.root.getElementById(focusedId) as HTMLElement | null)?.focus();
   }
@@ -165,7 +186,11 @@ export class Overlay {
       yes.onclick = async () => {
         const k = this.confirmKeys ?? [];
         this.confirmKeys = null;
-        toast((await this.bot.applyGameSettings(k)) ? 'Spieleinstellungen geändert' : 'Ändern fehlgeschlagen', 3000, this.doc);
+        toast(
+          (await this.bot.applyGameSettings(k)) ? 'Spieleinstellungen geändert' : 'Ändern fehlgeschlagen',
+          3000,
+          this.doc,
+        );
       };
       const no = this.h('button', { id: 'pk-speed-no' }, 'Abbrechen');
       no.onclick = () => {
@@ -175,7 +200,13 @@ export class Overlay {
       row.append(yes, no);
       box.appendChild(row);
     } else {
-      box.append(this.h('div', {}, `Schneller spielen: Spieloptionen ${keys.join(', ')} sind aus. Der Bot ändert sie nur mit deiner Bestätigung.`));
+      box.append(
+        this.h(
+          'div',
+          {},
+          `Schneller spielen: Spieloptionen ${keys.join(', ')} sind aus. Der Bot ändert sie nur mit deiner Bestätigung.`,
+        ),
+      );
       const b = this.h('button', { id: 'pk-speed-ask' }, 'Einschalten …');
       b.onclick = () => {
         this.confirmKeys = keys;

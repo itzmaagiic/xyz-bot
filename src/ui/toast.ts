@@ -5,7 +5,10 @@ export function toast(text: string, ms = 4000, doc: Document = document): void {
   if (!host || !host.isConnected) {
     host = doc.createElement('div');
     host.id = 'pkbot-toasts';
-    host.setAttribute('style', 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483646;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:calc(100vw - 32px);');
+    host.setAttribute(
+      'style',
+      'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483646;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:calc(100vw - 32px);',
+    );
     doc.body.appendChild(host);
   }
   const el = doc.createElement('div');

@@ -1,8 +1,20 @@
 /** Read-only DOM parsing helpers (language independent). Used as fallback and for cross-checking bridge data. */
+import { TYPES } from '../data/typechart';
 import type { Mon, Move } from '../types';
 
-const TYPE_CLASS = /\btype-([a-z]+)\b/;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const TYPE_SET = new Set<string>(TYPES.map((t) => t.toLowerCase()));
+
+/** Reads the Pokémon type from classes like "type-badge type-grass" (skips non-type classes such as type-badge). */
+export function typeFromClasses(el: Element | null | undefined): string | null {
+  if (!el) return null;
+  for (const c of Array.from(el.classList)) {
+    if (!c.startsWith('type-')) continue;
+    const t = c.slice(5);
+    if (TYPE_SET.has(t)) return cap(t);
+  }
+  return null;
+}
 
 export function speciesFromSprite(src: string | null | undefined): { id: number; shiny: boolean } | null {
   if (!src) return null;
@@ -38,9 +50,8 @@ export function parsePokeCard(card: Element): Mon | null {
   const sp = speciesFromSprite(img?.getAttribute('src'));
   if (!sp) return null;
   const types = Array.from(card.querySelectorAll('.poke-types .type-badge'))
-    .map((b) => (b.className.match(TYPE_CLASS)?.[1] ?? ''))
-    .filter(Boolean)
-    .map(cap);
+    .map((b) => typeFromClasses(b))
+    .filter((t): t is string => !!t);
   const stats = { hp: 0, atk: 0, def: 0, speed: 0, special: 0, spdef: 0 };
   for (const row of Array.from(card.querySelectorAll('.stat-row'))) {
     const fill = row.querySelector('.stat-bar-fill');
@@ -52,11 +63,11 @@ export function parsePokeCard(card: Element): Mon | null {
   let move: Move | null = null;
   const mv = card.querySelector('.poke-move');
   if (mv) {
-    const mt = mv.querySelector('.move-type-badge')?.className.match(TYPE_CLASS)?.[1];
+    const mt = typeFromClasses(mv.querySelector('.move-type-badge'));
     move = {
       name: mv.querySelector('.move-name')?.getAttribute('title') ?? '',
       power: int(mv.querySelector('.move-power-badge')?.textContent),
-      type: mt ? cap(mt) : types[0] ?? 'Normal',
+      type: mt ?? types[0] ?? 'Normal',
       isSpecial: /special/.test(mv.querySelector('.move-cat-icon')?.getAttribute('src') ?? ''),
     };
   }
@@ -72,6 +83,7 @@ export function parsePokeCard(card: Element): Mon | null {
     heldItem: null,
     moveTier: 0,
     move,
+    actualStats: true,
   };
 }
 

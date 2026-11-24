@@ -40,7 +40,10 @@ document.addEventListener('click', (e) => {
 });
 `;
 
-const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+);
 
 export function fixtureHtml(name: string): string {
   const html = readFileSync(join(FIXTURES, `${name}.html`), 'utf8');
@@ -54,7 +57,8 @@ export async function serveFixture(target: BrowserContext | Page, name: string):
     if (url.pathname === '/' || url.pathname === '/index.html') {
       return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: fixtureHtml(name) });
     }
-    if (/\.(png|jpe?g|gif|webp)$/i.test(url.pathname)) return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL });
+    if (/\.(png|jpe?g|gif|webp)$/i.test(url.pathname))
+      return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL });
     return route.fulfill({ status: 404, body: '' });
   });
   await target.route(/^https:\/\/(?!(www\.)?pokelike\.xyz)/, (route) => route.abort());

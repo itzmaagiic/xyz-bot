@@ -11,13 +11,19 @@ export interface Choice {
 const fmt = (n: number) => n.toFixed(1);
 
 /** Catch: best candidate by score; when the team is full only if it beats the weakest member by a margin. */
-export function chooseCatch(offer: readonly Mon[], team: readonly Mon[], maxTeamSize: number, vs: readonly string[] = []): Choice {
+export function chooseCatch(
+  offer: readonly Mon[],
+  team: readonly Mon[],
+  maxTeamSize: number,
+  vs: readonly string[] = [],
+): Choice {
   if (!offer.length) return { index: -1, why: 'no catch options' };
   const scored = offer.map((m, i) => ({ i, s: monScore(m, vs) + 0.15 * monScore(m) }));
   scored.sort((a, b) => b.s - a.s || a.i - b.i);
   const top = scored[0]!;
   const cand = offer[top.i]!;
-  if (team.length < maxTeamSize) return { index: top.i, why: `team has room; best option ${cand.name} (score ${fmt(top.s)})` };
+  if (team.length < maxTeamSize)
+    return { index: top.i, why: `team has room; best option ${cand.name} (score ${fmt(top.s)})` };
   const wi = weakestIndex(team);
   const weak = team[wi]!;
   const weakScore = monScore(weak, vs) + 0.15 * monScore(weak);
@@ -44,7 +50,7 @@ export const ITEM_VALUES: Record<string, number> = {
   'expert-belt': 8.5,
   'choice-band': 8,
   'choice-specs': 8,
-  'leftovers': 7.5,
+  leftovers: 7.5,
   'focus-sash': 7,
   'shell-bell': 6.5,
   'scope-lens': 6,
@@ -114,13 +120,18 @@ export function chooseHolder(team: readonly Mon[], kind: 'offense' | 'bulk' = 'o
 }
 
 /** Starter: preferred id, else best average matchup against the first bosses (`early` = list of type lists). */
-export function chooseStarter(options: readonly Mon[], preferred?: number | null, early: readonly string[][] = []): Choice {
+export function chooseStarter(
+  options: readonly Mon[],
+  preferred?: number | null,
+  early: readonly string[][] = [],
+): Choice {
   if (!options.length) return { index: -1, why: 'no starters' };
   if (preferred != null) {
     const i = options.findIndex((m) => m.speciesId === preferred);
     if (i >= 0) return { index: i, why: `preferred starter #${preferred}` };
   }
-  const score = (m: Mon) => (early.length ? early.reduce((a, vs) => a + monScore(m, vs), 0) / early.length : monScore(m));
+  const score = (m: Mon) =>
+    early.length ? early.reduce((a, vs) => a + monScore(m, vs), 0) / early.length : monScore(m);
   let best = 0;
   options.forEach((m, i) => {
     if (score(m) > score(options[best]!)) best = i;
@@ -141,7 +152,10 @@ export function desiredOrder(team: readonly Mon[], vs: readonly string[] = []): 
 }
 
 /** Smallest useful reorder step: bring the desired lead to slot 0 (one swap) if it is clearly better. */
-export function leadSwap(team: readonly Mon[], vs: readonly string[] = []): { from: number; to: number; why: string } | null {
+export function leadSwap(
+  team: readonly Mon[],
+  vs: readonly string[] = [],
+): { from: number; to: number; why: string } | null {
   if (team.length < 2) return null;
   const order = desiredOrder(team, vs);
   const lead = order[0]!;
