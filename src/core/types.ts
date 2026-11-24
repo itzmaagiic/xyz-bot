@@ -92,6 +92,8 @@ export type RunMode = 'story' | 'tower' | 'challenge' | 'none';
 export interface RunState {
   team: Mon[];
   items: string[];
+  /** bag contents in order (index = bag index) */
+  bag: { id: string; usable: boolean }[];
   badges: number;
   maxTeamSize: number;
   currentMap: number;
@@ -139,7 +141,7 @@ export type ScreenKind =
   | 'unknown';
 
 export type OverlayKind =
-  'tutorial' | 'move-tutor' | 'item-equip' | 'evolution' | 'misclick-confirm' | 'unknown-modal' | null;
+  'tutorial' | 'move-tutor' | 'item-equip' | 'usable-item' | 'evolution' | 'misclick-confirm' | 'unknown-modal' | null;
 
 export interface ScreenInfo {
   kind: ScreenKind;
@@ -173,6 +175,8 @@ export type Decision =
   | { kind: 'swapTeam'; from: number; to: number; where: 'map' | 'elite-prep'; why: string }
   /** sequence of "swap lead with slot k" presses (Shift+k) realising a full battle order */
   | { kind: 'reorder'; swaps: number[]; target: number[]; why: string }
+  /** open a bag item (use/equip dialog) – the game only opens it via a pointer-capture gesture */
+  | { kind: 'openBag'; index: number; itemId: string; why: string }
   | { kind: 'wait'; ms: number; why: string }
   | { kind: 'pause'; why: string }
   | { kind: 'stop'; why: string; result?: 'win' | 'loss' };

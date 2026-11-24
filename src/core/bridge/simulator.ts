@@ -69,17 +69,19 @@ function gen(s: any): number {
  */
 async function bossTeamRaw(ahead = 0): Promise<{ name: string; type: string | null; team: any[] } | null> {
   const s = state;
+  if (!s) return null;
+  if (s.currentMap >= 8) return bossAt(8, s.eliteIndex + ahead);
+  return s.currentMap + ahead >= 8 ? bossAt(8, 0) : bossAt(s.currentMap + ahead, 0);
+}
+
+async function bossAt(
+  mapIdx: number,
+  eliteIdx: number,
+): Promise<{ name: string; type: string | null; team: any[] } | null> {
+  const s = state;
   if (!s || s.isEndlessMode || s.inSubMap || s.rankedMode) return null;
   const g = gen(s);
   const mult = s.challengeLevelMult || 1;
-  let mapIdx = s.currentMap + ahead;
-  let eliteIdx = s.eliteIndex;
-  if (s.currentMap >= 8) {
-    eliteIdx = s.eliteIndex + ahead;
-    mapIdx = 8;
-  } else if (mapIdx >= 8) {
-    eliteIdx = 0;
-  }
   if (mapIdx >= 8) {
     if (g === 2 || g === 6) return null; // separate gauntlet implementations – not simulated (yet)
     const list = g === 5 ? UNOVA_ELITE_4 : g === 4 ? SINNOH_ELITE_4 : g === 3 ? HOENN_ELITE_4 : ELITE_4;
@@ -114,6 +116,33 @@ function battleConfig(): any {
   return cfg;
 }
 
+/**
+ * The fights that must be won in a row: a single gym leader, or – on the last map – every remaining Elite Four
+ * member plus the champion (doElite4 runs them back to back without healing).
+ */
+async function bossChain(ahead = 0): Promise<{ name: string; teams: any[][] } | null> {
+  const s = state;
+  if (!s) return null;
+  const g = gen(s);
+  const gauntlet = g !== 2 && g !== 6;
+  if (s.currentMap < 8 && s.currentMap + ahead < 8) {
+    const b = await bossAt(s.currentMap + ahead, 0);
+    return b ? { name: b.name, teams: [b.team] } : null;
+  }
+  if (!gauntlet || (s.currentMap >= 8 && ahead > 0)) return null;
+  const start = s.currentMap >= 8 ? s.eliteIndex : 0;
+  const teams: any[][] = [];
+  let name: string | null = null;
+  for (let i = start; i < start + 8; i++) {
+    const b = await bossAt(8, i);
+    if (!b) break;
+    teams.push(b.team);
+    name ??= b.name;
+  }
+  if (!teams.length) return null;
+  return { name: teams.length > 1 ? `${name} +${teams.length - 1}` : String(name), teams };
+}
+
 /** Team as it would look after `boost` more levels (only living members level up – like applyLevelGain). */
 export function projectTeam(team: any[], boost: number, heal: boolean): any[] {
   return clone(team).map((m: any) => {
@@ -142,9 +171,10 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
   const out: SimResult = { boss: null, scenarios: [], restored: false };
   try {
     const raw = await bossTeamRaw(req.ahead ?? 0);
-    if (!raw) return out;
+    const chain = await bossChain(req.ahead ?? 0);
+    if (!raw || !chain) return out;
     out.boss = {
-      name: String(raw.name),
+      name: chain.name,
       type: raw.type,
       team: raw.team.map((m: any) => ({
         speciesId: m.speciesId,
@@ -158,9 +188,6 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
     const orders = req.orders?.length ? req.orders : [team.map((_: any, i: number) => i)];
     const boosts = req.boosts?.length ? req.boosts : [0];
     const n = Math.max(1, Math.min(200, req.n ?? 24));
-    const cfg = battleConfig();
-    const items = state.items || [];
-    const passives = state.passives || [];
     for (const boost of boosts) {
       const projected = projectTeam(team, boost, !!req.heal);
       for (const order of orders) {
@@ -170,10 +197,8 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
         for (let k = 0; k < n; k++) {
           seedRng((seed0 ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0);
           const p = clone(ordered);
-          if (typeof applyMegaEvolution === 'function') p.forEach((m: any) => applyMegaEvolution(m));
-          const r = runBattle(p, clone(raw.team), clone(items), [], null, cfg, clone(passives));
-          if (r?.playerWon) wins++;
-          alive += (r?.pTeam ?? []).filter((m: any) => m.currentHp > 0).length;
+          if (fightChain(p, chain.teams)) wins++;
+          alive += p.filter((m: any) => m.currentHp > 0).length;
         }
         out.scenarios.push({ boost, order, heal: !!req.heal, winRate: wins / n, avgAlive: alive / n });
       }
@@ -343,18 +368,12 @@ export interface CatchSimResult {
   restored: boolean;
 }
 
-async function winRateVs(team: any[], enemy: any[], n: number, salt: number): Promise<number> {
-  const cfg = battleConfig();
-  const items = state.items || [];
-  const passives = state.passives || [];
+function chainRate(team: any[], teams: any[][], n: number, salt: number): number {
   const base = getRngSeed();
   let wins = 0;
   for (let k = 0; k < n; k++) {
     seedRng((base ^ Math.imul(k + salt, 0xc2b2ae35)) >>> 0);
-    const p = clone(team);
-    if (typeof applyMegaEvolution === 'function') p.forEach((m: any) => applyMegaEvolution(m));
-    const r = runBattle(p, clone(enemy), clone(items), [], null, cfg, clone(passives));
-    if (r?.playerWon) wins++;
+    if (fightChain(clone(team), teams)) wins++;
   }
   return wins / n;
 }
@@ -370,8 +389,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
   const out: CatchSimResult = { options: [], restored: false };
   try {
     const offer: any[] = state.savedCatch?.instances ?? [];
-    const cur = await bossTeamRaw(0);
-    const next = await bossTeamRaw(1);
+    const cur = await bossChain(0);
+    const next = await bossChain(1);
     if (!offer.length || !cur) return out;
     const boost = req.boost ?? 4;
     const n = Math.max(4, Math.min(60, req.n ?? 20));
@@ -388,8 +407,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
           t[lo] = mon;
         }
       }
-      const curRate = await winRateVs(projectTeam(t, boost, false), cur.team, n, 11 + c);
-      const nextRate = next ? await winRateVs(projectTeam(t, boost + 8, true), next.team, n, 101 + c) : 0;
+      const curRate = chainRate(projectTeam(t, boost, false), cur.teams, n, 11 + c);
+      const nextRate = next ? chainRate(projectTeam(t, boost + 8, true), next.teams, n, 101 + c) : 0;
       t = [];
       out.options.push({ index: c, current: curRate, next: nextRate, value: curRate + 0.6 * nextRate });
     }
@@ -448,6 +467,12 @@ function fightInto(team: any[], enemy: any[]): boolean {
   return true;
 }
 
+/** Fights a chain in a row (no healing in between); true only if every fight is won. */
+function fightChain(team: any[], teams: any[][]): boolean {
+  for (const enemy of teams) if (!fightInto(team, enemy)) return false;
+  return true;
+}
+
 async function sampleCatch(node: any): Promise<any | null> {
   const s = state;
   const lvl = s.currentMap === 0 ? Math.max(4, getLevelForNode(node)) : getLevelForNode(node);
@@ -474,8 +499,8 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
   try {
     const s = state;
     if (!s?.map?.nodes || s.isEndlessMode) return out;
-    const boss = await bossTeamRaw(0);
-    const next = await bossTeamRaw(1);
+    const boss = await bossChain(0);
+    const next = await bossChain(1);
     const n = Math.max(2, Math.min(40, req.n ?? 12));
     const nextGain = req.nextGain ?? 6;
     for (let pi = 0; pi < req.paths.length; pi++) {
@@ -509,7 +534,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
           } else if (kind === 'pokecenter') {
             team.forEach((m) => (m.currentHp = m.maxHp));
           } else if (kind === 'boss') {
-            if (!boss || !fightInto(team, boss.team)) {
+            if (!boss || !fightChain(team, boss.teams)) {
               alive = !boss;
               break;
             }
@@ -523,7 +548,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
           // next map: assume a heal at some point and `nextGain` levels for everyone still standing
           const t2 = team.map((m) => ({ ...m, currentHp: m.maxHp }));
           t2.forEach((m) => levelUp(m, nextGain));
-          if (fightInto(t2, next.team)) nextWins++;
+          if (fightChain(t2, next.teams)) nextWins++;
         }
       }
       out.results.push({

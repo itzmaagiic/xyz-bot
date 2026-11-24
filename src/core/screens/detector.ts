@@ -47,6 +47,7 @@ const KNOWN_OVERLAYS: { match: (el: Element) => boolean; kind: Exclude<OverlayKi
   { match: (el) => el.id === 'tutorial-overlay', kind: 'tutorial' },
   { match: (el) => el.id === 'item-equip-modal' && !!el.querySelector('[data-tutor]'), kind: 'move-tutor' },
   { match: (el) => el.id === 'item-equip-modal', kind: 'item-equip' },
+  { match: (el) => el.id === 'usable-item-modal', kind: 'usable-item' },
   { match: (el) => el.id === 'evo-overlay' || el.id === 'eevee-choice-overlay', kind: 'evolution' },
   { match: (el) => el.id === 'misclick-confirm-modal', kind: 'misclick-confirm' },
 ];
@@ -93,6 +94,7 @@ export function detectOverlay(doc: Document): { kind: OverlayKind; id: string | 
   for (const id of [
     'tutorial-overlay',
     'item-equip-modal',
+    'usable-item-modal',
     'evo-overlay',
     'eevee-choice-overlay',
     'misclick-confirm-modal',
