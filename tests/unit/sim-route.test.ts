@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { FLAGS } from '../../src/core/flags';
 import {
   chooseCatchSim,
   levelFactor,
@@ -127,6 +128,12 @@ describe('catch by simulation', () => {
 });
 
 describe('multiplicative risk value (run success is a product over maps)', () => {
+  beforeAll(() => {
+    FLAGS.multiplicative = true;
+  });
+  afterAll(() => {
+    FLAGS.multiplicative = false;
+  });
   const map: GameMap = {
     mapIndex: 0,
     nodes: {

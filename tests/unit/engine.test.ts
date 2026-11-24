@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FLAGS } from '../../src/core/flags';
 import { detectScreen } from '../../src/core/screens/detector';
 import { DEFAULT_SETTINGS, normalizeSettings } from '../../src/core/settings';
 import { parsePokeCard, readCards, speciesFromSprite } from '../../src/core/state/dom-reader';
@@ -117,7 +118,8 @@ describe('DecisionEngine on real snapshots', () => {
       selector: '#usable-item-modal .equip-pokemon-row[data-idx="1"]',
     });
   });
-  it('trade: only a far-behind member is traded, otherwise skip', () => {
+  it('trade (flag): only a far-behind member is traded, otherwise skip', () => {
+    FLAGS.trade = true;
     const doc = loadFixture('trade');
     const n = doc.querySelectorAll('#trade-team-list .trade-member-row').length;
     const team = Array.from({ length: n }, (_, i) => mon({ speciesId: 10 + i, level: 14 }));
@@ -127,6 +129,8 @@ describe('DecisionEngine on real snapshots', () => {
       selector: '#trade-team-list .trade-member-row',
       index: 2,
     });
+    FLAGS.trade = false;
+    expect(decide(gs(doc, baseRun({ team })), doc, s, newMemory())).toMatchObject({ selector: '#btn-skip-trade' });
   });
   it('unknown modal → pause', () => {
     const doc = loadFixture('settings-modal');
