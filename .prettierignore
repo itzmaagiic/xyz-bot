@@ -1,0 +1,9 @@
+dist
+tests/fixtures
+node_modules
+package-lock.json
+# Gedächtnis- und Anforderungsdateien nie automatisch umformatieren (Einrichtungsauftrag, CLAUDE.md „Gedächtnis schützen“)
+CLAUDE.md
+README.md
+docs/*.md
+.claude/
