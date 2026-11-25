@@ -131,7 +131,7 @@ function main() {
   const files = [
     ...['CLAUDE.md', 'README.md', 'CHANGELOG.md'].map((f) => join(root, f)),
     ...walk(join(root, 'docs'), ['.md']),
-    ...walk(join(root, '.claude'), ['.md', '.sh', '.json']),
+    ...walk(join(root, '.claude'), ['.md', '.sh', '.json', '.txt']),
     ...['src', 'tests', 'scripts', 'eslint-rules'].flatMap((d) => walk(join(root, d), ['.ts', '.mjs', '.sh'])),
   ];
   const others = [];

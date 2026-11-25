@@ -13,6 +13,14 @@ PROGRESS="$ROOT/docs/PROGRESS.md"
 REQS="$ROOT/docs/REQUIREMENTS.md"
 MAX_BYTES="${HOOK_MAX_BYTES:-9000}"
 
+# Befehl mit Zeitlimit (Linux: timeout, macOS ohne coreutils: perl alarm)
+run_limited() {
+  local secs="$1"; shift
+  if command -v timeout >/dev/null 2>&1; then timeout "$secs" "$@"
+  elif command -v perl >/dev/null 2>&1; then perl -e 'alarm shift; exec @ARGV' "$secs" "$@"
+  else "$@"; fi
+}
+
 DETAIL="$(mktemp 2>/dev/null || echo /tmp/pk-hook-detail.$$)"
 trap 'rm -f "$DETAIL"' EXIT
 {
@@ -21,6 +29,29 @@ trap 'rm -f "$DETAIL"' EXIT
   branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
   last="$(git -C "$ROOT" log -1 --format='%h %s (%cr)' 2>/dev/null || echo '?')"
   echo "Git: Branch $branch · letzter Commit: $last"
+  # R-247: Branches auf origin, deren Stand nicht in HEAD steckt – Vorarbeit nicht übersehen (D-016).
+  # Höchstens 5 s, ohne Passwortabfrage; ohne Netz nur ein Hinweis, nie ein Abbruch.
+  if git -C "$ROOT" remote get-url origin >/dev/null 2>&1; then
+    if refs="$(GIT_TERMINAL_PROMPT=0 run_limited 5 git -C "$ROOT" ls-remote --heads origin 2>/dev/null)"; then
+      # bekannte, erledigte Branches: "name  Begründung" je Zeile, # = Kommentar
+      HANDLED="$ROOT/.claude/hooks/branches-handled.txt"
+      unmerged=""; handled=""
+      while read -r sha ref; do
+        [ -z "$sha" ] && continue
+        if ! git -C "$ROOT" cat-file -e "$sha^{commit}" 2>/dev/null \
+          || ! git -C "$ROOT" merge-base --is-ancestor "$sha" HEAD 2>/dev/null; then
+          name="${ref#refs/heads/}"
+          why="$( [ -f "$HANDLED" ] && awk -v n="$name" '$1 == n { $1 = ""; sub(/^ +/, ""); print; exit }' "$HANDLED" )"
+          if [ -n "$why" ]; then handled="$handled${handled:+; }$name (${sha:0:7}): $why"
+          else unmerged="$unmerged${unmerged:+, }$name (${sha:0:7})"; fi
+        fi
+      done <<< "$refs"
+      [ -n "$unmerged" ] && echo "⚠️ Remote-Branches mit Stand, der nicht in HEAD enthalten ist: $unmerged → prüfen und ggf. mergen (D-016, R-247)"
+      [ -n "$handled" ] && echo "ℹ️ Bekannte Remote-Branches, nicht mergen: $handled"
+    else
+      echo "Hinweis: Remote-Branches nicht geprüft (kein Zugriff auf origin)."
+    fi
+  fi
   echo
 
   if [ -f "$REQS" ]; then
