@@ -126,3 +126,17 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 - Entscheidung: Die Cloud-Umgebung „xyz-bot“ hat ein Setup-Skript: `npm ci`, `npx playwright install webkit` und `npx playwright install-deps webkit`, mit `PLAYWRIGHT_BROWSERS_PATH` als Standard `/opt/pw-browsers`. Es läuft beim Bau eines frischen Containers. Der SessionStart-Hook bleibt read-only (D-002).
 - Begründung: Die apt-Installation dauert beim ersten Mal mehrere Minuten und braucht Root. Im Hook würde sie jeden Start bremsen und den Hook mit Seiteneffekten belasten. Das Setup-Skript ist dafür gedacht, und das Ergebnis wird mit dem Container gecacht. Lokal (macOS/Windows) installiert man einmal per `npx playwright install webkit`.
 - Nachtrag zu D-011: WebKit läuft seit 2026-11-25 in der Cloud. E2E: 17 bestanden, 1 gewollt übersprungen (R-065).
+
+**D-027 – Zielwert für „starke Runs“ (R-230)** (2026-11-25)
+- **Baseline:** Der Vorgänger, Variante A, erreichte über 12 Runs Story Classic Kanto Ø 3,2 Orden, dazu später 1 Champion-Sieg in einer Sitzung mit 13 Runs (STRATEGY.md). In Phase 1 lief der Live-Lauf 2 (frisches Profil) über 4 Runs: 0 Siege, 3 Orden, dann ein Hänger am Kampfende (PROGRESS).
+- **Ziel für P4**, Story Classic Kanto, frisches Profil, Standardprofil „Ausgewogen“, mindestens **20 Runs** am Stück:
+  - Ø ≥ 5 Orden pro Run
+  - Siegquote gegen den Champ ≥ 15 %, also mindestens 3 Siege
+  - **0 Hänger**, d. h. keine Pause außer den gewollten (Stopp-Bedingung, unbekannter Bildschirm mit Meldung)
+  - Jeder Run ist nach D-005 unter `runs/` geloggt.
+- Für Nuzlocke, Battle Tower und Challenges werden die Zielwerte in P4 nach einer ersten Messung mit eigenem D-Eintrag festgelegt.
+- Begründung: Das Ziel ist ehrgeizig, aber messbar. Gegenüber der Baseline bedeutet es grob +50 % bei den Orden und reproduzierbare Siege statt eines Einzelfalls. „Keine Hänger“ ist Voraussetzung für jede Messung.
+
+**D-028 – R-020 (Plugin-Aktivierung über `.claude/settings.json`) nach P7 verschoben** (2026-11-25)
+- Entscheidung: R-020 trägt jetzt `[P7]`. Der unterscheidende Nachweis gelingt nur in einer lokalen Claude-Code-Session des Nutzers (`/plugin` zeigt beide Plugins als „project“ aktiv). Das gehört in die Abnahme vor dem Release.
+- Begründung: In der Cloud kommen die Plugins zusätzlich über den Konto-Sync. Damit lässt sich hier nicht unterscheiden, ob die Projekt-Einstellung wirkt (D-021). Die Syntax ist nach der offiziellen Doku geprüft (D-001), und die Funktion ist in der Cloud gegeben, das Risiko ist also gering.

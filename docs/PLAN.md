@@ -21,7 +21,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 1 – Bestandsaufnahme und Aufklärung
 **Ziel:** Den übernommenen Code mit Nachweisen gegen alle R-IDs abgleichen und die Aufklärungslücken schließen. Für Bildschirme, die noch nicht live gesehen wurden, gilt: erst Aufklärung, dann Logik (R-224).
-**R-IDs:** R-020, R-022, R-027, R-036, R-064 bis R-073, R-075 bis R-077, R-224
+**R-IDs:** R-022, R-027, R-036, R-064 bis R-073, R-075 bis R-077, R-224
 **Abnahmekriterien**
 - **Bestandsaufnahme:** Für jede R-ID ist geprüft, ob und wo sie im übernommenen Code umgesetzt ist. Der Status ist mit Nachweis gesetzt (✅ nur mit Test, Screenshot oder Prüfprotokoll, sonst 🟡 mit Fundstelle). `npm test`, `npm run e2e` und ein Live-Test sind gelaufen, die Ergebnisse stehen in PROGRESS.md. Der Zielwert für R-230 ist festgelegt.
 - Die Plugins und die Agententypen `requirements-reviewer`, `ui-reviewer` und `strategy-reviewer` sind als ladbar bestätigt (R-020, R-022).
@@ -82,7 +82,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 7 – Lieferung
 **Ziel:** Der Bot ist fertig verpackt, dokumentiert und sicher veröffentlichbar.
-**R-IDs:** R-144 (optional), R-202 bis R-206, R-210, R-244
+**R-IDs:** R-020, R-144 (optional), R-202 bis R-206, R-210, R-244
 **Abnahmekriterien**
 - `dist/chrome/` plus zip, `dist/pokelike-bot.user.js` und `.meta.js` sind eingecheckt. Dafür muss `.gitignore` angepasst werden, denn `dist/` ist dort derzeit ausgeschlossen. Die GitHub-raw-Links funktionieren, und die Version ist überall gleich und erhöht.
 - README (Deutsch), `docs/GAME_RECON.md`, `docs/STRATEGY.md`, `docs/UI.md`, `docs/screenshots/` und `CHANGELOG` sind vollständig.
