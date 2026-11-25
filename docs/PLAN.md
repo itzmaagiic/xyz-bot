@@ -19,7 +19,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - [x] Der Repo-Sicherheitsscan über alle Refs ist erledigt, das Urteil ist mitgeteilt (R-209). Fixtures liegen nur anonymisiert vor, private Stände sind gitignored (R-211, R-240). Das Bereinigen des Verlaufs ist nach P7 abgespalten (R-244, D-022).
 - [x] Das Review-Tor ist bestanden (R-243): drei Runden, alle drei Reviewer. Der requirements-reviewer meldete „bestanden“, ui-reviewer und strategy-reviewer „nicht anwendbar“.
 
-## Phase 1 – Bestandsaufnahme und Aufklärung
+## Phase 1 – Bestandsaufnahme und Aufklärung ✅ (Session 1, 2026-11-25)
 **Ziel:** Den übernommenen Code mit Nachweisen gegen alle R-IDs abgleichen und die Aufklärungslücken schließen. Für Bildschirme, die noch nicht live gesehen wurden, gilt: erst Aufklärung, dann Logik (R-224).
 **R-IDs:** R-022, R-027, R-036, R-064, R-065, R-067 bis R-069, R-071, R-072, R-076 (sechs Aufklärungspunkte mit Restlücken nach P3 verschoben, siehe D-029)
 **Abnahmekriterien**
