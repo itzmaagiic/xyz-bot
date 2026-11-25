@@ -13,10 +13,9 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 3. **Phase 1, Aufklärung:** WebKit samt Bibliotheken lauffähig machen (D-011, R-065). Die offenen Fragen in `docs/GAME_RECON.md` §7 und §10.5 klären. Den Zielwert für „starke Runs“ festlegen (R-230).
 4. Für Phase 1 einen Superpowers-Plan anlegen (`docs/superpowers/plans/`) mit den R-IDs aus PLAN.md.
 
-## Entscheidungen des Nutzers, die offen sind (nicht blockierend)
-- **Git-Verlauf vor der Veröffentlichung:** Commit `c8c13a8` enthält die Gmail-Adresse als Autor, Commit `ad723db` die bereinigte volle Fassung des Spielstands (R-209, R-240). Entfernen geht nur per Rewrite mit Force-Push auf `main`. Das braucht die ausdrückliche Zustimmung des Nutzers.
-- **Alter Branch `claude/pokelike-bot-extension-skalzp`:** Er ist vollständig in `main` übernommen (D-016). Löschen auf GitHub nur mit Zustimmung.
-- **Pokédollar:** Laut D-017 gilt die strengere frühere Regel, also Ausgaben nur mit Freigabe. Der Nutzer kann das lockern.
+## Entscheidungen (Nutzer hat delegiert, D-023)
+- **Pokédollar:** Die strenge Regel bleibt, Ausgaben nur mit Freigabe, Budget-Standard 0. **Erledigt.**
+- **Git-Verlauf bereinigen und alten Branch löschen:** Beides ist **entschieden und als Probelauf geprüft**. Die Ausführung ist blockiert, weil die Umgebung für den Force-Push auf `main` eine **ausdrückliche Freigabe** des Nutzers verlangt. Bis dahin bleibt R-244 offen. Spätestens vor der Veröffentlichung (P7) erledigen. Das Vorgehen steht in D-023.
 
 ## Vorbefunde der Reviewer für spätere Phasen (Review-Tor P0, Runde 3)
 **strategy-reviewer** (für P0 nicht anwendbar, weil `runs/` fehlt):
