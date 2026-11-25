@@ -47,5 +47,5 @@ Stand 2026-11-25 (Phase 2). Diese Datei ist die Grundlage für `ALLOWED_GM` und 
 | `@require` | **nicht verwendet** | ✓ | Alles ist gebündelt (R-107) |
 
 ## Offene Punkte
-- Live-Test auf einem echten iPhone mit Userscripts (R-108, R-109, P3/P6). Die Playwright-Tests mit WebKit emulieren die GM-API nur über einen Shim (`tests/e2e/userscript-host.ts`).
+- Abnahme auf einem echten iPhone mit Userscripts (R-252, P7). Die Playwright-Tests mit WebKit emulieren die GM-API nur über einen Shim (`tests/e2e/userscript-host.ts`).
 - Ob `GM.info` in Tampermonkey und Violentmonkey ohne `@grant` verfügbar ist, belegen die Typdefinitionen nicht. Der Bot nutzt `GM.info` derzeit nicht. Sollte er es künftig nutzen, ist das in den offiziellen Docs zu prüfen (sie sind aus der Cloud-Umgebung nicht erreichbar).
