@@ -1,0 +1,107 @@
+{
+ "fetchedAt": "2026-11-25T21:44:44.733Z",
+ "site": "https://pokelike-guide.fr",
+ "pages": [
+  {
+   "url": "https://pokelike-guide.fr/en/",
+   "status": 200,
+   "title": "Pokelike Tips, Guide & Walkthrough — Pokédex, Battle Tower",
+   "textLength": 1342,
+   "tables": 0,
+   "headings": [
+    "Where are you in the game?",
+    "Pokelike  Tips & Tricks",
+    "Pick your mode",
+    "Normal",
+    "Nuzlocke",
+    "Battle Tower",
+    "Where to start",
+    "Guides",
+    "Legal"
+   ]
+  },
+  {
+   "url": "https://pokelike-guide.fr/en/nuzlocke/",
+   "status": 200,
+   "title": "Nuzlocke — Pokelike Guide",
+   "textLength": 3175,
+   "tables": 0,
+   "headings": [
+    "Where are you in the game?",
+    "Nuzlocke",
+    "Nuzlocke Mode",
+    "The two rules",
+    "How it changes play",
+    "Read these first",
+    "Guides",
+    "Legal"
+   ]
+  },
+  {
+   "url": "https://pokelike-guide.fr/en/mechanics/",
+   "status": 200,
+   "title": "Mechanics — Pokelike Guide",
+   "textLength": 3225,
+   "tables": 0,
+   "headings": [
+    "Where are you in the game?",
+    "Mechanics",
+    "The levers you actually control",
+    "The four systems that decide fights",
+    "Why they matter everywhere",
+    "Where to start",
+    "Guides",
+    "Legal"
+   ]
+  },
+  {
+   "url": "https://pokelike-guide.fr/en/donnees/",
+   "status": 200,
+   "title": "Data — Pokelike Guide",
+   "textLength": 3219,
+   "tables": 0,
+   "headings": [
+    "Where are you in the game?",
+    "Data",
+    "Game reference",
+    "The three references",
+    "Where to start",
+    "Guides",
+    "Legal"
+   ]
+  },
+  {
+   "url": "https://pokelike-guide.fr/en/battle-tower/",
+   "status": 200,
+   "title": "Battle Tower Guide — All 5 Regions — Pokelike Guide",
+   "textLength": 4739,
+   "tables": 0,
+   "headings": [
+    "Where are you in the game?",
+    "Battle Tower Guide — All 5 Regions",
+    "Battle Tower",
+    "How the Tower works",
+    "Where to start",
+    "Guides",
+    "Legal"
+   ]
+  },
+  {
+   "url": "https://pokelike-guide.fr/en/normal/",
+   "status": 200,
+   "title": "Pokelike Normal Mode Guide — Gen I–III Runs",
+   "textLength": 3918,
+   "tables": 0,
+   "headings": [
+    "Where are you in the game?",
+    "Pokelike Normal Mode Guide — Gen I–III Runs",
+    "Normal Mode",
+    "Pick your generation",
+    "What actually decides a run",
+    "Where to start",
+    "Guides",
+    "Legal"
+   ]
+  }
+ ]
+}

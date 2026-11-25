@@ -30,7 +30,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - [x] Geklärt sind DOM oder Canvas, das Framework, die CSP (mit Test, ob ein Seiten-Skript per script-Element läuft), der globale Zustand bzw. localStorage/IndexedDB, das Auslesen von Team und Karte, die Spieleinstellungen und die Spielversion. Vieles davon steht schon in GAME_RECON §1 bis §9 und ist hier nur gegenzuprüfen. Die offenen Fragen aus §7 und §10.5 sind beantwortet oder gebündelt nach §13 überführt und den Phasen P3 und P4 zugeordnet (D-029).
 - [x] Echte, bereinigte DOM-Snapshots liegen für 16 von 20 Bildschirmen vor, dazu challenge-select und weekly-select. *Der Rest ist nach P3 verschoben (D-029).*
 - [x] Jede Angabe aus HA §1 ist als bestätigt, teilweise oder offen markiert (§10.1). Die Wiki-Quellen und pokelike-guide.fr sind ausgewertet (§11).
-- Die offenen Fragen sind in GAME_RECON.md gelistet und, wo möglich, beantwortet.
+- [x] Die offenen Fragen stehen gebündelt in GAME_RECON §13 und sind P3 und P4 zugeordnet (D-029).
 
 ## Phase 2 – Projektgerüst und Build-Pipeline
 **Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Der übernommene Stand (D-016) baut beide Ziele bereits. Hier werden Gerüst und Pipeline mit Nachweis abgenommen und die Lücken geschlossen, z. B. WebKit im SessionStart-Hook, Doku-Checks und iPhone-Viewport in `playwright.config.ts`.
