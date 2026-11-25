@@ -52,7 +52,7 @@ Bewertung einer Route: `P·100 + 60·P·P(nächster Boss) + Boni (Item 4, Move-T
 
 ### Erster bestätigter Champion-Sieg
 
-Variante H (Commit `1ac0cec`: Pfadsimulation mit Zwei-Map-Horizont und Ketten-Fortschritt), Run 13 einer Session,
+Variante H (Commit `07f98ec`: Pfadsimulation mit Zwei-Map-Horizont und Ketten-Fortschritt), Run 13 einer Session,
 Sieg im dauerhaften Zähler des Overlays („13 · 1 Sieg · 12 Niederlagen“) und Sieg-Bildschirm erkannt.
 
 - Map 9: Legendäres **Lavados** unterwegs gewonnen und ins Team geholt, Pokécenter direkt vor den Top 4.

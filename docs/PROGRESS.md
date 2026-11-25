@@ -15,7 +15,8 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 
 ## Entscheidungen (Nutzer hat delegiert, D-023)
 - **Pokédollar:** Die strenge Regel bleibt, Ausgaben nur mit Freigabe, Budget-Standard 0. **Erledigt.**
-- **Git-Verlauf bereinigen und alten Branch löschen:** Beides ist **entschieden und als Probelauf geprüft**. Die Ausführung ist blockiert, weil die Umgebung für den Force-Push auf `main` eine **ausdrückliche Freigabe** des Nutzers verlangt. Bis dahin bleibt R-244 offen. Spätestens vor der Veröffentlichung (P7) erledigen. Das Vorgehen steht in D-023.
+- **Git-Verlauf bereinigt** (nach ausdrücklicher Freigabe, D-024). In `main` und im Session-Branch gibt es keine private Mailadresse und keinen Spielstand mehr. **Erledigt.**
+- **Alten Branch `claude/pokelike-bot-extension-skalzp` löschen: Das muss der Nutzer tun.** Der Git-Proxy der Session lehnt das Löschen mit 403 ab. Der Branch enthält noch den alten Initial-Commit mit der privaten Adresse. Weg: auf GitHub unter „Branches“ das Papierkorb-Symbol. Danach R-244 auf ✅ setzen.
 
 ## Vorbefunde der Reviewer für spätere Phasen (Review-Tor P0, Runde 3)
 **strategy-reviewer** (für P0 nicht anwendbar, weil `runs/` fehlt):
@@ -49,8 +50,10 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1: **Git-Verlauf bereinigt** (D-024): private Autor-Adresse ersetzt, Spielstand-Datei aus dem Verlauf entfernt, `main` und Session-Branch per `--force-with-lease` neu gesetzt, Tree unverändert. Die Commit-Hashes in den Docs sind angepasst. Das Löschen des alten Branches lehnt der Proxy ab (403), das übernimmt der Nutzer.
+- 2026-11-25 · Session 1: Delegierte Entscheidungen (D-023): Pokédollar bleibt streng, Verlauf wird bereinigt, alter Branch wird gelöscht.
 - 2026-11-25 · Session 1: **Phase 0 abgeschlossen, Review-Tor bestanden (R-243).** Runde 3 lief erstmals mit echten Agententypen (R-022 ✅). requirements-reviewer: „bestanden“, B1 bis B5 behoben. ui-reviewer und strategy-reviewer: „für P0 nicht anwendbar“, ihre Vorbefunde stehen oben. Aktuelle Phase ist jetzt P1.
-- 2026-11-25 · Session 1: Review-Tor P0, Runde 2: 6 Blocker und 14 Hinweise eingearbeitet (`5d3f7b0`). Dazu gehören die Abspaltung von R-244 (D-022), das Urteil in R-209, die Simulations-Ausnahme in D-018, das wiederhergestellte Run-Menü samt Taste R in GAME_RECON §10.6 und die neuen Punkte R-244 bis R-248.
+- 2026-11-25 · Session 1: Review-Tor P0, Runde 2: 6 Blocker und 14 Hinweise eingearbeitet (`fd3422f`). Dazu gehören die Abspaltung von R-244 (D-022), das Urteil in R-209, die Simulations-Ausnahme in D-018, das wiederhergestellte Run-Menü samt Taste R in GAME_RECON §10.6 und die neuen Punkte R-244 bis R-248.
 - 2026-11-25 · Session 1: **Vorgänger-Branch `claude/pokelike-bot-extension-skalzp` übernommen** (Merge, D-016), nachdem der requirements-reviewer ihn gefunden hatte. Vorher geprüft: `npm ci`, `tsc` mit 0 Fehlern, `vitest` 98/98 grün, `npm run build` mit beiden Zielen. Docs zusammengeführt (GAME_RECON §1–9 vom Vorgänger plus §10, UI.md, README, CLAUDE.md). Die alten Anforderungen R1–R6 stehen als R-233 bis R-242 in REQUIREMENTS, die Review-Funde als R-220 bis R-232. Neue Entscheidungen D-016 bis D-021. Den Spielstand habe ich auf ein anonymisiertes Run-Beispiel reduziert, der volle Stand liegt nur privat (D-013).
 - 2026-11-25 · Session 1: Repo-Sicherheitsscan über **alle Refs** (237 Blobs), mit `detect-secrets` und Regex: keine Secrets. Personendaten nur in den Commit-Metadaten (`c8c13a8`), dazu der Spielverlauf in `ad723db` (R-209).
 - 2026-11-25 · Session 1: Review von Phase 0 durch den requirements-reviewer, als allgemeiner Subagent mit dessen Anweisungen. Er hat 10 Lücken, 2 unberechtigte ✅ und den übersehenen Branch gefunden. Alles ist eingearbeitet.
@@ -68,12 +71,12 @@ _Verweise wie (R4.2) beziehen sich auf die alten IDs, die Zuordnung zu den neuen
 - Recon aller Bildschirme, Fixtures, Versionserkennung v3.8 (R3.6, R3.5): `docs/GAME_RECON.md`.
 - Gerüst, Core, Overlay, Chrome- und Userscript-Ziel, Unit- und E2E-Tests, README (R2, R3, R6).
 - Simulation mit der Kampf-Engine des Spiels für Route, Bossreihenfolge, Fang und Top 4 (`docs/STRATEGY.md`).
-- Story: **erster bestätigter Champion-Sieg** (Commit 1ac0cec; Varianten-Messungen in `docs/STRATEGY.md`) (R4.1).
-- Challenges: Navigation, Orden-Stufe, PC-Starter, Relikte; die Simulation berücksichtigt Traits (007bcf6) (R4.2).
+- Story: **erster bestätigter Champion-Sieg** (Commit 07f98ec; Varianten-Messungen in `docs/STRATEGY.md`) (R4.1).
+- Challenges: Navigation, Orden-Stufe, PC-Starter, Relikte; die Simulation berücksichtigt Traits (ce01aac) (R4.2).
 - Relikte werden per Simulation gewählt: Angebot und Austausch nach simulierten Boss-Chancen mit den Hooks aus
-  `PASSIVE_ITEM_POOL`, mit Heuristik als Fallback (5eabb60) (R4.4).
+  `PASSIVE_ITEM_POOL`, mit Heuristik als Fallback (8f6590d) (R4.4).
 - Challenge-Starter vorab wählbar: Dropdown im Overlay mit dem PC aus dem Spielstand (nur gelesen) bzw. Dex-Nr. auf der
-  Optionsseite. Gewählt wird das stärkste Exemplar der Art (5eabb60) (R4.3).
+  Optionsseite. Gewählt wird das stärkste Exemplar der Art (8f6590d) (R4.3).
 - 2026-11-25: **Erster Sieg in einer Arena-Challenge** im Live-Test (Donnerorden, Mega Mewtwo Y, 6 Relikte, 6:52 min).
 - 2026-11-25: Der Bildschirm „Stufe geschafft“ (`endless-stage-complete`) ist automatisiert: Sieg zählen, dann zurück
   zu den Challenges (Tower: nächste Stufe).
