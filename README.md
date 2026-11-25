@@ -47,6 +47,9 @@ npm run build:userscript   # nur dist/pokelike-bot.user.js + .meta.js
 Im Dashboard **Neues Skript** wählen, den Inhalt von `dist/pokelike-bot.user.js` einfügen und speichern, oder die Datei
 per Drag & Drop in den Browser ziehen.
 
+Das Userscript nutzt nur die GM-Funktionen, die alle drei Manager gemeinsam haben (`GM.getValue`, `GM.setValue`,
+`GM.setClipboard`). Details: [`docs/USERSCRIPT_API.md`](docs/USERSCRIPT_API.md). Änderungen je Version: [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Bedienung
 
 - **Overlay** (beide Ziele): Start/Pause, Einzelschritt, Status (Bildschirm, letzte Entscheidung mit Begründung,
@@ -89,9 +92,11 @@ Details zum Spiel (Bildschirme, Selektoren, Datenquellen) stehen in [docs/GAME_R
 
 ```bash
 npm test          # Vitest: Detector, Parser, Engine, Strategie – gegen echte DOM-Snapshots (tests/fixtures/dom)
-npm run e2e       # Playwright: Chrome-Extension (entpackt), Userscript in Chromium (isolierte Welt) und WebKit/iPhone 13
+npm run e2e       # Playwright: Chrome-Extension (entpackt), Userscript Desktop 1440×900 und WebKit/iPhone (390×844, 390×664, SE)
 npm run e2e:live  # echter Lauf gegen pokelike.xyz mit geladener Extension (LIVE_MINUTES, optional PKBOT_SAVE)
 npm run lint && npm run typecheck
+npm run check:userscript  # Bundle- und Metadaten-Check des gebauten Userscripts (läuft auch im Build)
+npm run check:docs        # Konsistenz der Gedächtnis-Dateien (läuft auch in npm test)
 ```
 
 `PKBOT_SAVE` darf auf einen localStorage-Export **ohne** Cloud-Token zeigen. Er wird nur in ein Wegwerf-Profil geladen.

@@ -25,11 +25,11 @@ Den Umfang legt allein `docs/REQUIREMENTS.md` fest. Der Auftrag steht wörtlich 
 - **Nie Geheimnisse oder Personendaten committen**, weder Spielstände noch Tokens (`poke_save_token`, `poke_username` …), weder in Fixtures noch in Logs, Screenshots oder Exporten. Private Spielstände gehören nur nach `tests/fixtures/private/` (gitignored, R-148, R-240). Das Repo soll öffentlich werden.
 
 ## Befehle
-- `npm ci` · `npm run build` (beide Ziele) · `npm run build:chrome` · `npm run build:userscript` · `npm test` (Vitest) · `npm run e2e` · `npm run typecheck` · `npm run lint` · `npm run format`
+- `npm ci` · `npm run build` (beide Ziele, prüft das Userscript) · `npm run build:chrome` · `npm run build:userscript` · `npm run check:userscript` · `npm run check:docs` · `npm test` (Vitest, enthält `check:docs`) · `npm run e2e` · `npm run typecheck` · `npm run lint` · `npm run format`
 - Live-Test gegen pokelike.xyz: `npm run e2e:live`, das baut vorher selbst. Alternativ nach `npm run build:chrome`: `LIVE=1 LIVE_MINUTES=30 LIVE_MODE=challenge LIVE_CHAL=arena npx playwright test tests/e2e/live.spec.ts --trace off`.
 - Playwright: Chromium ist in der Cloud vorinstalliert (`/opt/pw-browsers`), daher **kein** `playwright install chromium`. WebKit und seine Bibliotheken folgen D-011. Die iPhone-Viewports stehen in `docs/UI.md` §1.
 - Stand 2026-11-25 (Session 1): `tsc` 0 Fehler, `vitest` 98/98, `npm run build`, `lint` und `prettier --check` grün. Stand 2026-11-25 (P1): `vitest` 111/111. `npx playwright test` ergab 17 bestanden und 1 gewollt übersprungen, auch WebKit/iPhone. In neuen Sessions installiert das Setup-Skript der Umgebung WebKit samt Bibliotheken (D-026). Fehlt es trotzdem: `npx playwright install webkit && npx playwright install-deps webkit`.
-- Doku-Checks: `scripts/check-hook-budget.sh` (Hook-Budget, R-232).
+- Doku-Checks: `npm run check:docs` (IDs, Tags gegen PLAN, Verweise, ✅ nur ohne Lücke, keine gelöschten IDs, R-246) und `scripts/check-hook-budget.sh` (Hook-Budget, R-232).
 
 ## Dokumente (Gedächtnis)
 | Datei | Zweck |
