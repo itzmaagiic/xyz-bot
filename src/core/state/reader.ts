@@ -3,6 +3,7 @@ import type { BridgeClient } from '../bridge/client';
 import { setRuntimeTypeChart } from '../data/typechart';
 import { detectScreen } from '../screens/detector';
 import type { BridgeSnapshot, GameState } from '../types';
+import { noteError } from '../log/note';
 
 export class StateReader {
   private chartLoaded = false;
@@ -19,7 +20,8 @@ export class StateReader {
       try {
         snap = await this.bridge.request<BridgeSnapshot>('snapshot', { typeChart: !this.chartLoaded });
         if (!this.chartLoaded && snap.typeChart) this.chartLoaded = setRuntimeTypeChart(snap.typeChart);
-      } catch {
+      } catch (e) {
+        noteError('reader:snapshot', e); // fall back to the DOM-only view
         snap = null;
       }
     }

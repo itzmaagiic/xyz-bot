@@ -1,4 +1,6 @@
 /** Ring-buffer logger shared by core and UI. */
+import { noteError } from './note';
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'decision';
 
 export interface LogEntry {
@@ -21,8 +23,8 @@ export class Logger {
     for (const s of this.subs) {
       try {
         s(e);
-      } catch {
-        /* subscriber errors must not break the bot */
+      } catch (err) {
+        noteError('logger:subscriber', err); // subscriber errors must not break the bot
       }
     }
   }
@@ -58,7 +60,8 @@ export class Logger {
 function safeJson(v: unknown): string {
   try {
     return JSON.stringify(v);
-  } catch {
+  } catch (e) {
+    noteError('logger:json', e);
     return String(v);
   }
 }

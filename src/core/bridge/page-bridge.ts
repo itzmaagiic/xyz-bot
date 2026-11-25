@@ -27,6 +27,7 @@ import {
   type BridgeRequest,
   type BridgeResponse,
 } from './protocol';
+import { noteError } from '../log/note';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare const state: any;
@@ -41,7 +42,8 @@ function g<T>(read: () => T): T | null {
   try {
     const v = read();
     return v === undefined ? null : v;
-  } catch {
+  } catch (e) {
+    noteError('page-bridge:read', e);
     return null;
   }
 }
@@ -229,6 +231,7 @@ export async function handle(req: BridgeRequest): Promise<BridgeResponse> {
         return { id: req.id, ok: false, error: 'unknown command' };
     }
   } catch (e) {
+    noteError(`page-bridge:${req.cmd}`, e);
     return { id: req.id, ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
@@ -242,7 +245,8 @@ export function installBridge(): void {
     let req: BridgeRequest;
     try {
       req = JSON.parse(detail);
-    } catch {
+    } catch (e) {
+      noteError('page-bridge:parse', e);
       return;
     }
     void handle(req).then((res) => document.dispatchEvent(new CustomEvent(RES_EVENT, { detail: JSON.stringify(res) })));

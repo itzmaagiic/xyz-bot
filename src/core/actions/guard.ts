@@ -1,3 +1,4 @@
+import { noteError } from '../log/note';
 /**
  * Safety guard for all input the bot sends (R-147, D-025).
  *
@@ -40,8 +41,9 @@ export function isForbiddenTarget(el: Element | null | undefined): string | null
   for (const sel of FORBIDDEN_TARGETS) {
     try {
       if (el.closest(sel)) return sel;
-    } catch {
+    } catch (e) {
       // an unsupported selector in some DOM implementation must not disable the other rules
+      noteError('guard:closest', e);
       continue;
     }
   }

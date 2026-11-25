@@ -4,6 +4,7 @@ import { READY_ATTR } from '../../core/bridge/protocol';
 import { copyViaDom } from '../clipboard';
 import { bindPageShortcuts, type Platform } from '../types';
 import type { ContentRequest, StatusReply } from './messages';
+import { noteError } from '../../core/log/note';
 
 const hasChrome = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
 
@@ -29,7 +30,8 @@ const platform: Platform = {
     try {
       const ok = await chrome.runtime.sendMessage({ type: 'pkbot:notify', title, body });
       return ok === true;
-    } catch {
+    } catch (e) {
+      noteError('content:notify', e); // caller falls back to an in-page toast
       return false;
     }
   },

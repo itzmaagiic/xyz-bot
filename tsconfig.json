@@ -14,7 +14,9 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "types": ["chrome", "node"],
-    "noEmit": true
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false
   },
-  "include": ["src", "tests", "scripts", "*.ts"]
+  "include": ["src", "tests", "scripts", "eslint-rules", "*.ts"]
 }

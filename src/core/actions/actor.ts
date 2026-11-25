@@ -1,5 +1,6 @@
 /** Actor: performs human-like DOM input. It does not decide anything and never touches game variables. */
 import { assertAllowedTargets, ForbiddenActionError, isKeyAllowed } from './guard';
+import { noteError } from '../log/note';
 
 export type Rng = () => number;
 
@@ -41,7 +42,8 @@ function fire(el: Element, type: string, x: number, y: number, extra: Partial<Po
 export function resolve(doc: Document, selector: string, index = 0): Element | null {
   try {
     return doc.querySelectorAll(selector)[index] ?? null;
-  } catch {
+  } catch (e) {
+    noteError('actor:resolve', e);
     return null;
   }
 }

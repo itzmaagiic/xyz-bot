@@ -1,6 +1,7 @@
 /** Pure decisions for challenge runs (Arena-Challenge, daily, weekly). */
 import { TYPES } from '../data/typechart';
 import type { Mon } from '../types';
+import { noteError } from '../log/note';
 
 export interface PcCard {
   speciesId: number;
@@ -82,7 +83,8 @@ export function readPcRoster(get: (key: string) => string | null): PcRosterEntry
   const json = (k: string): any => {
     try {
       return JSON.parse(get(k) ?? 'null');
-    } catch {
+    } catch (e) {
+      noteError('challenge:json', e);
       return null;
     }
   };

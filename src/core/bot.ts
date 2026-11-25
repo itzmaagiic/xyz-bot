@@ -13,6 +13,7 @@ import { FLAGS } from './flags';
 import { readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
+import { noteError } from './log/note';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
 
@@ -87,7 +88,7 @@ export class BotController {
     await this.refresh();
     // keep the status display fresh while the bot is not running (cheap read-only snapshot)
     setInterval(() => {
-      if (this.view.status !== 'running') void this.refresh().catch(() => undefined);
+      if (this.view.status !== 'running') void this.refresh().catch((e: unknown) => noteError('bot:idle-refresh', e));
     }, 1500);
   }
 

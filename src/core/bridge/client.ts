@@ -1,5 +1,6 @@
 /** Isolated-world side of the bridge: request/response over CustomEvents carrying JSON strings. */
 import { READY_ATTR, REQ_EVENT, RES_EVENT, type BridgeCommand, type BridgeResponse } from './protocol';
+import { noteError } from '../log/note';
 
 export class BridgeClient {
   private nextId = 1;
@@ -12,7 +13,8 @@ export class BridgeClient {
       let res: BridgeResponse;
       try {
         res = JSON.parse(detail);
-      } catch {
+      } catch (e) {
+        noteError('bridge-client:parse', e);
         return;
       }
       const cb = this.pending.get(res.id);
@@ -50,7 +52,8 @@ export class BridgeClient {
       try {
         await this.request('ping', undefined, 400);
         return true;
-      } catch {
+      } catch (e) {
+        noteError('bridge-client:ping', e); // expected while the page bridge is still loading
         await new Promise((r) => setTimeout(r, 200));
       }
     }

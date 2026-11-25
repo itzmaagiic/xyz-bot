@@ -1,6 +1,7 @@
 /** Settings form shared by the in-game overlay and the Chrome options page. */
 import type { BotSettings } from '../core/settings';
 import { readPcRoster } from '../core/strategy/challenge';
+import { noteError } from '../core/log/note';
 
 export const REGIONS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos'];
 
@@ -99,7 +100,8 @@ export function buildSettingsForm(
   try {
     const ls = doc.defaultView?.localStorage;
     if (ls) roster = readPcRoster((k) => ls.getItem(k));
-  } catch {
+  } catch (e) {
+    noteError('settings-form:roster', e); // storage blocked → dex-number input instead of the PC list
     roster = [];
   }
   if (roster.length) {

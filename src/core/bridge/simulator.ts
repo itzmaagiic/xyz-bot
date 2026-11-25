@@ -13,6 +13,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FLAGS } from '../flags';
 import { simBase } from './sim-seed';
+import { noteError } from '../log/note';
 declare const state: any;
 declare function runBattle(p: any[], e: any[], items: any[], eItems: any[], log: any, cfg: any, passives: any[]): any;
 declare function getRngSeed(): number;
@@ -167,7 +168,8 @@ function fightConfig(team: any[], enemy: any[], meta?: FightMeta): any {
       if (extra) cfg = mergeBattleConfigs(cfg, extra);
     }
     return cfg;
-  } catch {
+  } catch (e) {
+    noteError('simulator:battle-config', e);
     return null;
   }
 }
@@ -224,7 +226,8 @@ async function buildEndlessTrainer(SE: any): Promise<{ team: any[]; tiers: Recor
       for (const [k, v] of Object.entries(SE.traitOverrides)) if (!v) delete tiers![k];
     }
     if (SE.maxTraitTier) for (const k of Object.keys(tiers!)) tiers![k] = Math.min(tiers![k]!, SE.maxTraitTier);
-  } catch {
+  } catch (e) {
+    noteError('simulator:trait-tiers', e);
     tiers = null;
   }
   return { team, tiers };
@@ -309,7 +312,8 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
-  } catch {
+  } catch (e) {
+    noteError('simulator:uid-read', e);
     uid0 = null;
   }
   const out: SimResult = { boss: null, scenarios: [], restored: false };
@@ -355,8 +359,8 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
     if (uid0 !== null) {
       try {
         _pokeUidCounter = uid0;
-      } catch {
-        /* binding not writable – ids only grow, harmless */
+      } catch (e) {
+        noteError('simulator:uid-restore', e); // binding not writable – ids only grow, harmless
       }
     }
     out.restored = getRngSeed() === seed0 && (uid0 === null || _pokeUidCounter === uid0);
@@ -388,7 +392,8 @@ const moveTierForMap = (map: number): number => {
   const f = (globalThis as any)['getMoveТierForMap'] ?? (globalThis as any).getMoveTierForMap;
   try {
     return typeof f === 'function' ? f(map) : map <= 1 ? 0 : map <= 6 ? 1 : 2;
-  } catch {
+  } catch (e) {
+    noteError('simulator:move-tier', e);
     return 1;
   }
 };
@@ -454,7 +459,8 @@ export async function simulateNodes(req: NodeSimRequest): Promise<NodeSimResult>
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
-  } catch {
+  } catch (e) {
+    noteError('simulator:uid-read', e);
     uid0 = null;
   }
   const out: NodeSimResult = { rates: {}, restored: false };
@@ -498,8 +504,8 @@ export async function simulateNodes(req: NodeSimRequest): Promise<NodeSimResult>
     if (uid0 !== null) {
       try {
         _pokeUidCounter = uid0;
-      } catch {
-        /* ignore */
+      } catch (e) {
+        noteError('simulator:uid-restore', e); // ids only grow, harmless
       }
     }
     out.restored = getRngSeed() === seed0 && (uid0 === null || _pokeUidCounter === uid0);
@@ -536,7 +542,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
-  } catch {
+  } catch (e) {
+    noteError('simulator:uid-read', e);
     uid0 = null;
   }
   const out: CatchSimResult = { options: [], restored: false };
@@ -571,8 +578,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
     if (uid0 !== null) {
       try {
         _pokeUidCounter = uid0;
-      } catch {
-        /* ignore */
+      } catch (e) {
+        noteError('simulator:uid-restore', e); // ids only grow, harmless
       }
     }
     out.restored = getRngSeed() === seed0 && (uid0 === null || _pokeUidCounter === uid0);
@@ -762,7 +769,10 @@ async function playNextMap(team: any[], mapIdx: number): Promise<boolean> {
     [5, true],
   ];
   for (const [layer, trainer] of plan) {
-    const enemy = await enemyOnMap(mapIdx, layer, trainer).catch(() => null);
+    const enemy = await enemyOnMap(mapIdx, layer, trainer).catch((e: unknown) => {
+      noteError('simulator:enemy-on-map', e);
+      return null;
+    });
     if (enemy?.length && !fightInto(team, enemy, { kind: trainer ? 'trainer' : 'wild' })) return false;
   }
   team.forEach((m) => (m.currentHp = m.maxHp));
@@ -775,7 +785,8 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
-  } catch {
+  } catch (e) {
+    noteError('simulator:uid-read', e);
     uid0 = null;
   }
   const out: PathSimResult = { results: [], targetLevel: null, restored: false };
@@ -836,7 +847,10 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
             const mon = await sampleCatch(node);
             if (mon) team.push(mon);
           } else if (kind === 'legendary') {
-            const leg = await legendaryEnemy(node, team).catch(() => null);
+            const leg = await legendaryEnemy(node, team).catch((e: unknown) => {
+              noteError('simulator:legendary', e);
+              return null;
+            });
             if (leg) {
               if (!fightInto(team, [leg], { kind: 'wild' })) {
                 alive = false;
@@ -905,8 +919,8 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
     if (uid0 !== null) {
       try {
         _pokeUidCounter = uid0;
-      } catch {
-        /* ignore */
+      } catch (e) {
+        noteError('simulator:uid-restore', e); // ids only grow, harmless
       }
     }
     out.restored = getRngSeed() === seed0 && (uid0 === null || _pokeUidCounter === uid0);
@@ -949,7 +963,8 @@ export async function simulateRelics(req: RelicSimRequest): Promise<RelicSimResu
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
-  } catch {
+  } catch (e) {
+    noteError('simulator:uid-read', e);
     uid0 = null;
   }
   const out: RelicSimResult = { baseline: 0, offers: [], replace: [], restored: false };
@@ -993,8 +1008,8 @@ export async function simulateRelics(req: RelicSimRequest): Promise<RelicSimResu
     if (uid0 !== null) {
       try {
         _pokeUidCounter = uid0;
-      } catch {
-        /* ignore */
+      } catch (e) {
+        noteError('simulator:uid-restore', e); // ids only grow, harmless
       }
     }
     out.restored = getRngSeed() === seed0 && (uid0 === null || _pokeUidCounter === uid0);

@@ -1,3 +1,4 @@
+import { noteError } from '../core/log/note';
 /** Clipboard helper used by both adapters as last resort. */
 export async function copyViaDom(text: string, doc: Document = document): Promise<boolean> {
   try {
@@ -5,8 +6,8 @@ export async function copyViaDom(text: string, doc: Document = document): Promis
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch {
-    /* fall through */
+  } catch (e) {
+    noteError('clipboard:writeText', e); // fall through to execCommand
   }
   try {
     const ta = doc.createElement('textarea');
@@ -18,7 +19,8 @@ export async function copyViaDom(text: string, doc: Document = document): Promis
     const ok = doc.execCommand('copy');
     ta.remove();
     return ok;
-  } catch {
+  } catch (e) {
+    noteError('clipboard:execCommand', e);
     return false;
   }
 }

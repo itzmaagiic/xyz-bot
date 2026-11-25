@@ -6,6 +6,7 @@ import { startApp } from '../../app';
 import { READY_ATTR } from '../../core/bridge/protocol';
 import { copyViaDom } from '../clipboard';
 import { bindPageShortcuts, type Platform, type PlatformStorage } from '../types';
+import { noteError } from '../../core/log/note';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare const __BRIDGE_CODE__: string;
@@ -29,8 +30,8 @@ function makeStorage(): PlatformStorage {
           const v = GM_getValue(key);
           return (typeof v === 'string' ? JSON.parse(v) : v) as T | undefined;
         }
-      } catch {
-        /* fall back */
+      } catch (e) {
+        noteError('userscript:storage', e);
       }
       const v = mem.get(key);
       return v == null ? undefined : (JSON.parse(v) as T);
@@ -40,8 +41,8 @@ function makeStorage(): PlatformStorage {
       try {
         if (typeof GM !== 'undefined' && GM?.setValue) return void (await GM.setValue(key, s));
         if (typeof GM_setValue === 'function') return void GM_setValue(key, s);
-      } catch {
-        /* fall back */
+      } catch (e) {
+        noteError('userscript:storage', e);
       }
       mem.set(key, s);
     },
@@ -51,8 +52,8 @@ function makeStorage(): PlatformStorage {
           GM_addValueChangeListener(key, (_k: string, _o: unknown, n: unknown, remote: boolean) => {
             if (remote) cb(typeof n === 'string' ? JSON.parse(n) : n);
           });
-        } catch {
-          /* not supported */
+        } catch (e) {
+          noteError('userscript:onChange', e);
         }
       }
     },
@@ -66,7 +67,8 @@ function injectBridge(): boolean {
     s.textContent = __BRIDGE_CODE__;
     (document.head || document.documentElement).appendChild(s);
     s.remove();
-  } catch {
+  } catch (e) {
+    noteError('userscript:inject-bridge', e);
     return false;
   }
   return !!document.documentElement.getAttribute(READY_ATTR);
@@ -85,8 +87,8 @@ const platform: Platform = {
         GM_setClipboard(text);
         return true;
       }
-    } catch {
-      /* fall back */
+    } catch (e) {
+      noteError('userscript:clipboard', e);
     }
     return copyViaDom(text);
   },

@@ -1,5 +1,6 @@
 /** Chrome service worker: keyboard commands and system notifications (both feature-detected). */
 import { COMMAND_TO_MESSAGE, type BackgroundRequest } from './messages';
+import { noteError } from '../../core/log/note';
 
 const GAME_URLS = ['https://pokelike.xyz/*', 'https://www.pokelike.xyz/*'];
 
@@ -14,7 +15,8 @@ if (chrome.commands?.onCommand) {
   chrome.commands.onCommand.addListener(async (command) => {
     const type = COMMAND_TO_MESSAGE[command];
     const tab = await gameTab();
-    if (type && tab?.id != null) chrome.tabs.sendMessage(tab.id, { type }).catch(() => undefined);
+    if (type && tab?.id != null)
+      chrome.tabs.sendMessage(tab.id, { type }).catch((e: unknown) => noteError('background:command', e)); // no content script in that tab yet
   });
 }
 

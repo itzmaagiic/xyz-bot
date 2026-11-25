@@ -1,5 +1,6 @@
 /** Chrome popup: quick access (start/pause/step/status). Settings live in the overlay and options page. */
 import type { ContentRequest, StatusReply } from './messages';
+import { noteError } from '../../core/log/note';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -9,7 +10,8 @@ async function send(type: ContentRequest['type']): Promise<StatusReply | null> {
   if (!tab?.id || !/^https:\/\/(www\.)?pokelike\.xyz\//.test(tab.url ?? '')) return null;
   try {
     return (await chrome.tabs.sendMessage(tab.id, { type })) as StatusReply;
-  } catch {
+  } catch (e) {
+    noteError('popup:send', e); // content script not (yet) injected → shown as "not connected"
     return null;
   }
 }
