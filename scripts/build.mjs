@@ -2,15 +2,23 @@
 // usage: node scripts/build.mjs [all|chrome|userscript]
 import { build } from 'esbuild';
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { deflateSync, crc32 } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+import {
+  MATCHES,
+  NO_GRANT_NEEDED,
+  buildMeta,
+  checkUserscript,
+  toTemplateLiteral,
+  usedGmApis,
+} from './userscript-meta.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const target = process.argv[2] ?? 'all';
-const dist = join(root, 'dist');
-const MATCHES = ['https://pokelike.xyz/*', 'https://www.pokelike.xyz/*'];
+// PKBOT_DIST lets tests build into a temporary directory
+const dist = process.env.PKBOT_DIST ? resolve(process.env.PKBOT_DIST) : join(root, 'dist');
 
 const FLAGS_DEFINE = {
   __PKBOT_FLAGS__: process.env.PKBOT_FLAGS ? JSON.stringify(JSON.parse(process.env.PKBOT_FLAGS)) : 'undefined',
@@ -24,8 +32,18 @@ const common = {
   logLevel: 'warning',
 };
 
+// Userscript and its embedded bridge: ES2020 (Safari iOS 15), readable, not minified (R-107)
+const USERSCRIPT_TARGET = ['es2020'];
+const BRIDGE_PLACEHOLDER = '__PKBOT_BRIDGE_SRC__';
+
 async function bundleToString(entry) {
-  const r = await build({ ...common, entryPoints: [join(root, entry)], write: false, minify: true });
+  const r = await build({
+    ...common,
+    target: USERSCRIPT_TARGET,
+    entryPoints: [join(root, entry)],
+    write: false,
+    minify: false,
+  });
   return r.outputFiles[0].text;
 }
 
@@ -162,8 +180,8 @@ async function buildChrome() {
     background: { service_worker: 'background.js' },
     permissions: ['storage', 'notifications'],
     content_scripts: [
-      { matches: MATCHES, js: ['bridge.js'], run_at: 'document_idle', world: 'MAIN' },
-      { matches: MATCHES, js: ['content.js'], run_at: 'document_idle' },
+      { matches: [...MATCHES], js: ['bridge.js'], run_at: 'document_idle', world: 'MAIN' },
+      { matches: [...MATCHES], js: ['content.js'], run_at: 'document_idle' },
     ],
     commands: {
       'toggle-bot': { suggested_key: { default: 'Alt+Shift+P' }, description: 'Bot starten/pausieren' },
@@ -181,34 +199,32 @@ async function buildUserscript() {
   const bridge = await bundleToString('src/platform/chrome/bridge-main.ts');
   const r = await build({
     ...common,
+    target: USERSCRIPT_TARGET,
     entryPoints: [join(root, 'src/platform/userscript/main.ts')],
     write: false,
     minify: false,
-    define: { ...FLAGS_DEFINE, __BRIDGE_CODE__: JSON.stringify(bridge) },
+    define: { ...FLAGS_DEFINE, __BRIDGE_CODE__: BRIDGE_PLACEHOLDER },
   });
-  const meta = [
-    '// ==UserScript==',
-    '// @name         Pokelike Bot',
-    '// @namespace    https://github.com/itzmaagiic/xyz-bot',
-    `// @version      ${pkg.version}`,
-    `// @description  ${pkg.description}`,
-    ...MATCHES.map((m) => `// @match        ${m}`),
-    '// @run-at       document-idle',
-    '// @noframes',
-    '// @grant        GM.getValue',
-    '// @grant        GM.setValue',
-    '// @grant        GM.setClipboard',
-    '// @grant        GM_getValue',
-    '// @grant        GM_setValue',
-    '// @grant        GM_setClipboard',
-    '// @grant        GM_addValueChangeListener',
-    '// @inject-into  content',
-    '// ==/UserScript==',
-    '',
-  ].join('\n');
+  let code = r.outputFiles[0].text;
+  const hits = code.split(BRIDGE_PLACEHOLDER).length - 1;
+  if (hits !== 1) throw new Error(`bridge placeholder found ${hits}× in the userscript bundle, expected exactly 1`);
+  code = code.replace(BRIDGE_PLACEHOLDER, () => toTemplateLiteral(bridge)); // function form: no $-patterns
+  // @grant is derived from what the bundle really uses (R-104); GM.info needs no grant
+  const grants = usedGmApis(code)
+    .gm.filter((a) => !NO_GRANT_NEEDED.includes(a))
+    .map((a) => 'GM.' + a);
+  const meta = buildMeta({ version: pkg.version, description: pkg.description, grants });
+  const userJs = meta + '\n' + code;
   writeFileSync(join(dist, 'pokelike-bot.meta.js'), meta);
-  writeFileSync(join(dist, 'pokelike-bot.user.js'), meta + '\n' + r.outputFiles[0].text);
-  console.log('userscript → dist/pokelike-bot.user.js + .meta.js');
+  writeFileSync(join(dist, 'pokelike-bot.user.js'), userJs);
+  const errs = checkUserscript({ userJs, metaJs: meta, version: pkg.version });
+  if (errs.length) {
+    console.error('userscript check FAILED (R-192/R-193):\n  - ' + errs.join('\n  - '));
+    process.exit(1);
+  }
+  console.log(
+    `userscript → ${relative(root, dist) || '.'}/pokelike-bot.user.js + .meta.js (check OK, grants: ${grants.join(', ') || 'none'})`,
+  );
 }
 
 if (target === 'all' || target === 'chrome') await buildChrome();

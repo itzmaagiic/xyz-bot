@@ -1,6 +1,7 @@
 /**
  * Userscript entry (Userscripts for iOS/iPadOS Safari, Tampermonkey, Violentmonkey).
  * Only the GM.* API intersection is used (R-099, docs/USERSCRIPT_API.md); everything else is feature-detected.
+ * GM functions are always called literally as `GM.<name>` so the build can derive @grant from the bundle (R-104).
  * Bridge: injected <script> element into the page (CustomEvent protocol); DOM fallback if that fails.
  */
 import { startApp } from '../../app';
@@ -11,10 +12,18 @@ import { bindPageShortcuts, type Platform } from '../types';
 import { makeStorage, type StorageEnv } from './storage';
 
 declare const __BRIDGE_CODE__: string;
-declare const GM:
-  (NonNullable<StorageEnv['gm']> & { setClipboard?: (data: string, type?: string) => Promise<unknown> }) | undefined;
+declare const GM: {
+  getValue?: (key: string) => Promise<unknown>;
+  setValue?: (key: string, value: string) => Promise<void>;
+  setClipboard?: (data: string, type?: string) => Promise<unknown>;
+};
 
-const gm = typeof GM !== 'undefined' ? GM : undefined;
+const hasGM = typeof GM !== 'undefined';
+
+function gmStorage(): StorageEnv['gm'] {
+  if (!hasGM || typeof GM.getValue !== 'function' || typeof GM.setValue !== 'function') return null;
+  return { getValue: (k) => GM.getValue!(k), setValue: (k, v) => GM.setValue!(k, v) };
+}
 
 function safeLocalStorage(): StorageEnv['local'] {
   try {
@@ -41,11 +50,11 @@ function injectBridge(): boolean {
 
 const platform: Platform = {
   name: 'userscript',
-  storage: makeStorage({ gm: gm ?? null, local: safeLocalStorage() }),
+  storage: makeStorage({ gm: gmStorage(), local: safeLocalStorage() }),
   async copyText(text) {
-    if (gm?.setClipboard) {
+    if (hasGM && typeof GM.setClipboard === 'function') {
       try {
-        const ok = await gm.setClipboard(text, 'text/plain');
+        const ok = await GM.setClipboard(text, 'text/plain');
         if (ok !== false) return true; // Userscripts resolves a boolean, TM/VM resolve undefined
       } catch (e) {
         noteError('userscript:clipboard', e);

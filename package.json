@@ -8,6 +8,7 @@
     "build": "node scripts/build.mjs all",
     "build:chrome": "node scripts/build.mjs chrome",
     "build:userscript": "node scripts/build.mjs userscript",
+    "check:userscript": "node scripts/check-userscript.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
