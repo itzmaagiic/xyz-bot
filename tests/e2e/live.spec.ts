@@ -7,6 +7,7 @@
 import { chromium, expect, test } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isErrorPause } from '../../src/core/pause-reason';
 
 const EXT = process.env.PKBOT_EXT ?? join(import.meta.dirname, '..', '..', 'dist', 'chrome');
 const OUT = process.env.PKBOT_OUT ?? join(import.meta.dirname, '..', '..', 'test-results');
@@ -15,7 +16,7 @@ const MINUTES = Number(process.env.LIVE_MINUTES ?? 5);
 test('bot plays the real game without getting stuck', async () => {
   const ctx = await chromium.launchPersistentContext('', {
     channel: 'chromium',
-    viewport: { width: 1280, height: 900 },
+    viewport: { width: 1440, height: 900 }, // docs/UI.md §1 desktop
     args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
   });
   await ctx.route(/googletagmanager|cloudflareinsights|fuseplatform|inmobi|quantcast|doubleclick/, (r) => r.abort());
@@ -132,4 +133,6 @@ test('bot plays the real game without getting stuck', async () => {
   await page.screenshot({ path: join(OUT, 'live-run.png') });
   await ctx.close();
   expect(progressEvents, `no progress; pause: ${pauseReason}`).toBeGreaterThan(3);
+  // R-082/R-190: a hang or crash is a failure even when the bot made progress before it (D-027: 0 hangs)
+  expect(isErrorPause(pauseReason), `error pause: ${pauseReason}`).toBe(false);
 });

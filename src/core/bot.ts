@@ -14,6 +14,7 @@ import { readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
 import { noteError } from './log/note';
+import { errorPause } from './pause-reason';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
 
@@ -193,11 +194,11 @@ export class BotController {
       if (e instanceof ForbiddenActionError) {
         // R-147: a forbidden action (Reset Run, account, key R …) was blocked – never retry, pause and tell the user
         this.log.error('forbidden action blocked', e.message);
-        this.pause(`blocked: ${e.message}`, true);
+        this.pause(errorPause('blocked', e.message), true);
         return;
       }
       this.log.error('bot loop crashed', String(e));
-      this.pause(`internal error: ${String(e)}`, true);
+      this.pause(errorPause('internal', String(e)), true);
     } finally {
       this.loopRunning = false;
     }
@@ -504,7 +505,7 @@ export class BotController {
     const limit = careful ? 1 : MAX_ATTEMPTS;
     this.log.warn(`${why} (attempt ${this.failCount}/${limit})`);
     if (this.failCount >= limit) {
-      this.pause(`action keeps failing: ${why}`, true);
+      this.pause(errorPause('failing', why), true);
       return;
     }
     await sleep(600 * 2 ** (this.failCount - 1)); // backoff
