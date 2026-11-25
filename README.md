@@ -50,6 +50,10 @@ per Drag & Drop in den Browser ziehen.
   Datenquelle, Spielversion, Siege/Niederlagen), Einstellungen, Log (kopierbar). Es ist zusammenklappbar und verschiebbar.
 - **Chrome zusätzlich:** Popup (Start/Pause/Schritt/Status), Optionsseite (dieselben Einstellungen), System-Benachrichtigungen
   und Browser-Tastenkürzel über `commands`. Alles wird per Feature-Erkennung genutzt, sonst greifen In-Page-Toasts.
+- **Challenges:** Modus „Challenge“, Art (Arena/Täglich/Wöchentlich), Orden-Stufe und **Challenge-Starter**. Das
+  Starter-Dropdown im Overlay listet deinen PC (nur gelesen aus dem Spielstand, stärkste zuerst, ★ = Shiny); gewählt
+  wird das stärkste Exemplar dieser Art (Shiny/Vitamine/Mega). „Auto“ nimmt das insgesamt stärkste. Auf der
+  Chrome-Optionsseite gibt man stattdessen die Dex-Nr. ein. Relikte wählt der Bot per Kampfsimulation.
 - **Tastenkürzel auf der Spielseite:** `Alt+Shift+P` Start/Pause · `Alt+Shift+S` Schritt · `Alt+Shift+O` Overlay ein/aus.
 - **Spieleinstellungen** (z. B. Kämpfe automatisch überspringen) ändert der Bot **nur nach deiner zweistufigen Bestätigung**
   im Overlay („Einschalten …“ → „Ja, ändern“).
