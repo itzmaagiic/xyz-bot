@@ -21,7 +21,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 1 – Bestandsaufnahme und Aufklärung
 **Ziel:** Den übernommenen Code mit Nachweisen gegen alle R-IDs abgleichen und die Aufklärungslücken schließen. Für Bildschirme, die noch nicht live gesehen wurden, gilt: erst Aufklärung, dann Logik (R-224).
-**R-IDs:** R-022, R-027, R-036, R-064 bis R-073, R-075 bis R-077, R-224
+**R-IDs:** R-022, R-027, R-036, R-064, R-065, R-067 bis R-069, R-071, R-072, R-076 (sechs Aufklärungspunkte mit Restlücken nach P3 verschoben, siehe D-029)
 **Abnahmekriterien**
 - **Bestandsaufnahme:** Für jede R-ID ist geprüft, ob und wo sie im übernommenen Code umgesetzt ist. Der Status ist mit Nachweis gesetzt (✅ nur mit Test, Screenshot oder Prüfprotokoll, sonst 🟡 mit Fundstelle). `npm test`, `npm run e2e` und ein Live-Test sind gelaufen, die Ergebnisse stehen in PROGRESS.md. Der Zielwert für R-230 ist festgelegt.
 - Die Plugins und die Agententypen `requirements-reviewer`, `ui-reviewer` und `strategy-reviewer` sind als ladbar bestätigt (R-020, R-022).
@@ -44,7 +44,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 3 – Kern: Zustand, Bildschirme, Aktionen, Daten, Logs und Baseline-Run
 **Ziel:** Der Bot erkennt jeden Bildschirm, handelt verlässlich und spielt mit einer einfachen, sicheren Baseline-Strategie einen kompletten Story-Run ohne Hänger.
-**R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245, R-249
+**R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245, R-249, R-066, R-070, R-073, R-075, R-077, R-224
 **Abnahmekriterien**
 - Der ScreenDetector besteht alle Fixture-Tests (R-186). Ein unbekannter Bildschirm führt zu Pause, Meldung und Snapshot.
 - Der Actor nutzt Pointer- und Touch-Events, prüft die Wirkung jeder Aktion und arbeitet mit Backoff. Das Warten läuft über MutationObserver plus Stabilitätserkennung, dazu kommt der Watchdog.

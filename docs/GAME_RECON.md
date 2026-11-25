@@ -1,6 +1,6 @@
 # Pokelike – Aufklärung (Game Recon)
 
-Stand: **2026-11-24**, beobachtete Spielversion **v3.8** (`PATCH_NOTES[0].version`, Patch-Datum 2026-11-20),
+Stand: **2026-11-24** (§1–§9, Vorgänger), ergänzt am **2026-11-25** (§10–§13, Phase 1), beobachtete Spielversion **v3.8** (`PATCH_NOTES[0].version`, Patch-Datum 2026-11-20),
 Bundle `js/bundle.d97633119f.js`. Alles hier wurde live mit Playwright (Chromium) gegen https://pokelike.xyz
 beobachtet, einmal mit frischem Profil (nur Kanto offen) und einmal mit einer **bereinigten Kopie** eines echten
 Spielstands (alle Regionen offen, Sprache Deutsch). Wiki-Seiten waren nur Hinweise; maßgeblich ist das hier.
@@ -181,7 +181,7 @@ Der Simulator bildet das alles nach, daher wirken Relikte und Talente in den sim
 
 Dieser Abschnitt kam in der Einrichtungs-Session hinzu, als der Hauptauftrag zerlegt wurde. Die Abschnitte 1 bis 9 stammen aus dem Vorgänger-Branch (D-016) und wurden live geprüft.
 
-### 10.1 Abgleich mit HA §1 („live prüfen, nicht blind übernehmen“, R-036)
+### 10.1 Abgleich mit HA §1 („live prüfen, nicht blind übernehmen“, R-036). Stand: v3.8, geprüft am 2026-11-25
 | Angabe im Hauptauftrag | Stand laut Abschnitten 1 bis 9 |
 |---|---|
 | Autobattler, Kämpfe laufen automatisch | **bestätigt**: Der Kampf wird sofort komplett berechnet (§8 Kampf) |
@@ -192,7 +192,11 @@ Dieser Abschnitt kam in der Einrichtungs-Session hinzu, als der Hauptauftrag zer
 | Gehaltene Items können **Angriffstyp** und Wirkung ändern | **bestätigt** (§12.2). Die 17 Typ-Booster lassen den Träger Angriffe ihres Typs versuchen („attempts X-type attacks if able“), Metronome lässt doppeltypige Pokémon mit ihrem **anderen** Typ angreifen |
 | Traits: 2 Punkte pro Stufe, normal 1 Punkt pro Typ, Shiny 2 | **bestätigt** (`computeTraitTiers`, §12.3): Stufe = min(`TRAIT_MAX_TIER`, ⌊Punkte/2⌋ + Bonus). Grundwert 1 Punkt pro Typ und Pokémon, Shiny +1. Dazu kommen weitere +1-Quellen, etwa Legendäre mit Relikt und Reroll-Fänge mit Relikt |
 | Level und Sonderbonbons beleben Besiegte nicht | **bestätigt** (§8 „Besiegte bekommen nichts“) |
-| Nuzlocke: ein Fang pro Zone, Besiegte sind weg | **teilweise** (§12.4): Im Nuzlocke wird auf festem Level gefangen (`nuzlockeCatchLevel` = Mitte von `MAP_LEVEL_RANGES[currentMap]`), „?“ führt zum Kampf statt zum Fang (§8). „Ein Fang pro Zone“ und Permadeath sind im Code noch nicht belegt, das ist eine Aufgabe für P4 (R-062) |
+| Nuzlocke: ein Fang pro Zone, Besiegte sind weg | **teilweise**. „Besiegte sind weg“ bestätigt das Wiki (§11, Nuzlocke-Challenge). **„Ein Fang pro Zone“ ist im Wiki nicht belegt**, es nennt nur Varianten mit einem Fangknoten pro Karte. Vermutlich ist das eine Ungenauigkeit im Auftrag, im Code zu prüfen. Aus §12.4: Im Nuzlocke wird auf festem Level gefangen (`nuzlockeCatchLevel` = Mitte von `MAP_LEVEL_RANGES[currentMap]`), „?“ führt zum Kampf statt zum Fang (§8). „Ein Fang pro Zone“ und Permadeath sind im Code noch nicht belegt, das ist eine Aufgabe für P4 (R-062) |
+| Battle Tower: Start mit freigeschalteten Pokémon, Stage Select | **teilweise**: Die Region bzw. Stufe wird in `endless-stage-select` gewählt (§4). Ob der Tower-Starter aus dem PC kommt, ist nur für Challenges belegt (§9). Für den Tower ist das **offen** (§13) |
+| Champion-Bildschirm mit Play Again, Share, Climb the Tower, Home | **teilweise**: Laut Markup bzw. §4 gibt es `#btn-play-again`, `#btn-win-home` und `shareRun()` (Fixtures mit Run-Menü). Ein `win`-Fixture fehlt (§13) |
+| Sonderbonbons beleben nicht wieder | **bestätigt**: `rare_candy` = „Gives a Pokémon +3 levels“ (`USABLE_ITEM_POOL`), wiederbeleben kann nur `sacred_ash` (§12.2). Besiegte bekommen kein Level (§8) |
+| Daily Pokésort: 6 Pokémon so ordnen, dass jede Verbindung passt | **bestätigt** im Hauptmenü (§3) und als `pokechain-modal` (§5). Die Lösungslogik fehlt (R-144, P7) |
 | Tower: dauerhafte EV-Upgrades (Vitamine) für Pokédollar | **bestätigt** (§12.5): `buyVitamin` gibt dauerhafte Pokédollar aus (`spendPokedollars(VITAMIN_COST)`), maximal 10 pro Wert, mit Gesamtgrenze `getVitaminCap()`. Der Kauf wird dauerhaft gespeichert und synchronisiert (`savePersistentBuffs`, `syncToCloud`). **Fällt unter R-237** |
 
 ### 10.1a Teilweise überholte Angaben in §7
@@ -207,8 +211,8 @@ Ein echter Spielstand enthält außerdem `poke_progress_backup` (Kopie des Forts
 - `tests/fixtures/state/run-samples-v3.8.json` (eingecheckt): enthält nur `poke_current_run`, `poke_parked_run:endless2`, `poke_settings` und `poke_patch_intro_seen` als localStorage-Strings, anonym. Das Beispiel ist ein Johto-Nuzlocke-Run in einer Wochen-Challenge (`mega-johto`) mit Karte (Knoten, Kanten, Ebenen), Team mit KP, Items, dazu ein geparkter Endless2-Run mit `endless`-Zustand.
 - Der vollständige bereinigte Spielstand liegt nur lokal unter `tests/fixtures/private/` (gitignored, R5.4). In einer neuen Session ist er nicht mehr vorhanden.
 
-### 10.4 WebKit in der Cloud (D-011)
-Am 2026-11-25 geprüft: Der Download von WebKit für Playwright 1.63.0 (`webkit-2359`) über `cdn.playwright.dev` klappt. Der Start scheitert an fehlenden Systembibliotheken (`libgtk-4.so.1`, `libgraphene-1.0.so.0` u. a.). Diese sind per `npx playwright install-deps webkit` bzw. apt nachzuinstallieren.
+### 10.4 WebKit in der Cloud (D-011, D-026)
+**Gelöst am 2026-11-25:** WebKit (`webkit-2359`) läuft samt Systembibliotheken (`npx playwright install-deps webkit`). Die E2E-Suite ergab 17 bestanden und 1 gewollt übersprungen (R-065). Neue Sessions bekommen WebKit über das Setup-Skript der Umgebung (D-026).
 
 ### 10.5 Weitere offene Fragen (zusätzlich zu §7)
 1. Ändern bestimmte Items den Angriffstyp, etwa Platten oder Typ-Items? Das betrifft R-059 und R-118.
@@ -225,9 +229,26 @@ Diese Angaben stammen aus der Vorab-Aufklärung in Session 1 (Hauptmenü headles
 - **Sicherheits-Header:** CSP wie in §1, dazu `X-Frame-Options: SAMEORIGIN`. Ausgeliefert wird über Cloudflare, mit Google Analytics und einem Consent-Manager (CMP/TCF).
 
 ### 10.7 Weitere offene Fragen aus der Vorab-Aufklärung
-1. Gibt es zusätzlich eine Meta-CSP im HTML?
-2. Wann schreibt das Spiel `poke_current_run` in den localStorage, nach jeder Aktion oder nur an Speicherpunkten? Das ist wichtig für Resume (R-194) und R-241.
-3. Wie zeigt das Spiel den nächsten Boss an (Boss-Vorschau, Einstellung `hideBossPreview`, R-121)?
+1. ~~Gibt es zusätzlich eine Meta-CSP im HTML?~~ **Beantwortet (§12.1): nein**, nur eine `Permissions-Policy`.
+2. Wann schreibt das Spiel `poke_current_run` in den localStorage, nach jeder Aktion oder nur an Speicherpunkten? **Beantwortet (§12.6).** Das ist wichtig für Resume (R-194) und R-241.
+3. Wie zeigt das Spiel den nächsten Boss an (Boss-Vorschau, Einstellung `hideBossPreview`, R-121)? **Teilweise beantwortet (§12.7, `bossPreviewMon`).** Die Darstellung im DOM ist noch offen (P4).
+
+## 11. Externe Quellen (R-064), abgerufen am 2026-11-25
+Sie sind **nur Hinweise**. Maßgeblich ist das Spiel (§12). Alle Seiten sind ein Fan-Projekt ohne gefundenen Lizenztext. Übernommene Daten brauchen deshalb eine Quellenangabe, und vor einer Übernahme (P4, R-221) sind `/sources/`, `/disclaimer/` und `/methodology/` zu prüfen.
+
+| Quelle | Inhalt | Stand laut Seite | Abgleich mit dem Spiel |
+|---|---|---|---|
+| https://pokelike.wiki/guides/kanto/ | Tabellen: 8 Arenen, Top 4 und Champ Gary mit Pokémon, Level und „Ace-Item“, Fänge pro Kartenabschnitt | Client gelesen am 17.09.2026, Version nicht angegeben | Die Teams decken sich mit §8 (z. B. Brock Geodude 12 und Onix 14). Neu ist die **Ace-Regel**: Im Kanto-Story-Kampf behält nur das höchstlevelige Gegner-Mitglied sein Item, bei Gleichstand das später stehende. Das ist im Code zu prüfen (P4) |
+| https://pokelike.wiki/battle-tower/ | 7 Stufen (Kanto bis ORAS) mit je 9 festen Gegnern, also 63 Teams, die Details auf Unterseiten. Belohnung 200 bis 1100 ₽ pro Sieg | v3.5, importiert am 19.10.2026 | Vitamine kosten **200 ₽**, „Free reset removes the allocation without refunding coins“, 10 Punkte pro Stufe, höchstens 50 pro Linie und 10 pro Wert. Sie gelten **nur im Tower und in Challenges**, nicht in der Story. Das passt zu `buyVitamin` (§12.5) |
+| https://pokelike.wiki/traits/ | 18 Typ-Traits mit Stufen T1 bis T6 (ca. 108 Effektzeilen), Punktregeln mit Beispielen | Kopf „Official v3.6 · 2026-11-01“, Karten teils v3.1 | **Bestätigt §12.3**: „A normal Pokémon contributes 1 point to each type; Shiny adds 1 and Mutant adds 1 more“, Stufe = ⌊Summe/2⌋. Das Spiel kennt laut Seite bis T12 |
+| https://pokelike.wiki/items/ | Katalog mit 164 Einträgen (36 Items, 128 Passive), Effekttext, Modus, Stapelregel meist „not established“ | v3.1, importiert am 12.09.2026 | **Bestätigt §12.2** (Typ-Items „attempts X-type attacks if able“). Das Spiel hat inzwischen 37 Items, 256 Relikte und 4 nutzbare (v3.8), die Seite ist also veraltet |
+| https://pokelike.wiki/ | Startseite, Verweise u. a. auf `/challenges/` („twelve permanent rules“) und `/guides/evs-and-vitamins/` | – | `/challenges/` und die Tower-Unterseiten sind noch nicht gelesen, das folgt in P4 |
+| https://pokelike.wiki/battle-tower/kanto/ | 9 feste Gegner in Kartenreihenfolge (Erika, Misty, Flint, Falkner, Bugsy, Lorelei, Sabrina, Agatha, Ash Ketchum), Team in Kampfreihenfolge mit Level, Trait-Regel („Team-computed Traits“, bei Ash „+ 1 Tier bonus“). Keine Items je Gegner | v3.5, geprüft am 19.10.2026 | Beispiel: „1 \| Erika \| Bellsprout Lv.7; Bulbasaur Lv.8“. Ein Clear gibt 200 ₽ und öffnet Johto. Für Tower-Gegnerdaten in P4 gegen `endlessState` prüfen (R-090) |
+| https://pokelike.wiki/challenges/ | 12 Dauerregeln: Monotype, Wish Upon a Star, Trick Room, Nuzlocke, Inverse World, Legendary Opposition, Arena Floors, Ride or Die, Little League, Walk It Off, Wanted, Ultimate Challenge. Dazu Belohnungen (Clear 1.000 ₽, Daily 2.000/500 ₽) | Regeln v3.5 (19.10.2026), Snapshot v3.6 (01.11.2026) | **Nuzlocke-Challenge**: „A Pokémon that faints is lost for the rest of this run.“ Von **„ein Fang pro Zone“ steht dort nichts**, nur „one catch node per map“ bei Nuzlocke Randomizer und „one catch per map“ bei einem Weekly. Relevant für R-062 und R-234 (Challenge-Regeln je Art) |
+| https://pokelike.wiki/guides/evs-and-vitamins/ | Vitamine: HP Up, Protein (ATK und SpATK gekoppelt), Iron, Zinc, Carbos | v3.5, geprüft am 19.10.2026 | Die Angaben: 200 ₽ pro Punkt, +5 % pro Punkt, höchstens 10 pro Wert, Gesamtgrenze pro Entwicklungslinie = min(10 × höchste geschaffte Tower-Stufe, 50). Ein kostenloser EV-Reset im Poké Mart erstattet nichts. Gilt für Tower- und Challenge-artige Runs, **nicht gleichermaßen für die Story**. Passt zu §12.5 (R-063, R-137, R-237) |
+| https://pokelike-guide.fr/ | Nur „Pokelike Tips and Tricks“, ohne verwertbaren Inhalt (vermutlich JS-gerendert) | – | nicht nutzbar |
+
+Zu Nuzlocke („ein Fang pro Zone, Besiegte sind weg“) gibt es auf den gelesenen Seiten **keine** Angaben. Der Punkt bleibt offen für P4 (R-062).
 
 ## 12. Phase-1-Befunde (Spielcode, nur lesend gelesen, v3.8 vom 2026-11-20, abgerufen am 2026-11-25)
 Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockiert). Die Ausgabe landet in `artifacts/recon/read-game.json` und ist nicht eingecheckt.
@@ -235,7 +256,7 @@ Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockier
 ### 12.1 Technik und Version (R-067, R-068, R-069, R-077)
 - **Version:** `PATCH_NOTES[0].version = "3.8"`, Patch-Datum `2026-11-20`, `.title-version` = „v3.8“.
 - **CSP:** Der Header lautet `object-src 'none'; base-uri 'self'; frame-ancestors 'self'`, dazu `X-Frame-Options: SAMEORIGIN`. Eine **Meta-CSP gibt es nicht**, im HTML steht nur eine `Permissions-Policy` (camera, microphone, geolocation, payment, usb aus). **Ein eingeschleustes `<script>`-Element wird ausgeführt** (Test über `window.__pkCspTest`). Der Weg über ein Seiten-Skript für das Userscript funktioniert also (R-106).
-- **Zustand:** `state` ist eine lexikalische globale Variable auf oberster Ebene, nicht `window.state`, und nur im Hauptkontext lesbar (bestätigt §1). Es gibt 1813 globale Funktionen. Die Bildschirme sind 20 `div.screen[id]`: title, trainer, starter, map, battle, catch, item, passive, swap, trade, shiny, badge, transition, elite-prep, gameover, win, stat-buff, history-region-select, endless-stage-select, endless-stage-complete.
+- **Zustand:** `state` ist eine lexikalische globale Variable auf oberster Ebene, nicht `window.state`, und nur im Hauptkontext lesbar (bestätigt §1). Es gibt 1813 globale Funktionen. Gezählt sind die kleingeschriebenen Funktions-Eigenschaften von `window` mit mehr als 3 Zeichen. Die „~2100“ in §1 zählen alle Top-Level-Funktionen, beide Angaben sind also mit ihrer Zählweise korrekt. Die Bildschirme sind 20 `div.screen[id]`: title, trainer, starter, map, battle, catch, item, passive, swap, trade, shiny, badge, transition, elite-prep, gameover, win, stat-buff, history-region-select, endless-stage-select, endless-stage-complete.
 - **Speicher:** keine IndexedDB-Datenbank (`indexedDB.databases()` liefert `[]`). Ein frisches Profil hat nur `poke_ach_backfill_v24`, `poke_ach_backfill_v24b` und `poke_storage_migrated_v1`. `poke_current_run` und die übrigen Schlüssel entstehen erst beim Spielen (§2, §10.2).
 - **Standard-Einstellungen eines frischen Profils:** alle Auto-Skips aus, `language: "en"`, `darkMode: false`, `hideBossPreview: false`, Musik und SFX an.
 
@@ -255,25 +276,27 @@ Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockier
 - `doPokeMartNode` (Knoten im Run, Endless/ER) tauscht Items aus dem Team-Inventar (ohne Rare Candy) gegen einen Candy-Wert (`erMartCandyValue`). Nach dem Codeausschnitt werden dabei **keine** dauerhaften Pokédollar ausgegeben, live noch zu bestätigen. `openShopModal` (Poké Mart in der oberen Leiste) gehört zum dauerhaften Shop.
 
 ### 12.6 Speichern und Fairness (R-069, R-194, R-239)
-- `saveRun()` schreibt `{...state, currentNodeId, currentNode: null, rngSeed: getRngSeed()}` in den Run-Slot `poke_current_run`, sofern `runWritesAllowed()` gilt. **Der Spielstand enthält damit den echten Zufalls-Seed (`rngSeed`) und `runSeed`.** Das ist verborgenes Wissen: Der Bot darf beides nie für Entscheidungen nutzen (R-239, `sim-seed.ts` ignoriert sie). Wann gespeichert wird, misst der Live-Test (`saveChangesByScreen`, §12.7).
+- `saveRun()` schreibt `{...state, currentNodeId, currentNode: null, rngSeed: getRngSeed()}` in den Run-Slot `poke_current_run`, sofern `runWritesAllowed()` gilt. **Der Spielstand enthält damit den echten Zufalls-Seed (`rngSeed`) und `runSeed`.** Das ist verborgenes Wissen: Der Bot darf beides nie für Entscheidungen nutzen (R-239, `sim-seed.ts` ignoriert sie). **Wann gespeichert wird**, haben die Live-Läufe 1 und 2 gemessen (`saveChangesByScreen` in `tests/e2e/live.spec.ts`). Der Spielstand ändert sich bei fast jedem Bildschirmwechsel, Lauf 2 zählte: Karte 66×, Kampf 48×, Item 7×, Elite-Prep 4×, Game Over 2×, Fang 1×. Ein Reload ist also außer im Kampf (§1) nahezu ohne Verlust fortsetzbar (R-194, R-241).
 
 ### 12.7 Boss-Vorschau und Starter (R-121, R-138, R-160)
 - `bossPreviewMon(boss, i)` berechnet die Vorschau-Pokémon eines Bosses (Level, Entwicklung). Die Boss-Vorschau ist also im Spiel vorhanden, abschaltbar über `hideBossPreview`.
 - Der Starter wird auf dem `starter-screen` gewählt (`selectStarter`, Karten in `#starter-choices`). Die Bot-Einstellung „Starter“ (R-160) legt fest, welche Karte er wählt. In Challenges kommt der Starter aus dem PC (§9).
 
-## 11. Externe Quellen (R-064), abgerufen am 2026-11-25
-Sie sind **nur Hinweise**. Maßgeblich ist das Spiel (§12). Alle Seiten sind ein Fan-Projekt ohne gefundenen Lizenztext. Übernommene Daten brauchen deshalb eine Quellenangabe, und vor einer Übernahme (P4, R-221) sind `/sources/`, `/disclaimer/` und `/methodology/` zu prüfen.
-
-| Quelle | Inhalt | Stand laut Seite | Abgleich mit dem Spiel |
-|---|---|---|---|
-| https://pokelike.wiki/guides/kanto/ | Tabellen: 8 Arenen, Top 4 und Champ Gary mit Pokémon, Level und „Ace-Item“, Fänge pro Kartenabschnitt | Client gelesen am 17.09.2026, Version nicht angegeben | Die Teams decken sich mit §8 (z. B. Brock Geodude 12 und Onix 14). Neu ist die **Ace-Regel**: Im Kanto-Story-Kampf behält nur das höchstlevelige Gegner-Mitglied sein Item, bei Gleichstand das später stehende. Das ist im Code zu prüfen (P4) |
-| https://pokelike.wiki/battle-tower/ | 7 Stufen (Kanto bis ORAS) mit je 9 festen Gegnern, also 63 Teams, die Details auf Unterseiten. Belohnung 200 bis 1100 ₽ pro Sieg | v3.5, importiert am 19.10.2026 | Vitamine kosten **200 ₽**, „Free reset removes the allocation without refunding coins“, 10 Punkte pro Stufe, höchstens 50 pro Linie und 10 pro Wert. Sie gelten **nur im Tower und in Challenges**, nicht in der Story. Das passt zu `buyVitamin` (§12.5) |
-| https://pokelike.wiki/traits/ | 18 Typ-Traits mit Stufen T1 bis T6 (ca. 108 Effektzeilen), Punktregeln mit Beispielen | Kopf „Official v3.6 · 2026-11-01“, Karten teils v3.1 | **Bestätigt §12.3**: „A normal Pokémon contributes 1 point to each type; Shiny adds 1 and Mutant adds 1 more“, Stufe = ⌊Summe/2⌋. Das Spiel kennt laut Seite bis T12 |
-| https://pokelike.wiki/items/ | Katalog mit 164 Einträgen (36 Items, 128 Passive), Effekttext, Modus, Stapelregel meist „not established“ | v3.1, importiert am 12.09.2026 | **Bestätigt §12.2** (Typ-Items „attempts X-type attacks if able“). Das Spiel hat inzwischen 37 Items, 256 Relikte und 4 nutzbare (v3.8), die Seite ist also veraltet |
-| https://pokelike.wiki/ | Startseite, Verweise u. a. auf `/challenges/` („twelve permanent rules“) und `/guides/evs-and-vitamins/` | – | `/challenges/` und die Tower-Unterseiten sind noch nicht gelesen, das folgt in P4 |
-| https://pokelike-guide.fr/ | Nur „Pokelike Tips and Tricks“, ohne verwertbaren Inhalt (vermutlich JS-gerendert) | – | nicht nutzbar |
-
-Zu Nuzlocke („ein Fang pro Zone, Besiegte sind weg“) gibt es auf den gelesenen Seiten **keine** Angaben. Der Punkt bleibt offen für P4 (R-062).
-
 ### 12.8 Kampfende (Live-Lauf 2, 2026-11-25)
 Nach einem verlorenen Arenakampf (Kanto, Erika) bleibt `battle-screen` aktiv. „SKIP“ (`#btn-auto-battle`) ist dann ausgegraut, alle KP-Balken des Teams sind leer, und es geht nicht über diesen Knopf weiter. Wie es danach weitergeht, ist **offen** und braucht ein Fixture: Weiter-Knopf (`#btn-continue-battle`, §4) oder automatischer Übergang zu `gameover-screen` (P3). Der Bot hat das zweimal reproduzierbar nicht erkannt (PROGRESS, „Bekannte Probleme“).
+
+## 13. Offene Fragen, gebündelt (Stand 2026-11-25, Ende Phase 1)
+Diese Liste ersetzt §7, §10.5 und §10.7 als Arbeitsliste. Erledigtes ist dort markiert.
+
+| # | Frage | Status | Wo gelöst |
+|---|---|---|---|
+| 1 | **Kampfende nach Niederlage**: Was erscheint nach einem verlorenen Arenakampf, `#btn-continue-battle` oder ein automatischer Übergang? Wie erkennt man „Kampf vorbei“? (§12.8) | offen, **blockiert vollständige Runs** | P3 (R-087, R-190) |
+| 2 | Fixtures fehlen für `transition`, `win`, `stat-buff`, `endless-stage-complete`, das Kampfende bei Niederlage, Shop/Mart (`shop-modal`, Mart-Knoten) und echte Modals (Entwicklung, `usable-item`, `eevee-choice`, `reset-run-modal`) | offen | P3 (R-075, R-224: erst Fixture, dann Logik) |
+| 3 | DE/EN-Paare gibt es nur für catch und starter. Weitere Bildschirme brauchen eine zweite Sprache | offen | P3 (R-212) |
+| 4 | Was bewirkt jede Spieleinstellung genau (`autoSkipBattles` vs. `autoSkipAllBattles`, `misclickProtection`, `skipTraitFx`)? | offen | P3 (R-073, R-074) |
+| 5 | Nuzlocke: Wie setzt das Spiel „ein Fang pro Zone“ und Permadeath um? | offen | P4 (R-062) |
+| 6 | Ace-Regel (Wiki): Behält im Kanto-Story-Kampf nur das höchstlevelige Gegner-Mitglied sein Item? | offen | P4 (R-090) |
+| 7 | Mart-Knoten (`doPokeMartNode`): Tausch von Items gegen Candy ohne Pokédollar? Live bestätigen | offen | P3/P4 (R-055, R-136) |
+| 8 | Tower-Start: Kommt der Starter aus dem PC? Welche Regeln haben Normal und Hardcore? | offen | P4 (R-040) |
+| 9 | Darstellung der Boss-Vorschau im DOM | offen | P4 (R-121) |
+| 10 | Stapelregeln für Items und Relikte (laut Wiki „not established“) | offen | P4 (R-221) |

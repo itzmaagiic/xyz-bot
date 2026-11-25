@@ -1,0 +1,430 @@
+{
+ "fetchedAt": "2026-11-25T16:18:46.487Z",
+ "version": "3.8",
+ "patchDate": "2026-11-20",
+ "titleVersion": "v3.8",
+ "csp": "object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
+ "xfo": "SAMEORIGIN",
+ "metaCsp": [
+  "Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+ ],
+ "scriptElementRuns": true,
+ "stateIsGlobalLexical": true,
+ "windowGlobals": [
+  [
+   "_currentScreenId",
+   true
+  ],
+  [
+   "TYPE_CHART",
+   true
+  ],
+  [
+   "__POKEDEX__",
+   true
+  ],
+  [
+   "PATCH_NOTES",
+   true
+  ],
+  [
+   "endlessState",
+   true
+  ]
+ ],
+ "indexedDB": [],
+ "localStorageKeysFreshProfile": [
+  "poke_ach_backfill_v24",
+  "poke_ach_backfill_v24b",
+  "poke_storage_migrated_v1"
+ ],
+ "screens": [
+  "title-screen",
+  "trainer-screen",
+  "starter-screen",
+  "map-screen",
+  "battle-screen",
+  "catch-screen",
+  "item-screen",
+  "passive-screen",
+  "swap-screen",
+  "trade-screen",
+  "shiny-screen",
+  "badge-screen",
+  "transition-screen",
+  "elite-prep-screen",
+  "gameover-screen",
+  "win-screen",
+  "stat-buff-screen",
+  "history-region-select",
+  "endless-stage-select",
+  "endless-stage-complete"
+ ],
+ "settings": {
+  "autoSkipBattles": false,
+  "autoSkipAllBattles": false,
+  "autoSkipEvolve": false,
+  "skipResetConfirm": false,
+  "misclickProtection": false,
+  "darkMode": false,
+  "hideBossPreview": false,
+  "showShortcuts": false,
+  "cardColours": true,
+  "cardBold": true,
+  "language": "en",
+  "musicEnabled": true,
+  "musicVolume": 0.3,
+  "sfxEnabled": true,
+  "sfxVolume": 0.5
+ },
+ "fnCount": 1813,
+ "fnNuzlocke": [
+  "hasNuzlockeModeWin",
+  "nuzlockeCatchLevel"
+ ],
+ "fnShop": [
+  "erMartCandyValue",
+  "refreshShopBalance",
+  "doPokeMartNode",
+  "buyVitamin",
+  "openShopModal"
+ ],
+ "fnSave": [
+  "showSaveFilePicker",
+  "saveSettings",
+  "saveHallOfFameEntry",
+  "fusionSaveSprite",
+  "saveEndlessState",
+  "saveDexFilters",
+  "achtcSave",
+  "saveRun",
+  "clearSavedRun",
+  "savedRunKindKey",
+  "isSavedRunChallenge",
+  "isSavedRunCampaignWeekly",
+  "isSavedRunSoulLink",
+  "savedRunIsEndless",
+  "savedRunContinueKind",
+  "loadPersistentBuffs",
+  "savePersistentBuffs",
+  "pcSaveProgress",
+  "spSaveCollection",
+  "spPersistEvolutions",
+  "spSashSaves",
+  "initCloudSave"
+ ],
+ "fnTrait": [
+  "tTrait",
+  "passiveActiveTraits",
+  "passiveTeamTraits",
+  "erTraitBonusTotal",
+  "erSpreadTraitLevels",
+  "traitShortHtml",
+  "traitLineText",
+  "traitShortText",
+  "getTraitDisplayData",
+  "computeMirroredTraits",
+  "endlessChallengeTraitCap",
+  "deckModeNoTraits",
+  "computeTraitTiers",
+  "buildTraitsConfig",
+  "playerTraitCountAdjust",
+  "sigTraitCountAdjust",
+  "renderTraitPreview",
+  "playTraitTriggerAnimation",
+  "renderSwapTraits",
+  "renderEndlessTraitPanel",
+  "hideEndlessTraitPanel",
+  "equalizeTraitBarHeights",
+  "renderBattleTraitBars",
+  "clearBattleTraitBars",
+  "renderTraitDeltaRows",
+  "makeTraitOverlay",
+  "refreshTraitPanel",
+  "trainerPortraitSlug",
+  "applyEndlessBugTrait",
+  "dkTraitHook"
+ ],
+ "fnBoss": [
+  "bossPreviewMon",
+  "erIsBigBoss",
+  "erBossLevel",
+  "erBossStep",
+  "erBossTeamLevels",
+  "erBossTeamSize",
+  "erBossMutationCount",
+  "treatBossLevelBonus",
+  "erAfterBigBoss",
+  "megaAbilityPreview",
+  "renderTraitPreview",
+  "attachBossTeamTooltips",
+  "megaPreviewInstance",
+  "tBossTitle",
+  "rollSubMapBoss",
+  "doSubMapBoss",
+  "doBossNode",
+  "bossPrepKey",
+  "bossPrepCommitted",
+  "commitBossPrep",
+  "clearBossPrep",
+  "chalBadgeBossMult",
+  "currentMapBossType",
+  "showErBigBossRewards",
+  "huntBossVariants",
+  "doEndlessBossNode",
+  "withMegaPreview",
+  "renderDeckOddsPreview",
+  "dkPreviewCardDamage",
+  "dkShowAimPreview",
+  "dkClearAimPreview",
+  "spBossLabel",
+  "spPayBossToken",
+  "spAfterBossRelics",
+  "spBossModFor",
+  "spCurrentBossName",
+  "spBossModsForNode",
+  "spSummonBossMewtwo",
+  "spBossRuleNames",
+  "spMergeBossMods",
+  "spCurrentBossMod",
+  "spPreviewHits",
+  "spPreviewDamage",
+  "spShowDamagePreview",
+  "spClearDamagePreview"
+ ],
+ "fnStarter": [
+  "countGenStarterRootsTotal",
+  "getUsedStarters",
+  "recordUsedStarter",
+  "ckStarterForm",
+  "pickForcedStarter",
+  "backFromStarterSelect",
+  "showStarterSelect",
+  "pcOwnsStarterForm",
+  "setPcStarterForm",
+  "numberStarterChoices",
+  "selectStarter",
+  "rankedStarterReveal",
+  "renderRankedStarterFoe",
+  "checkStarterCollectionAchievements",
+  "getHofStarterRoots",
+  "countGenStarterTotal",
+  "getMegaStarterChoice",
+  "setMegaStarterChoice",
+  "megaStarterChoicePending",
+  "megaWeeklyStarterIds",
+  "chooseMegaStarter",
+  "spChooseStarterDeck"
+ ],
+ "_note": "Erzeugt von scripts/recon/read-game.mjs (frisches Profil, nur lesend). Ohne Spielcode-Ausschnitte. Beleg für GAME_RECON §12 (R-067 bis R-069, R-073, R-077).",
+ "itemPool": [
+  {
+   "id": "lucky_egg",
+   "name": "Lucky Egg",
+   "desc": "30% chance: holder gains +1 extra level after each battle"
+  },
+  {
+   "id": "choice_band",
+   "name": "Choice Band",
+   "desc": "+40% physical damage, -20% DEF"
+  },
+  {
+   "id": "choice_specs",
+   "name": "Choice Specs",
+   "desc": "+30% special damage"
+  },
+  {
+   "id": "metronome",
+   "name": "Metronome",
+   "desc": "Dual-type holder uses its OTHER type for attacks; +20% damage on all moves"
+  },
+  {
+   "id": "scope_lens",
+   "name": "Scope Lens",
+   "desc": "+30% crit chance"
+  },
+  {
+   "id": "rocky_helmet",
+   "name": "Rocky Helmet",
+   "desc": "Attacker takes 12% of their max HP on each hit"
+  },
+  {
+   "id": "shell_bell",
+   "name": "Shell Bell",
+   "desc": "Heal 15% of damage inflicted"
+  },
+  {
+   "id": "eviolite",
+   "name": "Eviolite",
+   "desc": "stops evolutions, if the pokemon is not the final stage it gets +50% DEF & +50% Sp. DEF"
+  },
+  {
+   "id": "sharp_beak",
+   "name": "Sharp Beak",
+   "desc": "+40% Flying move damage; attempts Flying-type attacks if able"
+  },
+  {
+   "id": "charcoal",
+   "name": "Charcoal",
+   "desc": "+40% Fire move damage; attempts Fire-type attacks if able"
+  },
+  {
+   "id": "mystic_water",
+   "name": "Mystic Water",
+   "desc": "+40% Water move damage; attempts Water-type attacks if able"
+  },
+  {
+   "id": "magnet",
+   "name": "Magnet",
+   "desc": "+40% Electric move damage; attempts Electric-type attacks if able"
+  },
+  {
+   "id": "miracle_seed",
+   "name": "Miracle Seed",
+   "desc": "+40% Grass move damage; attempts Grass-type attacks if able"
+  },
+  {
+   "id": "twisted_spoon",
+   "name": "Twisted Spoon",
+   "desc": "+40% Psychic move damage; attempts Psychic-type attacks if able"
+  },
+  {
+   "id": "soft_sand",
+   "name": "Soft Sand",
+   "desc": "+40% Ground move damage; attempts Ground-type attacks if able"
+  },
+  {
+   "id": "hard_stone",
+   "name": "Hard Stone",
+   "desc": "+40% Rock move damage; attempts Rock-type attacks if able"
+  },
+  {
+   "id": "dragon_fang",
+   "name": "Dragon Fang",
+   "desc": "+40% Dragon move damage; attempts Dragon-type attacks if able"
+  },
+  {
+   "id": "poison_barb",
+   "name": "Poison Barb",
+   "desc": "+40% Poison move damage; attempts Poison-type attacks if able"
+  },
+  {
+   "id": "spell_tag",
+   "name": "Spell Tag",
+   "desc": "+40% Ghost move damage; attempts Ghost-type attacks if able"
+  },
+  {
+   "id": "silk_scarf",
+   "name": "Silk Scarf",
+   "desc": "+40% Normal move damage; attempts Normal-type attacks if able"
+  },
+  {
+   "id": "metal_coat",
+   "name": "Metal Coat",
+   "desc": "+40% Steel move damage; attempts Steel-type attacks if able"
+  },
+  {
+   "id": "black_glasses",
+   "name": "Black Glasses",
+   "desc": "+40% Dark move damage; attempts Dark-type attacks if able"
+  },
+  {
+   "id": "pixie_plate",
+   "name": "Pixie Plate",
+   "desc": "+40% Fairy move damage; attempts Fairy-type attacks if able"
+  },
+  {
+   "id": "never_melt_ice",
+   "name": "Never-Melt Ice",
+   "desc": "+40% Ice move damage; attempts Ice-type attacks if able"
+  },
+  {
+   "id": "black_belt",
+   "name": "Black Belt",
+   "desc": "+40% Fighting move damage; attempts Fighting-type attacks if able"
+  },
+  {
+   "id": "silver_powder",
+   "name": "Silver Powder",
+   "desc": "+40% Bug move damage; attempts Bug-type attacks if able"
+  },
+  {
+   "id": "assault_vest",
+   "name": "Assault Vest",
+   "desc": "+50% Sp.Def"
+  },
+  {
+   "id": "choice_scarf",
+   "name": "Choice Scarf",
+   "desc": "+50% Speed"
+  },
+  {
+   "id": "leftovers",
+   "name": "Leftovers",
+   "desc": "Restore 10% max HP each round"
+  },
+  {
+   "id": "expert_belt",
+   "name": "Expert Belt",
+   "desc": "+100% damage on super effective hits"
+  },
+  {
+   "id": "wide_lens",
+   "name": "Wide Lens",
+   "desc": "+20% damage on all moves"
+  },
+  {
+   "id": "quick_claw",
+   "name": "Quick Claw",
+   "desc": "50% chance to attack first regardless of speed"
+  },
+  {
+   "id": "kings_rock",
+   "name": "King's Rock",
+   "desc": "30% chance to flinch the target on a hit"
+  },
+  {
+   "id": "lagging_tail",
+   "name": "Lagging Tail",
+   "desc": "Always moves last, but +100% move damage"
+  },
+  {
+   "id": "amulet_coin",
+   "name": "Amulet Coin",
+   "desc": "Earn 3₽ for every battle won while you carry it (up to 150₽ per run)"
+  },
+  {
+   "id": "red_card",
+   "name": "Red Card",
+   "desc": "Take 50% less damage from super-effective hits"
+  },
+  {
+   "id": "loaded_dice",
+   "name": "Loaded Dice",
+   "desc": "Start of each battle: 37% chance for +2 to ATK / DEF / Sp.Atk / Sp.Def / Speed, else -1"
+  }
+ ],
+ "usablePool": [
+  {
+   "id": "sacred_ash",
+   "name": "Sacred Ash",
+   "desc": "Fully restores HP and revives a Pokémon (works on fainted or alive)"
+  },
+  {
+   "id": "rare_candy",
+   "name": "Rare Candy",
+   "desc": "Gives a Pokémon +3 levels"
+  },
+  {
+   "id": "moon_stone",
+   "name": "Moon Stone",
+   "desc": "Force evolves a Pokémon regardless of level"
+  },
+  {
+   "id": "tm_normal",
+   "name": "TM",
+   "desc": "Upgrades a Pokémon's move tier by 1"
+  }
+ ],
+ "passivePoolCount": 256
+}
