@@ -22,6 +22,25 @@ describe('actor guard (R-147)', () => {
     expect(isForbiddenTarget(account)).toBe('[data-menu="account"]');
   });
 
+  it('flags share, shop/Pokédollar, app install and the second reset button (R-053, R-237)', () => {
+    const q = (sel: string) => doc.querySelector(sel) as Element;
+    expect(isForbiddenTarget(q('[onclick="shareRun()"]'))).not.toBeNull();
+    expect(isForbiddenTarget(q('#btn-mart-nav'))).not.toBeNull();
+    expect(isForbiddenTarget(q('#btn-install-app'))).not.toBeNull();
+    const resets = Array.from(doc.querySelectorAll('[onclick*="confirmResetRun"]'));
+    expect(resets.length).toBeGreaterThanOrEqual(1);
+    for (const r of resets) expect(isForbiddenTarget(r)).not.toBeNull();
+    const vitamin = doc.createElement('button');
+    vitamin.setAttribute('onclick', 'buyVitamin(1, "atk")');
+    doc.body.appendChild(vitamin);
+    expect(isForbiddenTarget(vitamin)).not.toBeNull();
+  });
+
+  it('keeps navigation allowed: home and map buttons', () => {
+    expect(isForbiddenTarget(doc.querySelector('[data-menu="home"]') as Element)).toBeNull();
+    expect(isForbiddenTarget(doc.querySelector('[onclick="showLeagueModal()"]') as Element)).toBeNull();
+  });
+
   it('allows normal game controls', () => {
     expect(isForbiddenTarget(doc.querySelector('#run-menu-toggle') as Element)).toBeNull();
     const node = doc.querySelector('g.map-node, .map-node');

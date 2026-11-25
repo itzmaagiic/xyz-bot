@@ -13,6 +13,13 @@ export const FORBIDDEN_TARGETS: readonly string[] = [
   '[onclick*="confirmResetRun"]',
   '#reset-run-modal',
   '.reset-run-modal',
+  // never share a run, never open the Poké Mart / spend Pokédollar, never install the app (R-053, R-237)
+  '[onclick*="shareRun"]',
+  '[onclick*="openShopModal"]',
+  '#btn-mart-nav',
+  '[onclick*="buyVitamin"]',
+  '[onclick*="installApp"]',
+  '#btn-install-app',
 ];
 
 /** The only key presses the bot may send: Shift+1…6 (swap the lead, see bot.ts). */

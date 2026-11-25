@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global window, document, localStorage, indexedDB -- used inside page.evaluate (browser context) */
 /**
  * Read-only recon of https://pokelike.xyz (Phase 1, R-067…R-073, R-077; GAME_RECON §10.5/§10.7).
  * Fresh, logged-out browser profile; cloud-save endpoints and trackers are blocked.
