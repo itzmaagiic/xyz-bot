@@ -16,7 +16,7 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 ## Entscheidungen (Nutzer hat delegiert, D-023)
 - **Pokédollar:** Die strenge Regel bleibt, Ausgaben nur mit Freigabe, Budget-Standard 0. **Erledigt.**
 - **Git-Verlauf bereinigt** (nach ausdrücklicher Freigabe, D-024). In `main` und im Session-Branch gibt es keine private Mailadresse und keinen Spielstand mehr. **Erledigt.**
-- **Alten Branch `claude/pokelike-bot-extension-skalzp` löschen: Das muss der Nutzer tun.** Der Git-Proxy der Session lehnt das Löschen mit 403 ab. Der Branch enthält noch den alten Initial-Commit mit der privaten Adresse. Weg: auf GitHub unter „Branches“ das Papierkorb-Symbol. Danach R-244 auf ✅ setzen.
+- **Alten Branch `claude/pokelike-bot-extension-skalzp` löschen: Das muss der Nutzer tun.** Der Git-Proxy der Session lehnt das Löschen mit 403 ab. Der Branch enthält noch den alten Initial-Commit mit der privaten Adresse. Weg: im Browser, nicht in der GitHub-App, `github.com/itzmaagiic/xyz-bot/branches` öffnen und beim Branch das Papierkorb-Symbol wählen (iPhone: „Desktop-Website anfordern“). Laut GitHub-API ist der Branch nicht geschützt und hat keinen offenen PR. Der Nutzer löscht ihn später (Stand 2026-11-25). **Jede Session prüft zu Beginn mit `git ls-remote origin`, ob er noch existiert, und erinnert den Nutzer vor einer Veröffentlichung daran.** Ist er weg, R-244 auf ✅ setzen.
 
 ## Vorbefunde der Reviewer für spätere Phasen (Review-Tor P0, Runde 3)
 **strategy-reviewer** (für P0 nicht anwendbar, weil `runs/` fehlt):
