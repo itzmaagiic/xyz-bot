@@ -2,10 +2,10 @@
 
 **Stand:** 2026-11-25
 **Aktuelle Phase:** P0
-_(Phase 0 ist fast abgeschlossen. Offen ist nur noch das Review-Tor R-243, also die erneute Prüfung nach den Korrekturen. Danach folgt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
+_(Phase 0 ist fast abgeschlossen. Offen sind nur noch das Review-Tor R-243 (Runde 3) und damit R-018. Danach folgt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- Review-Tor Phase 0 (R-243): Die Funde des requirements-reviewer sind eingearbeitet, die erneute Prüfung läuft.
+- Review-Tor Phase 0 (R-243), Runde 3: Die Funde aus Runde 2 (B1 bis B6 und H1 bis H14) sind eingearbeitet. Es prüfen requirements-reviewer, ui-reviewer und strategy-reviewer, erstmals als echte Agententypen.
 
 ## Nächster Schritt
 1. **Session 2, zuerst:** Prüfen, ob die Agententypen `requirements-reviewer`, `ui-reviewer` und `strategy-reviewer` per `subagent_type` aufrufbar sind (R-022). Die Plugins prüfen (R-020, D-021).
@@ -19,6 +19,10 @@ _(Phase 0 ist fast abgeschlossen. Offen ist nur noch das Review-Tor R-243, also 
 - **Pokédollar:** Laut D-017 gilt die strengere frühere Regel, also Ausgaben nur mit Freigabe. Der Nutzer kann das lockern.
 
 ## Bekannte Probleme
+- **Mögliches Fair-Play-Risiko:** Die Simulations-Seeds werden aus dem echten Spielseed abgeleitet (`getRngSeed() ^ k`, `src/core/bridge/simulator.ts`). In Phase 1 prüfen, ob das mit dem echten Zufall korreliert, Umbau nach R-248.
+- **Reset per Tastatur:** „Reset Run“ hat das Tastenkürzel `R`. Phase 1 muss prüfen, dass die Tastatur-Aktionen des Actors (z. B. Shift+Ziffer) nie `R` senden können (R-147).
+- `src/core/bridge/page-bridge.ts` behauptet im Kommentar „never mutates game state“. Die Simulation setzt aber vorübergehend Seed und Zähler (D-019). Der Kommentar wird in P3 korrigiert.
+- `playwright.config.ts` nutzt für `userscript-webkit-iphone` das unveränderte iPhone 13 (390×664, entspricht `iphone-safari`). Es fehlt `iphone` mit 390×844 (UI.md §1). Wird in P2/P5 korrigiert.
 - **WebKit startet in der Cloud noch nicht:** Der Download klappt, aber Systembibliotheken fehlen (`libgtk-4.so.1`, `libgraphene-1.0.so.0` u. a.). Lösung in Phase 1 (D-011).
 - **Fast alle R-Punkte sind formal noch ❌.** Der übernommene Code erfüllt viele davon wahrscheinlich schon, aber ohne Abnahme mit Nachweis. Das ist Phase 1.
 - R-020 und R-022 lassen sich erst in einer neuen Session prüfen (D-021).

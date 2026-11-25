@@ -8,7 +8,7 @@ Jeder Satz des Hauptauftrags muss in `docs/REQUIREMENTS.md` mindestens einer R-I
 
 ## Hauptauftrag
 
-_Nachgereicht in der Einrichtungs-Session am 2026-11-25. Der Text steht unverändert hier. Als Anhang lag ein Spielstand bei (`pokelike-save.json.txt`, localStorage-Export). Eine bereinigte Kopie liegt unter `tests/fixtures/storage/` (D-013)._
+_Nachgereicht in der Einrichtungs-Session am 2026-11-25. Der Text steht unverändert hier. Als Anhang lag ein Spielstand bei (`pokelike-save.json.txt`, localStorage-Export). Eine bereinigte Kopie lag zunächst unter `tests/fixtures/storage/` (D-013). Nachtrag vom selben Tag: Nach D-016 und D-013 ist im Repo nur noch ein anonymisiertes Run-Beispiel unter `tests/fixtures/state/`, der volle bereinigte Stand liegt privat unter `tests/fixtures/private/` (gitignored)._
 
 # Pokelike.xyz-Bot – Chrome-Erweiterung + Userscript
 

@@ -187,13 +187,16 @@ Dieser Abschnitt kam in der Einrichtungs-Session hinzu, als der Hauptauftrag zer
 | Autobattler, Kämpfe laufen automatisch | **bestätigt**: Der Kampf wird sofort komplett berechnet (§8 Kampf) |
 | Modi Story (Classic/Nuzlocke, Regionen), Tower (Normal/Hardcore), Challenges, Pokésort, Multiplayer „Coming Soon“ | **bestätigt** (§4: `title-screen`, `history-region-select`, `endless-stage-select`, §9) |
 | Run-Ablauf Charakter → Starter → Karte → Orden → Next Map → Top 4 → Champ | **bestätigt** (§4) |
-| Bildschirme Wild, Item, Relic, Team Full, Trade, Badge, Choose Your Order, FIGHT!, Game Over, Champion | **bestätigt** (§4, §9). Shop, Entwicklungs-Overlays und Top 4/Champ live sind **teilweise offen** (§7) |
+| Bildschirme Wild, Item, Relic, Team Full, Trade, Badge, Choose Your Order, FIGHT!, Game Over, Champion | **bestätigt** (§4, §9). Top 4 und Champ wurden live gespielt (Champion-Sieg, STRATEGY.md). Shop/Pokémart und einzelne Entwicklungs-Overlays sind **offen** |
 | Der erste lebende Pokémon kämpft zuerst | **bestätigt** (`runBattle`, §8) |
 | Gehaltene Items können **Angriffstyp** und Wirkung ändern | Wirkung **bestätigt** (`calcDamage`, §8). Ob es Items gibt, die den Angriffstyp ändern: **offen** |
 | Traits: 2 Punkte pro Stufe, normal 1 Punkt pro Typ, Shiny 2 | **teilweise bestätigt** („Shinys zählen doppelt“, `computeTraitTiers`, §9). Die Schwelle von 2 Punkten pro Stufe ist noch zu belegen |
 | Level und Sonderbonbons beleben Besiegte nicht | **bestätigt** (§8 „Besiegte bekommen nichts“) |
 | Nuzlocke: ein Fang pro Zone, Besiegte sind weg | **offen** (`state.nuzlockeMode` ist vorhanden, die Regeln sind nicht live geprüft) |
 | Tower: dauerhafte EV-Upgrades (Vitamine) für Pokédollar | **teilweise** (`poke_stat_buffs`, `.pc-buff-stars`, `vitamin-apply-modal`) |
+
+### 10.1a Teilweise überholte Angaben in §7
+§7 stammt aus einem früheren Stand des Vorgängers. **Überholt:** „`runBattle` … bewusst nicht verwendet“. Der Simulator nutzt es inzwischen, siehe §8 „Simulation durch den Bot“ und D-019. Ebenfalls überholt ist „Relic/Passive … Top 4/Champ noch nicht live gesehen“: Relikte sind in §9 live erfasst, Top 4 und Champ wurden live gespielt. Weiterhin offen sind Shop/Pokémart, einzelne Entwicklungs-Overlays, der Tower-Stat-Buff und der Pokésort-Löser.
 
 ### 10.2 localStorage-Schlüssel mit Zugangs- und Personendaten (R-148, D-013)
 Diese Schlüssel liest, loggt und exportiert der Bot **nie**. In Fixtures haben sie nichts zu suchen:
@@ -213,3 +216,15 @@ Am 2026-11-25 geprüft: Der Download von WebKit für Playwright 1.63.0 (`webkit-
 3. Wie gehen die Nuzlocke-Regeln im Code und live? Das betrifft R-062.
 4. Mit welcher Währung bezahlt man im Shop bzw. Pokémart während eines Runs? Ist das dieselbe wie die dauerhaften Pokédollar? Das betrifft R-136 und R5.1/D-017.
 5. Wo stellt man den Starter für die Story ein? Das betrifft R-138 und R-160.
+
+### 10.6 Obere Leiste, Run-Menü und Hauptmenü
+Diese Angaben stammen aus der Vorab-Aufklärung in Session 1 (Hauptmenü headless, frisches Profil, englische UI). Die Selektoren sind am 2026-11-25 in allen 29 DOM-Fixtures geprüft. Die Elemente sind auf jedem Bildschirm vorhanden, deshalb darf das Overlay sie nie verdecken (R-002).
+- **Run-Menü:** `#run-menu-toggle` öffnet die Liste `.run-menu-btn[data-menu=…]` mit den Werten `home`, `menu`, `pokedex`, `items`, `achievements`, `hof`, `pc`, `settings`, `patch`, `credits`, `discord`, `account` (Login bzw. Logout) und **`reset`** („Reset Run“, ruft `confirmResetRun()` auf, Modal `reset-run-modal`, **Tastenkürzel `R`** über `data-shortcut="R"`). Der Bot klickt `reset` und `account` nie ohne ausdrückliche Erlaubnis und sendet **nie die Taste `R`** (R-147). Das gilt auch für Tastenkürzel wie den Lead-Tausch per Shift+Ziffer. Spieleinstellung `skipResetConfirm` beachten (R-226).
+- **Obere Leiste:** Geld (₽), `#btn-fullscreen` (Vollbild), `#btn-mart-nav` (Poké Mart), dazu Pokédex, PC und Einstellungen. Auf dem Desktop kommen Achievements und Mega Bracelet hinzu, auf dem iPhone liegt die Navigation hinter dem Hamburger-Menü („Open menu“).
+- **Hauptmenü (frisches Profil):** Die Modi heißen Story („PLAY STORY“), Battle Tower („ENTER TOWER“), Challenges („TAKE CHALLENGE“, im frischen Profil gesperrt, R-227), Multiplayer („COMING SOON“) und Daily Pokésort (₽500, täglich neues Rätsel). Die Desktop-Navigation umfasst HOME, POKÉDEX, ITEMS, ACHIEVEMENTS, HALL OF FAME, PC, LOGIN / SIGNUP, PATCH NOTES, SETTINGS, CREDITS und DISCORD.
+- **Sicherheits-Header:** CSP wie in §1, dazu `X-Frame-Options: SAMEORIGIN`. Ausgeliefert wird über Cloudflare, mit Google Analytics und einem Consent-Manager (CMP/TCF).
+
+### 10.7 Weitere offene Fragen aus der Vorab-Aufklärung
+1. Gibt es zusätzlich eine Meta-CSP im HTML?
+2. Wann schreibt das Spiel `poke_current_run` in den localStorage, nach jeder Aktion oder nur an Speicherpunkten? Das ist wichtig für Resume (R-194) und R-241.
+3. Wie zeigt das Spiel den nächsten Boss an (Boss-Vorschau, Einstellung `hideBossPreview`, R-121)?

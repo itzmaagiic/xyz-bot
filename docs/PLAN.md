@@ -16,7 +16,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - [x] Die Gedächtnis-Dateien, Plugins, drei Reviewer-Subagenten und der SessionStart-Hook stehen (R-017 bis R-026). Die Prüfung, ob Plugins und Subagenten geladen werden, ist nach P1 verschoben (R-020, R-022, D-021).
 - [x] Der Hauptauftrag steht wörtlich in `docs/AUFTRAG.md` und ist zerlegt (R-028 bis R-243), mit Zuordnungstabelle.
 - [x] Alle Branches sind gesichtet und der Vorgänger-Branch ist übernommen (R-225, D-016).
-- [x] Der Repo-Sicherheitsscan über alle Refs ist erledigt (R-209). Fixtures liegen nur anonymisiert vor (R-211, R-240).
+- [x] Der Repo-Sicherheitsscan über alle Refs ist erledigt, das Urteil ist mitgeteilt (R-209). Fixtures liegen nur anonymisiert vor, private Stände sind gitignored (R-211, R-240). Das Bereinigen des Verlaufs ist nach P7 abgespalten (R-244, D-022).
 - [ ] Das Review-Tor ist bestanden (R-243): Die Funde des requirements-reviewer sind behoben und erneut geprüft.
 
 ## Phase 1 – Bestandsaufnahme und Aufklärung
@@ -33,18 +33,18 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - Die offenen Fragen sind in GAME_RECON.md gelistet und, wo möglich, beantwortet.
 
 ## Phase 2 – Projektgerüst und Build-Pipeline
-**Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Die Ziele sind zunächst leere Hüllen.
-**R-IDs:** R-015, R-016, R-032 bis R-034, R-078 bis R-082, R-098 bis R-100, R-102 bis R-105, R-107, R-192, R-193, R-199, R-201, R-208, R-232
+**Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Der übernommene Stand (D-016) baut beide Ziele bereits. Hier werden Gerüst und Pipeline mit Nachweis abgenommen und die Lücken geschlossen, z. B. WebKit im SessionStart-Hook, Doku-Checks und iPhone-Viewport in `playwright.config.ts`.
+**R-IDs:** R-015, R-016, R-032 bis R-034, R-078 bis R-082, R-098 bis R-100, R-102 bis R-105, R-107, R-192, R-193, R-199, R-201, R-208, R-232, R-246, R-247
 **Abnahmekriterien**
 - TypeScript strict, Bundler (Entscheidung in DECISIONS), ESLint, Prettier, Vitest und Playwright sind eingerichtet. `npm run build`, `build:chrome`, `build:userscript`, `test`, `lint` und `e2e` laufen grün.
-- Die MV3-Hülle lässt sich in Chromium entpackt laden (E2E). Die Userscript-Hülle hat einen vollständigen Metadaten-Block, und ein GM-Shim lädt sie in Chromium und WebKit (E2E).
+- Die MV3-Erweiterung lässt sich in Chromium entpackt laden (E2E). Das Userscript hat einen vollständigen Metadaten-Block, und ein GM-Shim lädt es in Chromium und WebKit (E2E).
 - Automatische Checks laufen: Import-Grenzen `core/`/`ui/` gegen `platform/` (R-032), erlaubte GM-API-Schnittmenge und `@grant`-Abgleich (R-192, R-104), Metadaten (R-193), keine leeren catch-Blöcke (R-199).
 - Der API-Abgleich mit der README von quoid/userscripts ist dokumentiert (R-098).
 - Der SessionStart-Hook installiert die Abhängigkeiten idempotent, inklusive der WebKit-Bibliotheken (R-016). Die Befehle stehen in CLAUDE.md. Das CHANGELOG ist angelegt.
 
 ## Phase 3 – Kern: Zustand, Bildschirme, Aktionen, Daten, Logs und Baseline-Run
 **Ziel:** Der Bot erkennt jeden Bildschirm, handelt verlässlich und spielt mit einer einfachen, sicheren Baseline-Strategie einen kompletten Story-Run ohne Hänger.
-**R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242
+**R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245
 **Abnahmekriterien**
 - Der ScreenDetector besteht alle Fixture-Tests (R-186). Ein unbekannter Bildschirm führt zu Pause, Meldung und Snapshot.
 - Der Actor nutzt Pointer- und Touch-Events, prüft die Wirkung jeder Aktion und arbeitet mit Backoff. Das Warten läuft über MutationObserver plus Stabilitätserkennung, dazu kommt der Watchdog.
@@ -55,7 +55,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 4 – Strategie (das Herzstück)
 **Ziel:** Der Bot entscheidet wie ein erfahrener Spieler und gewinnt messbar öfter als die Baseline.
-**R-IDs:** R-008, R-029 bis R-031, R-037, R-039 bis R-041, R-058 bis R-063, R-085, R-090, R-116 bis R-141, R-184, R-185, R-191, R-207, R-221, R-223, R-230, R-234 bis R-236, R-239
+**R-IDs:** R-008, R-029 bis R-031, R-037, R-039 bis R-041, R-058 bis R-063, R-085, R-090, R-116 bis R-141, R-184, R-185, R-191, R-207, R-221, R-223, R-230, R-234 bis R-236, R-239, R-248
 **Abnahmekriterien**
 - Für jeden Entscheidungstyp gibt es eine reine Funktion mit Unit-Tests für konkrete Szenarien und alle Grenzfälle (R-184, R-185).
 - Team-Bewertung, Vorausschau, Routenwahl, Fangen und Team Full, Items und Relikte, Tausch, Kampfreihenfolge, Shop, Tower-EVs, Profile und zentrale Gewichte sind umgesetzt.
@@ -82,7 +82,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 7 – Lieferung
 **Ziel:** Der Bot ist fertig verpackt, dokumentiert und sicher veröffentlichbar.
-**R-IDs:** R-144 (optional), R-202 bis R-206, R-210
+**R-IDs:** R-144 (optional), R-202 bis R-206, R-210, R-244
 **Abnahmekriterien**
 - `dist/chrome/` plus zip, `dist/pokelike-bot.user.js` und `.meta.js` sind eingecheckt. Dafür muss `.gitignore` angepasst werden, denn `dist/` ist dort derzeit ausgeschlossen. Die GitHub-raw-Links funktionieren, und die Version ist überall gleich und erhöht.
 - README (Deutsch), `docs/GAME_RECON.md`, `docs/STRATEGY.md`, `docs/UI.md`, `docs/screenshots/` und `CHANGELOG` sind vollständig.

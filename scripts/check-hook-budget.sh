@@ -13,7 +13,8 @@ for p in 0 1 2 3 4 5 6 7; do
   out="$(CLAUDE_PROJECT_DIR="$TMP" "$ROOT/.claude/hooks/session-start.sh")"
   chars=$(printf '%s' "$out" | python3 -c 'import sys; print(len(sys.stdin.read()))')
   missing=0
-  for id in $open_ids; do printf '%s' "$out" | grep -qE "(^|[^0-9])$id([^0-9]|$)" || missing=$((missing+1)); done
+  idblock="$(printf '%s\n' "$out" | awk '/^Offene\/teilweise Punkte nach Phase/ {f=1; next} f && /^$/ {exit} f')"
+  for id in $open_ids; do printf '%s' "$idblock" | grep -qE "(^|[^0-9])$id([^0-9]|$)" || missing=$((missing+1)); done
   gekuerzt=$(printf '%s' "$out" | grep -c 'gekürzt –' || true)
   echo "P$p: $chars Zeichen, fehlende offene IDs: $missing, gekürzt: $gekuerzt"
   if [ "$chars" -gt 9000 ] || [ "$missing" -gt 0 ]; then fail=1; fi

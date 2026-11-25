@@ -11,7 +11,7 @@ Du änderst **keine** Dateien im Repo. Auswertungsskripte, etwa mit `jq` oder No
 
 ## Grundlagen
 - Log-Format und Ablage stehen in `docs/DECISIONS.md` (D-005, D-012): `runs/<datum>-<run-id>/decisions.jsonl` mit einer Zeile pro Entscheidung und den Feldern `state`, `options`, `scores`, `chosen`, `reason`, `confidence` und `outcome`, dazu `summary.json`.
-- Spielwissen steht in `docs/GAME_RECON.md`. Ist dort etwas als [ungeprüft] markiert, kennzeichnest du Funde, die darauf beruhen, als unsicher. Die beabsichtigte Strategie steht in `docs/STRATEGY.md`, die Anforderungen in `docs/REQUIREMENTS.md` Abschnitt G (R-116 bis R-144).
+- Spielwissen steht in `docs/GAME_RECON.md`. Beruht ein Fund auf einer Angabe, die GAME_RECON als offen, teilweise oder überholt führt (§7, §10.1, §10.1a, §10.5, §10.7), kennzeichnest du ihn als unsicher. Die beabsichtigte Strategie steht in `docs/STRATEGY.md`, die Anforderungen in `docs/REQUIREMENTS.md` Abschnitt G (R-116 bis R-144).
 - Pokelike ist ein **Autobattler**: Die Kämpfe laufen automatisch. Bewerte deshalb die Entscheidungen **vor** dem Kampf. Berücksichtige Modus (Story Classic oder Nuzlocke, Battle Tower, Challenge) und Strategieprofil (Sicher, Ausgewogen, Aggressiv) des Runs.
 - Die Strategie-Logik findest du im Code (Suche nach den Entscheidungs-Funktionen). Bei jedem Fund nennst du die verantwortliche Stelle mit `Datei:Zeile`.
 

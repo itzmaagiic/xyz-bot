@@ -6,4 +6,5 @@ package-lock.json
 CLAUDE.md
 README.md
 docs/*.md
+docs/superpowers/
 .claude/

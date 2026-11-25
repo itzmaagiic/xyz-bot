@@ -26,9 +26,10 @@ Den Umfang legt allein `docs/REQUIREMENTS.md` fest. Der Auftrag steht wörtlich 
 
 ## Befehle
 - `npm ci` · `npm run build` (beide Ziele) · `npm run build:chrome` · `npm run build:userscript` · `npm test` (Vitest) · `npm run e2e` · `npm run typecheck` · `npm run lint` · `npm run format`
-- Live-Test gegen pokelike.xyz: `LIVE=1 LIVE_MINUTES=30 LIVE_MODE=challenge LIVE_CHAL=arena npx playwright test tests/e2e/live.spec.ts --trace off` bzw. `npm run e2e:live`
+- Live-Test gegen pokelike.xyz: `npm run e2e:live`, das baut vorher selbst. Alternativ nach `npm run build:chrome`: `LIVE=1 LIVE_MINUTES=30 LIVE_MODE=challenge LIVE_CHAL=arena npx playwright test tests/e2e/live.spec.ts --trace off`.
 - Playwright: Chromium ist in der Cloud vorinstalliert (`/opt/pw-browsers`), daher **kein** `playwright install chromium`. WebKit und seine Bibliotheken folgen D-011. Die iPhone-Viewports stehen in `docs/UI.md` §1.
-- Stand 2026-11-25 (Session 1): `tsc` 0 Fehler, `vitest` 98/98, `npm run build` grün. `e2e` und `live` sind in dieser Session nicht gelaufen.
+- Stand 2026-11-25 (Session 1): `tsc` 0 Fehler, `vitest` 98/98, `npm run build`, `lint` und `prettier --check` grün. Die E2E-Projekte für Chromium waren 12/12 grün. **`npm run e2e` ist in einer frischen Cloud-Session rot**, weil WebKit fehlt (D-011, Phase 1). `live` ist nicht gelaufen.
+- Doku-Checks: `scripts/check-hook-budget.sh` (Hook-Budget, R-232).
 
 ## Dokumente (Gedächtnis)
 | Datei | Zweck |
@@ -44,7 +45,7 @@ Den Umfang legt allein `docs/REQUIREMENTS.md` fest. Der Auftrag steht wörtlich 
 | `docs/superpowers/` | Specs und Pläne aus Superpowers. Sie sind abgeleitet und verweisen auf R-IDs |
 
 Subagenten in `.claude/agents/`: **requirements-reviewer** (Anforderungen gegen Code, Tests und Screenshots), **ui-reviewer** (Screenshots nach `docs/UI.md`), **strategy-reviewer** (Bot-Entscheidungen in den Logs echter Runs unter `runs/`).
-Der SessionStart-Hook (`.claude/hooks/session-start.sh`) zeigt beim Start PROGRESS.md, die IDs aller offenen Punkte je Phase und die offenen Punkte der aktuellen Phase.
+Der SessionStart-Hook (`.claude/hooks/session-start.sh`) zeigt beim Start PROGRESS.md, die IDs aller offenen Punkte je Phase und die offenen Punkte der aktuellen Phase in Kurzform. In großen Phasen (P3 bis P5) wird diese Kurzform gekürzt, dann die Phase in REQUIREMENTS.md vollständig lesen.
 
 ## Arbeitsregeln
 1. **Vor jeder Aufgabe** `CLAUDE.md`, `docs/REQUIREMENTS.md` und `docs/PROGRESS.md` lesen. Die Ausgabe des Hooks ersetzt das Lesen nicht. Diese Dateien sind die **einzige Quelle der Wahrheit**. Pläne aus Superpowers beziehen sich auf sie (R-IDs) und halten sie aktuell, nicht umgekehrt.
