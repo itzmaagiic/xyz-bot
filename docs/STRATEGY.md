@@ -11,6 +11,9 @@ Zähler sind danach identisch. 280 Bosskämpfe dauern etwa 60 ms, 68 Routen × 8
 
 **Fairness:** Simuliert wird nur mit eigenen Seeds, also über die Verteilung möglicher Gegner und Kampfverläufe. Der Bot
 sagt nie den echten nächsten Gegner oder Kampfausgang aus dem gesäten Zufall voraus.
+Seit 2026-11-25 (D-025, R-248) kommt die Seed-Basis aus einem FNV-1a-Hash des **sichtbaren** Zustands, also Karte, Knoten
+und Team mit Art, Level und KP (`src/core/bridge/sim-seed.ts`), und nicht mehr aus `getRngSeed()`. Davor war sie daraus abgeleitet.
+`getRngSeed()` dient nur noch zum Sichern und Wiederherstellen. Gleicher sichtbarer Zustand bedeutet gleiche Simulation und damit gleiche Entscheidung (R-030).
 
 | Simulation                    | Wofür                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

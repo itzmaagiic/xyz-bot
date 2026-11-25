@@ -1,14 +1,18 @@
 /**
  * Battle simulator – runs in the page's MAIN world and uses the game's own battle engine (`runBattle`).
  *
- * Side-effect free by construction:
+ * Side-effect free by construction (D-019):
  *  - every input team is deep-cloned before it reaches the engine
- *  - the global RNG seed (getRngSeed/seedRng) and the instance-id counter (_pokeUidCounter) are saved before and
- *    restored after every simulation, so the real run continues exactly as if nothing had happened
+ *  - simulations temporarily set the global RNG seed (seedRng) and the instance-id counter (_pokeUidCounter);
+ *    both are saved before and restored after every simulation, so the real run continues exactly as if nothing
+ *    had happened
+ *  - simulation seeds come from the VISIBLE state (simBase, sim-seed.ts), never from the game's hidden RNG:
+ *    getRngSeed() is used only to save/restore (R-239, R-248, D-025)
  *  - runBattle itself only reads `state` (verified in docs/GAME_RECON.md §8)
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FLAGS } from '../flags';
+import { simBase } from './sim-seed';
 declare const state: any;
 declare function runBattle(p: any[], e: any[], items: any[], eItems: any[], log: any, cfg: any, passives: any[]): any;
 declare function getRngSeed(): number;
@@ -301,6 +305,7 @@ export function projectTeam(team: any[], boost: number, heal: boolean): any[] {
 
 export async function simulateBoss(req: SimRequest): Promise<SimResult> {
   const seed0 = getRngSeed();
+  const sb = simBase(typeof state !== 'undefined' ? state : null);
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
@@ -336,7 +341,7 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
         let wins = 0;
         let alive = 0;
         for (let k = 0; k < n; k++) {
-          seedRng((seed0 ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0);
+          seedRng((sb ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0);
           const p = clone(ordered);
           if (fightChain(p, chain.teams, chain.metas)) wins++;
           alive += p.filter((m: any) => m.currentHp > 0).length;
@@ -445,6 +450,7 @@ export interface NodeSimResult {
 
 export async function simulateNodes(req: NodeSimRequest): Promise<NodeSimResult> {
   const seed0 = getRngSeed();
+  const sb = simBase(typeof state !== 'undefined' ? state : null);
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
@@ -470,7 +476,7 @@ export async function simulateNodes(req: NodeSimRequest): Promise<NodeSimResult>
         let wins = 0;
         let done = 0;
         for (let k = 0; k < n; k++) {
-          seedRng((seed0 ^ Math.imul(k + 7, 0x85ebca6b) ^ (boost * 0x27d4eb2d)) >>> 0);
+          seedRng((sb ^ Math.imul(k + 7, 0x85ebca6b) ^ (boost * 0x27d4eb2d)) >>> 0);
           // a "?" is 22 % wild / 20 % trainer / otherwise no fight – sample only the fights here
           const asTrainer = kind === 'trainer' || (kind === 'question' && k % 2 === 1);
           const enemy = asTrainer ? await trainerEnemies(node) : await wildEnemy(node);
@@ -515,11 +521,10 @@ export interface CatchSimResult {
   restored: boolean;
 }
 
-function chainRate(team: any[], teams: any[][], n: number, salt: number, metas?: FightMeta[]): number {
-  const base = getRngSeed();
+function chainRate(sb: number, team: any[], teams: any[][], n: number, salt: number, metas?: FightMeta[]): number {
   let wins = 0;
   for (let k = 0; k < n; k++) {
-    seedRng((base ^ Math.imul(k + salt, 0xc2b2ae35)) >>> 0);
+    seedRng((sb ^ Math.imul(k + salt, 0xc2b2ae35)) >>> 0);
     if (fightChain(clone(team), teams, metas)) wins++;
   }
   return wins / n;
@@ -527,6 +532,7 @@ function chainRate(team: any[], teams: any[][], n: number, salt: number, metas?:
 
 export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResult> {
   const seed0 = getRngSeed();
+  const sb = simBase(typeof state !== 'undefined' ? state : null);
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
@@ -554,8 +560,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
           t[lo] = mon;
         }
       }
-      const curRate = chainRate(projectTeam(t, boost, false), cur.teams, n, 11 + c, cur.metas);
-      const nextRate = next ? chainRate(projectTeam(t, boost + 8, true), next.teams, n, 101 + c, next.metas) : 0;
+      const curRate = chainRate(sb, projectTeam(t, boost, false), cur.teams, n, 11 + c, cur.metas);
+      const nextRate = next ? chainRate(sb, projectTeam(t, boost + 8, true), next.teams, n, 101 + c, next.metas) : 0;
       t = [];
       out.options.push({ index: c, current: curRate, next: nextRate, value: curRate + 0.6 * nextRate });
     }
@@ -765,6 +771,7 @@ async function playNextMap(team: any[], mapIdx: number): Promise<boolean> {
 
 export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult> {
   const seed0 = getRngSeed();
+  const sb = simBase(typeof state !== 'undefined' ? state : null);
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
@@ -806,7 +813,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
       let aliveSum = 0;
       let progSum = 0;
       for (let k = 0; k < n; k++) {
-        seedRng((seed0 ^ Math.imul(k + 1, 0x27d4eb2f) ^ Math.imul(pi + 1, 0x165667b1)) >>> 0);
+        seedRng((sb ^ Math.imul(k + 1, 0x27d4eb2f) ^ Math.imul(pi + 1, 0x165667b1)) >>> 0);
         const base: any[] = s.team ?? [];
         const team: any[] = clone(req.order?.length ? req.order.map((i) => base[i]).filter(Boolean) : base);
         let alive = true;
@@ -938,6 +945,7 @@ function relicByIcon(icon: string): any | null {
 
 export async function simulateRelics(req: RelicSimRequest): Promise<RelicSimResult> {
   const seed0 = getRngSeed();
+  const sb = simBase(typeof state !== 'undefined' ? state : null);
   let uid0: number | null = null;
   try {
     uid0 = _pokeUidCounter;
@@ -955,8 +963,8 @@ export async function simulateRelics(req: RelicSimRequest): Promise<RelicSimResu
     const value = (passives: any[]): number => {
       passivesOverride = passives;
       try {
-        const c = chainRate(projectTeam(team, 2, false), cur.teams, n, 31, cur.metas);
-        const x = next ? chainRate(projectTeam(team, 8, true), next.teams, n, 131, next.metas) : 0;
+        const c = chainRate(sb, projectTeam(team, 2, false), cur.teams, n, 31, cur.metas);
+        const x = next ? chainRate(sb, projectTeam(team, 8, true), next.teams, n, 131, next.metas) : 0;
         return c + 0.6 * x;
       } finally {
         passivesOverride = null;

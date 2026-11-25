@@ -5,7 +5,7 @@
 _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Aktuell: Task 1, Simulations-Seeds aus dem sichtbaren Zustand.
+- **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Task 1 (Seeds) ist erledigt, aktuell: Task 2, Actor-Guard.
 
 ## Nächster Schritt
 1. **Session 2, zuerst:** Die Projekt-Aktivierung der Plugins prüfen (R-020, D-021). In der Cloud kommen sie auch über den Konto-Sync, ein unterscheidender Nachweis gelingt nur lokal (`/plugin`). Die Agententypen sind bestätigt (R-022 ✅).
@@ -39,9 +39,7 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 8. Design-System (UI.md §6) und Mockups fehlen (R-177, R-179).
 
 ## Bekannte Probleme
-- **Mögliches Fair-Play-Risiko:** Die Simulations-Seeds werden aus dem echten Spielseed abgeleitet (`getRngSeed() ^ k`, `src/core/bridge/simulator.ts`). In Phase 1 prüfen, ob das mit dem echten Zufall korreliert, Umbau nach R-248.
 - **Reset per Tastatur:** „Reset Run“ hat das Tastenkürzel `R`. Phase 1 muss prüfen, dass die Tastatur-Aktionen des Actors (z. B. Shift+Ziffer) nie `R` senden können (R-147).
-- `src/core/bridge/page-bridge.ts` behauptet im Kommentar „never mutates game state“. Die Simulation setzt aber vorübergehend Seed und Zähler (D-019). Der Kommentar wird in P3 korrigiert.
 - `playwright.config.ts` nutzt für `userscript-webkit-iphone` das unveränderte iPhone 13 (390×664, entspricht `iphone-safari`). Es fehlt `iphone` mit 390×844 (UI.md §1). Wird in P2/P5 korrigiert.
 - **WebKit startet in der Cloud noch nicht:** Der Download klappt, aber Systembibliotheken fehlen (`libgtk-4.so.1`, `libgraphene-1.0.so.0` u. a.). Lösung in Phase 1 (D-011).
 - **Fast alle R-Punkte sind formal noch ❌.** Der übernommene Code erfüllt viele davon wahrscheinlich schon, aber ohne Abnahme mit Nachweis. Das ist Phase 1.
@@ -50,6 +48,7 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1, P1 Task 1: Die Simulations-Seeds kommen jetzt aus dem sichtbaren Zustand (`sim-seed.ts`), nicht mehr aus dem echten Spielzufall (R-248 ✅, R-239 🟡). Die Kommentare in `simulator.ts` und `page-bridge.ts` sind korrigiert. Tests 102/102 grün, Lint und Build ebenfalls.
 - 2026-11-25 · Session 1: **Git-Verlauf bereinigt** (D-024): private Autor-Adresse ersetzt, Spielstand-Datei aus dem Verlauf entfernt, `main` und Session-Branch per `--force-with-lease` neu gesetzt, Tree unverändert. Die Commit-Hashes in den Docs sind angepasst. Das Löschen des alten Branches lehnt der Proxy ab (403), das übernimmt der Nutzer.
 - 2026-11-25 · Session 1: Delegierte Entscheidungen (D-023): Pokédollar bleibt streng, Verlauf wird bereinigt, alter Branch wird gelöscht.
 - 2026-11-25 · Session 1: **Phase 0 abgeschlossen, Review-Tor bestanden (R-243).** Runde 3 lief erstmals mit echten Agententypen (R-022 ✅). requirements-reviewer: „bestanden“, B1 bis B5 behoben. ui-reviewer und strategy-reviewer: „für P0 nicht anwendbar“, ihre Vorbefunde stehen oben. Aktuelle Phase ist jetzt P1.

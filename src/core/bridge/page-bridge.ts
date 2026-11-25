@@ -1,8 +1,9 @@
 /**
  * Runs in the PAGE's main world (Chrome: content script with world "MAIN"; userscript: injected <script>).
  * Reads the game's lexical globals (`state`, `TYPE_CHART`, `PATCH_NOTES`, …) and answers requests from the
- * isolated world with plain JSON strings. It never mutates game state; the only write is `saveSettings`
- * restricted to WRITABLE_SETTINGS.
+ * isolated world with plain JSON strings. It does not change the game's progress or storage. Exceptions (D-018,
+ * D-019): `saveSettings` restricted to WRITABLE_SETTINGS (after confirmation), the documented UI openers, and the
+ * simulations, which temporarily set the RNG seed and `_pokeUidCounter` and restore both exactly afterwards.
  */
 import {
   simulateBoss,
