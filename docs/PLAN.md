@@ -9,15 +9,15 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ---
 
-## Phase 0 – Einrichtung, Übernahme und Zerlegung des Auftrags (Session 1, 2026-11-25)
+## Phase 0 – Einrichtung, Übernahme und Zerlegung des Auftrags ✅ (Session 1, 2026-11-25)
 **Ziel:** Jede spätere Session arbeitet gründlich, selbstständig und ohne Vergessen. Vorhandene Arbeit ist übernommen, und der Auftrag ist vollständig in prüfbare Anforderungen zerlegt.
 **R-IDs:** R-014, R-017 bis R-019, R-021, R-023 bis R-026, R-209, R-211, R-225, R-240, R-243
 **Abnahmekriterien**
 - [x] Die Gedächtnis-Dateien, Plugins, drei Reviewer-Subagenten und der SessionStart-Hook stehen (R-017 bis R-026). Die Prüfung, ob Plugins und Subagenten geladen werden, ist nach P1 verschoben (R-020, R-022, D-021).
-- [x] Der Hauptauftrag steht wörtlich in `docs/AUFTRAG.md` und ist zerlegt (R-028 bis R-243), mit Zuordnungstabelle.
+- [x] Der Hauptauftrag steht wörtlich in `docs/AUFTRAG.md` und ist zerlegt (R-028 bis R-248), mit Zuordnungstabelle.
 - [x] Alle Branches sind gesichtet und der Vorgänger-Branch ist übernommen (R-225, D-016).
 - [x] Der Repo-Sicherheitsscan über alle Refs ist erledigt, das Urteil ist mitgeteilt (R-209). Fixtures liegen nur anonymisiert vor, private Stände sind gitignored (R-211, R-240). Das Bereinigen des Verlaufs ist nach P7 abgespalten (R-244, D-022).
-- [ ] Das Review-Tor ist bestanden (R-243): Die Funde des requirements-reviewer sind behoben und erneut geprüft.
+- [x] Das Review-Tor ist bestanden (R-243): drei Runden, alle drei Reviewer. Der requirements-reviewer meldete „bestanden“, ui-reviewer und strategy-reviewer „nicht anwendbar“.
 
 ## Phase 1 – Bestandsaufnahme und Aufklärung
 **Ziel:** Den übernommenen Code mit Nachweisen gegen alle R-IDs abgleichen und die Aufklärungslücken schließen. Für Bildschirme, die noch nicht live gesehen wurden, gilt: erst Aufklärung, dann Logik (R-224).

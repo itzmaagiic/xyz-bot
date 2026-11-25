@@ -1,14 +1,14 @@
 # Fortschritt
 
 **Stand:** 2026-11-25
-**Aktuelle Phase:** P0
-_(Phase 0 ist fast abgeschlossen. Offen sind nur noch das Review-Tor R-243 (Runde 3) und damit R-018. Danach folgt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
+**Aktuelle Phase:** P1
+_(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- Review-Tor Phase 0 (R-243), Runde 3: Die Funde aus Runde 2 (B1 bis B6 und H1 bis H14) sind eingearbeitet. Es prüfen requirements-reviewer, ui-reviewer und strategy-reviewer, erstmals als echte Agententypen.
+- Nichts. Phase 1 beginnt in der nächsten Session.
 
 ## Nächster Schritt
-1. **Session 2, zuerst:** Prüfen, ob die Agententypen `requirements-reviewer`, `ui-reviewer` und `strategy-reviewer` per `subagent_type` aufrufbar sind (R-022). Die Plugins prüfen (R-020, D-021).
+1. **Session 2, zuerst:** Die Projekt-Aktivierung der Plugins prüfen (R-020, D-021). In der Cloud kommen sie auch über den Konto-Sync, ein unterscheidender Nachweis gelingt nur lokal (`/plugin`). Die Agententypen sind bestätigt (R-022 ✅).
 2. **Phase 1, Bestandsaufnahme:** `npm ci`, `npm test`, `npm run e2e` und einen kurzen Live-Test laufen lassen. Dann jede R-ID gegen den übernommenen Code prüfen und den Status mit Nachweis setzen (✅ nur mit Test, Screenshot oder Prüfprotokoll). Dafür am besten den requirements-reviewer pro Abschnitt einsetzen.
 3. **Phase 1, Aufklärung:** WebKit samt Bibliotheken lauffähig machen (D-011, R-065). Die offenen Fragen in `docs/GAME_RECON.md` §7 und §10.5 klären. Den Zielwert für „starke Runs“ festlegen (R-230).
 4. Für Phase 1 einen Superpowers-Plan anlegen (`docs/superpowers/plans/`) mit den R-IDs aus PLAN.md.
@@ -17,6 +17,26 @@ _(Phase 0 ist fast abgeschlossen. Offen sind nur noch das Review-Tor R-243 (Rund
 - **Git-Verlauf vor der Veröffentlichung:** Commit `c8c13a8` enthält die Gmail-Adresse als Autor, Commit `ad723db` die bereinigte volle Fassung des Spielstands (R-209, R-240). Entfernen geht nur per Rewrite mit Force-Push auf `main`. Das braucht die ausdrückliche Zustimmung des Nutzers.
 - **Alter Branch `claude/pokelike-bot-extension-skalzp`:** Er ist vollständig in `main` übernommen (D-016). Löschen auf GitHub nur mit Zustimmung.
 - **Pokédollar:** Laut D-017 gilt die strengere frühere Regel, also Ausgaben nur mit Freigabe. Der Nutzer kann das lockern.
+
+## Vorbefunde der Reviewer für spätere Phasen (Review-Tor P0, Runde 3)
+**strategy-reviewer** (für P0 nicht anwendbar, weil `runs/` fehlt):
+1. **Fair Play, Pflicht in P1/P4:** Simulations-Seeds werden aus dem echten Seed abgeleitet (`simulator.ts:339, 473, 522, 809`: `seedRng((getRngSeed() ^ …) >>> 0)`), `chainRate` (`:519`) nutzt den laufenden RNG-Zustand. Das verletzt R-239 bzw. R-248. Lösung: eigener PRNG plus Test. `STRATEGY.md:12` widerspricht dem Code.
+2. **Taste R:** `actor.ts:85 pressKey` hat keine Allowlist. Heute wird es nur mit Shift+Digit1–6 aufgerufen (`bot.ts:442, 522`). Ein Guard und der Test nach R-147 fehlen, ebenso die Einstellung R-165.
+3. **Pokédollar:** Es gibt keinen Ausgabepfad, aber auch keine harte Sperre. Ein Guard ist Pflicht, bevor R-136 und R-137 kommen (R-237).
+4. **Logs:** `logger.ts` ist ein Ringpuffer mit 500 Einträgen, er loggt nur `why` plus Klickziel. Es fehlen `state`, `options`, `scores`, `confidence` und `outcome`, ebenso der Export nach D-005. Damit ist kein Strategie-Review möglich (R-006, R-116).
+5. Es gibt keine Profile Sicher, Ausgewogen und Aggressiv (R-139). „FIGHT!“ wird auch bei 8 % Siegchance geklickt, ohne vorher Beutel, Ash oder Items zu prüfen (`engine.ts:232, 240`).
+6. Nuzlocke ist kaum modelliert: ein Fang pro Zone, Permadeath beim Freilassen und vorsichtige Pfade fehlen (R-062, R-127).
+7. Haupttodesursache sind Abnutzung und Trainer (STRATEGY.md). Pokécenter und Ash-Heuristik in P4 prüfen. Die bisherigen Messwerte beruhen auf kleinen Stichproben (8 bis 12 Runs) und sind nicht nach D-005 geloggt.
+
+**ui-reviewer** (für P0 nicht anwendbar, weil es keine Screenshots und keinen Screenshot-Befehl gibt):
+1. `playwright.config.ts` nutzt nur das iPhone 13 mit 390×664. Es fehlen `desktop` 1440×900, `iphone` 390×844 und `iphone-se`.
+2. Es gibt kein Screenshot-Skript für alle Zustände und Spielbildschirme im hellen und dunklen Modus (R-180). Ein Befehl in CLAUDE.md fehlt.
+3. **Verdeckung (R-002):** Das Panel liegt `fixed` links unten, ist bis 330 px breit (auf dem iPhone 330 von 390 px) und bis zu `100vh − 24px` hoch. Es verdeckt sehr wahrscheinlich Spielbuttons und das Run-Menü. Ein Test fehlt.
+4. Es gibt keine Pille, kein Andocken und keine gespeicherte oder begrenzte Position (R-154 bis R-156).
+5. Schrift 13 px bzw. 11 px, Buttons 32 px, Selects 30 px, Abstände außerhalb des Rasters, kein `env(safe-area-inset-*)`, `100vh` auf iOS (R-003, R-004, UI.md §3a).
+6. Es fehlen Stopp, Team-Zustand, Fortschritt, nächster Boss, Tabs für Statistik und Log mit Filter sowie ein eigener Fehlerzustand. Der Hinweis auf Tastenkürzel ist auf iOS nutzlos.
+7. Die Texte sind fest auf Deutsch, kein i18n (R-174). Hell und dunkel folgen `prefers-color-scheme` statt `darkMode` des Spiels (R-218).
+8. Design-System (UI.md §6) und Mockups fehlen (R-177, R-179).
 
 ## Bekannte Probleme
 - **Mögliches Fair-Play-Risiko:** Die Simulations-Seeds werden aus dem echten Spielseed abgeleitet (`getRngSeed() ^ k`, `src/core/bridge/simulator.ts`). In Phase 1 prüfen, ob das mit dem echten Zufall korreliert, Umbau nach R-248.
@@ -30,6 +50,8 @@ _(Phase 0 ist fast abgeschlossen. Offen sind nur noch das Review-Tor R-243 (Rund
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1: **Phase 0 abgeschlossen, Review-Tor bestanden (R-243).** Runde 3 lief erstmals mit echten Agententypen (R-022 ✅). requirements-reviewer: „bestanden“, B1 bis B5 behoben. ui-reviewer und strategy-reviewer: „für P0 nicht anwendbar“, ihre Vorbefunde stehen oben. Aktuelle Phase ist jetzt P1.
+- 2026-11-25 · Session 1: Review-Tor P0, Runde 2: 6 Blocker und 14 Hinweise eingearbeitet (`5d3f7b0`). Dazu gehören die Abspaltung von R-244 (D-022), das Urteil in R-209, die Simulations-Ausnahme in D-018, das wiederhergestellte Run-Menü samt Taste R in GAME_RECON §10.6 und die neuen Punkte R-244 bis R-248.
 - 2026-11-25 · Session 1: **Vorgänger-Branch `claude/pokelike-bot-extension-skalzp` übernommen** (Merge, D-016), nachdem der requirements-reviewer ihn gefunden hatte. Vorher geprüft: `npm ci`, `tsc` mit 0 Fehlern, `vitest` 98/98 grün, `npm run build` mit beiden Zielen. Docs zusammengeführt (GAME_RECON §1–9 vom Vorgänger plus §10, UI.md, README, CLAUDE.md). Die alten Anforderungen R1–R6 stehen als R-233 bis R-242 in REQUIREMENTS, die Review-Funde als R-220 bis R-232. Neue Entscheidungen D-016 bis D-021. Den Spielstand habe ich auf ein anonymisiertes Run-Beispiel reduziert, der volle Stand liegt nur privat (D-013).
 - 2026-11-25 · Session 1: Repo-Sicherheitsscan über **alle Refs** (237 Blobs), mit `detect-secrets` und Regex: keine Secrets. Personendaten nur in den Commit-Metadaten (`c8c13a8`), dazu der Spielverlauf in `ad723db` (R-209).
 - 2026-11-25 · Session 1: Review von Phase 0 durch den requirements-reviewer, als allgemeiner Subagent mit dessen Anweisungen. Er hat 10 Lücken, 2 unberechtigte ✅ und den übersehenen Branch gefunden. Alles ist eingearbeitet.
