@@ -13,7 +13,8 @@ export type BridgeCommand =
   | 'simulateCatch'
   | 'simulatePaths'
   | 'openBagItem'
-  | 'speciesStats';
+  | 'speciesStats'
+  | 'simulateRelics';
 
 export interface BridgeRequest {
   id: number;

@@ -134,11 +134,15 @@ export interface FightMeta {
  * Challenge/endless: trait tiers of both sides + relics (passives, run buffs) exactly like runBattleScreen /
  * runEndlessTrainerFight, so relics and traits change the simulated outcome like they change the real one.
  */
+/** Relic set used by simulated fights (null = the real one); lets the bot try out relic offers. */
+let passivesOverride: any[] | null = null;
+const curPassives = (): any[] => passivesOverride ?? state?.passives ?? [];
+
 function fightConfig(team: any[], enemy: any[], meta?: FightMeta): any {
   const s = state;
   if (!s?.isEndlessMode) return battleConfig();
   try {
-    const passives = s.passives || [];
+    const passives = curPassives();
     const playerTiers = computeTraitTiers(team, 0, passives, enemy);
     let enemyTiers: Record<string, number> | null = null;
     if (meta?.kind === 'boss') enemyTiers = meta.tiers ?? computeTraitTiers(enemy, 0);
@@ -606,7 +610,7 @@ function fightInto(team: any[], enemy: any[], meta?: FightMeta): boolean {
   if (typeof applyMegaEvolution === 'function') p.forEach((m: any) => applyMegaEvolution(m));
   const e = clone(enemy);
   const cfg = fightConfig(p, e, meta);
-  const r = runBattle(p, e, clone(state.items || []), [], null, cfg, clone(state.passives || []));
+  const r = runBattle(p, e, clone(state.items || []), [], null, cfg, clone(curPassives()));
   const after: any[] = r?.pTeam ?? [];
   team.forEach((m, i) => {
     const a = after[i];
@@ -890,6 +894,93 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
     }
     return out;
   } finally {
+    seedRng(seed0);
+    if (uid0 !== null) {
+      try {
+        _pokeUidCounter = uid0;
+      } catch {
+        /* ignore */
+      }
+    }
+    out.restored = getRngSeed() === seed0 && (uid0 === null || _pokeUidCounter === uid0);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Relic evaluation: try each offered relic (or each replacement) in simulated boss fights.
+// ---------------------------------------------------------------------------------------------------------------
+declare const PASSIVE_ITEM_POOL: any[];
+
+export interface RelicSimRequest {
+  /** icon paths of the offered relic cards (img src), as shown in the dialog */
+  icons: string[];
+  /** replace dialog: also try dropping each owned relic */
+  replace?: boolean;
+  n?: number;
+}
+
+export interface RelicSimResult {
+  baseline: number;
+  /** per offered card: id found in PASSIVE_ITEM_POOL and simulated value (current + 0.6·next boss chain) */
+  offers: { id: string | null; value: number; combat: boolean }[];
+  /** replace mode: value when dropping owned relic i for the (single) new one */
+  replace: number[];
+  restored: boolean;
+}
+
+function relicByIcon(icon: string): any | null {
+  const base = icon.split('/').pop() ?? '';
+  const cands = (typeof PASSIVE_ITEM_POOL !== 'undefined' ? PASSIVE_ITEM_POOL : []).filter((r: any) =>
+    (r.iconUrl ?? '').endsWith('/' + base),
+  );
+  return cands.find((r: any) => !r.retired) ?? cands[0] ?? null;
+}
+
+export async function simulateRelics(req: RelicSimRequest): Promise<RelicSimResult> {
+  const seed0 = getRngSeed();
+  let uid0: number | null = null;
+  try {
+    uid0 = _pokeUidCounter;
+  } catch {
+    uid0 = null;
+  }
+  const out: RelicSimResult = { baseline: 0, offers: [], replace: [], restored: false };
+  try {
+    const cur = await bossChain(0);
+    const next = await bossChain(1);
+    if (!cur) return out;
+    const n = Math.max(6, Math.min(60, req.n ?? 24));
+    const team: any[] = state.team ?? [];
+    const own: any[] = state.passives ?? [];
+    const value = (passives: any[]): number => {
+      passivesOverride = passives;
+      try {
+        const c = chainRate(projectTeam(team, 2, false), cur.teams, n, 31, cur.metas);
+        const x = next ? chainRate(projectTeam(team, 8, true), next.teams, n, 131, next.metas) : 0;
+        return c + 0.6 * x;
+      } finally {
+        passivesOverride = null;
+      }
+    };
+    out.baseline = value(own);
+    for (const icon of req.icons) {
+      const r = relicByIcon(icon);
+      if (!r) {
+        out.offers.push({ id: null, value: out.baseline, combat: false });
+        continue;
+      }
+      const v = value([...own, clone(r)]);
+      out.offers.push({ id: r.id, value: v, combat: Math.abs(v - out.baseline) > 1e-9 });
+    }
+    if (req.replace && req.icons.length) {
+      const r = relicByIcon(req.icons[req.icons.length - 1]!);
+      if (r)
+        for (let i = 0; i < own.length; i++)
+          out.replace.push(value([...own.slice(0, i), ...own.slice(i + 1), clone(r)]));
+    }
+    return out;
+  } finally {
+    passivesOverride = null;
     seedRng(seed0);
     if (uid0 !== null) {
       try {

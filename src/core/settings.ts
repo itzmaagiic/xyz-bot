@@ -11,6 +11,8 @@ export interface BotSettings {
   trainer: 'boy' | 'girl';
   /** National dex id; null = strongest */
   preferredStarter: number | null;
+  /** challenge starter from the PC (evolution-line root dex id); null = strongest by simulation score */
+  chalStarter: number | null;
   resumeRuns: boolean;
   /** after game over / champion: start the next run automatically */
   autoRestart: boolean;
@@ -35,6 +37,7 @@ export const DEFAULT_SETTINGS: BotSettings = {
   region: 1,
   trainer: 'boy',
   preferredStarter: null,
+  chalStarter: null,
   resumeRuns: true,
   autoRestart: false,
   maxRuns: 0,
@@ -64,6 +67,7 @@ export function normalizeSettings(raw: unknown): BotSettings {
   if (!['arena', 'daily', 'weekly'].includes(out.chalKind)) out.chalKind = 'arena';
   if (out.chalLevel !== null) out.chalLevel = Math.min(7, Math.max(0, Math.round(Number(out.chalLevel) || 0)));
   if (out.storyVariant !== 'classic' && out.storyVariant !== 'nuzlocke') out.storyVariant = 'classic';
+  if (out.chalStarter !== null) out.chalStarter = Math.round(Number(out.chalStarter)) || null;
   out.region = Math.min(6, Math.max(1, Math.round(out.region)));
   out.actionDelayMs = Math.min(5000, Math.max(150, Math.round(out.actionDelayMs)));
   out.maxRuns = Math.max(0, Math.round(out.maxRuns));

@@ -9,9 +9,11 @@ import {
   simulateCatch,
   simulateNodes,
   simulatePaths,
+  simulateRelics,
   type CatchSimRequest,
   type NodeSimRequest,
   type PathSimRequest,
+  type RelicSimRequest,
   type SimRequest,
 } from './simulator';
 import type { BridgeSnapshot, Mon, RunState, GameMap, MapNode } from '../types';
@@ -202,6 +204,8 @@ function openBagItem(index: number, expectId: string): boolean {
 export async function handle(req: BridgeRequest): Promise<BridgeResponse> {
   try {
     switch (req.cmd) {
+      case 'simulateRelics':
+        return { id: req.id, ok: true, result: await simulateRelics((req.args ?? {}) as unknown as RelicSimRequest) };
       case 'simulatePaths':
         return { id: req.id, ok: true, result: await simulatePaths((req.args ?? {}) as unknown as PathSimRequest) };
       case 'simulateCatch':

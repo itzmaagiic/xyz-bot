@@ -47,22 +47,67 @@ export function choosePcStarter(
   preferred?: number | null,
 ): { index: number; why: string } {
   if (!cards.length) return { index: -1, why: 'no PC Pokémon' };
-  if (preferred != null) {
-    const i = cards.findIndex((c) => c.speciesId === preferred);
-    if (i >= 0) return { index: i, why: `preferred starter #${preferred}` };
-  }
-  let best = 0;
-  cards.forEach((c, i) => {
-    if (pcStarterScore(c, stats[c.speciesId]) > pcStarterScore(cards[best]!, stats[cards[best]!.speciesId])) best = i;
-  });
+  let best = -1;
+  const better = (i: number) =>
+    best < 0 ||
+    pcStarterScore(cards[i]!, stats[cards[i]!.speciesId]) > pcStarterScore(cards[best]!, stats[cards[best]!.speciesId]);
+  // preferred species: the strongest copy of it (shiny / buffed / mega) if the PC has it, else the overall best
+  if (preferred != null) cards.forEach((c, i) => c.speciesId === preferred && better(i) && (best = i));
+  const isPreferred = best >= 0;
+  if (!isPreferred) cards.forEach((_, i) => better(i) && (best = i));
   const c = cards[best]!;
   const tags = [c.shiny ? 'shiny' : '', c.aurora ? 'aurora' : '', c.mega ? 'mega' : '', c.buff ? `${c.buff} buff` : '']
     .filter(Boolean)
     .join(', ');
   return {
     index: best,
-    why: `PC starter #${c.speciesId} (BST ${stats[c.speciesId]?.bst ?? '?'}${tags ? ', ' + tags : ''})`,
+    why: `${isPreferred ? 'chosen' : 'PC'} starter #${c.speciesId} (BST ${stats[c.speciesId]?.bst ?? '?'}${tags ? ', ' + tags : ''})`,
   };
+}
+
+export interface PcRosterEntry {
+  id: number;
+  name: string;
+  bst: number;
+  shiny: boolean;
+  aurora: boolean;
+}
+
+/**
+ * The PC (challenge starter pool) from the game's own save – read only. The grid lists exactly the evolution-line
+ * roots of poke_hof_index; names and BST come from the cached dex entries (pkrl_poke_<id>). Sorted by BST.
+ */
+export function readPcRoster(get: (key: string) => string | null): PcRosterEntry[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped save JSON
+  const json = (k: string): any => {
+    try {
+      return JSON.parse(get(k) ?? 'null');
+    } catch {
+      return null;
+    }
+  };
+  const hof = json('poke_hof_index');
+  const roots: unknown[] = Array.isArray(hof?.evoLineRoots) ? hof.evoLineRoots : [];
+  const shiny = new Set<number>((hof?.shinySpecies ?? []).map(Number));
+  const aurora = new Set<number>((hof?.auroraSpecies ?? []).map(Number));
+  const names = new Map<number, string>();
+  const list = json('pkrl_species_list');
+  if (Array.isArray(list)) for (const e of list) names.set(Number(e?.id), String(e?.name ?? ''));
+  const out: PcRosterEntry[] = [];
+  for (const r of roots) {
+    const id = Number(r);
+    if (!Number.isInteger(id) || id <= 0) continue;
+    const e = json(`pkrl_poke_${id}`);
+    const name = String(e?.name ?? names.get(id) ?? `#${id}`);
+    out.push({
+      id,
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      bst: Number(e?.bst) || 0,
+      shiny: shiny.has(id),
+      aurora: aurora.has(id),
+    });
+  }
+  return out.sort((a, b) => b.bst - a.bst || a.name.localeCompare(b.name));
 }
 
 export interface RelicCard {
