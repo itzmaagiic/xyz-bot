@@ -291,6 +291,12 @@ Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockier
 - **Wahrscheinliche Ursache:** `isShown` (`detector.ts:59-76`) prüft weder `disabled`, `aria-disabled` noch `pointer-events`. Die Engine klickt deshalb SKIP, statt zu warten (`engine.ts:183`). Die Kampfsignatur (`detector.ts:127-131`) enthält keinen Fortschritt wie KP oder Kampflog, deshalb gilt „läuft noch“ als „keine Wirkung“.
 - **Offen:** Sperrt das Spiel SKIP in Bosskämpfen generell? Hängt das an `autoSkipBattles` bzw. `autoSkipAllBattles` (§13 Nr. 4)?
 
+### 12.9 Manipulationsschutz `pk` (gelesen am 2026-11-25, Session 1, P2, nur lesend)
+- Das Spiel hat ein globales Objekt `pk` mit einem Speicher-Digest. `pk.keyClass` ordnet localStorage-Schlüssel ein: In den Digest gehen **nur Schlüssel mit Präfix `poke_`**, ausgenommen eine feste Ausnahmeliste und Schlüssel auf `_seen`. `pkrl_*` und fremde Präfixe zählen nicht.
+- `pk.active` war `false` (frisches, nicht eingeloggtes Profil). Die Zähler `pk.extCount` und `pk.decCount` standen auf 0.
+- **Folge für den Bot (D-031, R-102):** Ein eigener Fallback-Speicher mit Präfix `pkbot.` liegt außerhalb des Digests und verändert ihn nicht. Spielschlüssel (`poke_*`, `pkrl_*`) bleiben tabu (R-145).
+- **Offen (§13 Nr. 11):** Was zählen `extCount` und `decCount`, etwa Erweiterungen oder Eingriffe im DOM? Bemerkt das Spiel ein Overlay im Shadow DOM? Bei jedem Live-Lauf vorher und nachher ablesen (P3, R-145).
+
 ## 13. Offene Fragen, gebündelt (Stand 2026-11-25, Ende Phase 1)
 Diese Liste ersetzt §7, §10.5 und §10.7 als Arbeitsliste. Erledigtes ist dort markiert.
 
@@ -306,3 +312,4 @@ Diese Liste ersetzt §7, §10.5 und §10.7 als Arbeitsliste. Erledigtes ist dort
 | 8 | Tower-Start: Kommt der Starter aus dem PC? Welche Regeln haben Normal und Hardcore? | offen | P4 (R-040) |
 | 9 | Darstellung der Boss-Vorschau im DOM | offen | P4 (R-121) |
 | 10 | Stapelregeln für Items und Relikte (laut Wiki „not established“) | offen | P4 (R-221) |
+| 11 | Manipulationsschutz `pk` (§12.9): Was zählen `extCount` und `decCount`? Ändern sie sich durch Overlay oder Bridge? | offen | P3 (R-145) |

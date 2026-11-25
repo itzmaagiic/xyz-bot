@@ -5,7 +5,7 @@
 _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- Nichts. Phase 2 beginnt mit einem Superpowers-Plan (brainstorming → writing-plans).
+- **Phase 2:** Design (`docs/superpowers/specs/2026-11-25-phase2-design.md`, D-031, D-032) und Plan (`docs/superpowers/plans/2026-11-25-phase2-geruest-build.md`, Tasks 1–9) stehen. Umsetzung inline mit TDD, Start mit Task 1 (R-199, keine stillen Fehler).
 
 ## Nächster Schritt
 1. **Phase 2 (Gerüst und Build):** Superpowers-Plan anlegen. Schwerpunkte laut Bestandsaufnahme:

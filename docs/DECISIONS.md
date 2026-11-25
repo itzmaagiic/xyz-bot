@@ -148,3 +148,22 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 **D-030 – Externe Quellen: in P1 bewertet, Datenübernahme in P4** (2026-11-25)
 - Entscheidung: R-064 ist erfüllt, wenn jede Quelle nach Inhalt (Gegner-Teams, Items, Traits, Mechanik), Stand bzw. Version und Abgleich mit dem Spiel bewertet ist (GAME_RECON §11). Das Übernehmen konkreter Daten, z. B. Tower-Gegner aller Regionen und Item-Details, mit Quellenangabe gehört zu P4 (R-090, R-221). Dort werden auch die spoiler-gesperrten Tower-Seiten von pokelike-guide.fr gelesen.
 - Begründung: Maßgeblich ist das Spiel selbst (§12, R-064). Beide Seiten hinken v3.8 hinterher (Items 165 bzw. 164 gegenüber 297 im Spiel). Daten aus dem Spielcode (`GYM_LEADERS`, `ELITE_4`, `endlessState`, Item-Pools) haben Vorrang. Externe Daten braucht es nur, wo das Spiel sie erst zur Laufzeit erzeugt.
+
+**D-031 – Phase 2: Design freigegeben; Fallback-Speicher localStorage mit Präfix `pkbot.`** (2026-11-25)
+- Entscheidung: Das Design steht in `docs/superpowers/specs/2026-11-25-phase2-design.md` (Ansatz 1: Checks als Code plus ESLint-Regeln, eingebunden in `npm test` und `npm run lint`).
+  - Das Userscript nutzt nur die GM-Schnittmenge aus R-099. `GM.addValueChangeListener` gibt es nur per Feature-Erkennung, die Legacy-APIs `GM_*` entfallen.
+  - Fehlt GM oder wirft es, weicht der Speicher auf `localStorage` unter `pkbot.<key>` aus, danach auf einen Speicher im RAM. Jeder Fallback wird als Fehler vermerkt.
+  - `@grant` wird aus der tatsächlichen Nutzung im Bundle erzeugt und geprüft. `@updateURL`/`@downloadURL` zeigen auf GitHub raw (`main/dist/…`). Funktionieren können die Links erst, wenn `dist/` eingecheckt ist, das kommt in P7 (R-203).
+  - Die Bridge wird nicht minifiziert, `target` ist `es2020`.
+- Begründung für das Präfix: Der Manipulationsschutz des Spiels (`pk.storageDigest`, GAME_RECON §12.9) erfasst nur `poke_*`-Schlüssel. `pkbot.` kollidiert weder mit `poke_*` noch mit `pkrl_*` und verändert den Digest nicht. Damit ist R-102 erfüllbar, ohne gegen R-145 bzw. D-018 zu verstoßen: Das ist kein Schreiben in den Speicher **des Spiels**, sondern eigener Speicher unter eigenem Präfix auf derselben Origin, und nur der Fallback, wenn GM fehlt.
+- Freigabe nach D-006: eigenes Review (keine Widersprüche zu R-099 bis R-107, R-145, R-192, R-193, R-199). Ausführung: inline mit TDD (superpowers:executing-plans), kleine Schritte, jeweils Commit und Push, am Ende das Review-Tor. Abweichung vom Standard subagent-driven-development (CLAUDE.md): Die Tasks hängen eng an denselben Dateien (`build.mjs`, `eslint.config.js`). Frische Subagenten pro Task würden den Kontext jedes Mal neu aufbauen, ohne zusätzliche Sicherheit zu bringen. Diese liefern der Gesamt-Review per superpowers:requesting-code-review und das Review-Tor mit den drei Reviewern.
+- Abgleich mit der README von quoid/userscripts (abgerufen am 2026-11-25): `GM.info` braucht kein `@grant`. `GM.addValueChangeListener` und synchrone `GM_*`-Funktionen außer `GM_info`/`GM_xmlhttpRequest` bietet quoid nicht an. `onChange` ist im Userscript deshalb ein No-op.
+
+**D-032 – Bundler: esbuild (R-079)** (2026-11-25)
+- Entscheidung: Beide Ziele baut **esbuild** über ein eigenes Skript `scripts/build.mjs`. Vite wird nicht genutzt.
+- Begründung:
+  - Wir brauchen kein Dev-Server-/HMR-Modell. Zu bauen sind drei bis vier IIFE-Bundles: Content-Skript, Bridge, Hintergrund bzw. Popup und das Userscript.
+  - Die Bridge muss als **Text** ins Userscript eingebettet werden (`__BRIDGE_CODE__`). Das geht mit der esbuild-API direkt (`write: false`), in Vite nur über ein Plugin.
+  - esbuild hat keine Laufzeitabhängigkeiten, baut in unter einer Sekunde und kennt `target` (es2020) für Safari ab iOS 15.
+  - Den Metadaten-Block, `@grant` und die Checks (R-104, R-192, R-193) erzeugen reine Funktionen in `scripts/userscript-meta.mjs`. Ein Build-Werkzeug mit eigenem Plugin-Ökosystem bringt dafür keinen Vorteil.
+- Übernommen vom Vorgänger-Branch (D-016), mit dieser Begründung jetzt festgehalten.
