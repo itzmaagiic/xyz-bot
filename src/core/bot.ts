@@ -1,4 +1,5 @@
 /** BotController: read → detect → decide → act → verify, with backoff and pause-on-unknown. */
+import { ForbiddenActionError } from './actions/guard';
 import { Actor, humanDelay, resolve, sleep } from './actions/actor';
 import type { BridgeClient } from './bridge/client';
 import type { WritableSetting } from './bridge/protocol';
@@ -188,6 +189,12 @@ export class BotController {
         await sleep(humanDelay(base));
       }
     } catch (e) {
+      if (e instanceof ForbiddenActionError) {
+        // R-147: a forbidden action (Reset Run, account, key R …) was blocked – never retry, pause and tell the user
+        this.log.error('forbidden action blocked', e.message);
+        this.pause(`blocked: ${e.message}`, true);
+        return;
+      }
       this.log.error('bot loop crashed', String(e));
       this.pause(`internal error: ${String(e)}`, true);
     } finally {

@@ -1,4 +1,5 @@
 /** Actor: performs human-like DOM input. It does not decide anything and never touches game variables. */
+import { assertAllowedTargets, ForbiddenActionError, isKeyAllowed } from './guard';
 
 export type Rng = () => number;
 
@@ -61,12 +62,14 @@ export class Actor {
   }
 
   async click(el: Element): Promise<void> {
+    assertAllowedTargets('click', el); // R-147: before anything happens (no scroll, no event)
     if ((el as HTMLElement).scrollIntoView && !inViewport(el)) {
       (el as HTMLElement).scrollIntoView({ block: 'center', inline: 'center' });
       await sleep(120);
     }
     const { x, y } = point(el, this.rng);
     const target = topmostAt(el, x, y);
+    assertAllowedTargets('click', target);
     fire(target, 'pointerover', x, y);
     fire(target, 'mouseover', x, y);
     fire(target, 'pointermove', x, y);
@@ -88,6 +91,8 @@ export class Actor {
     key: string,
     mods: { shift?: boolean; alt?: boolean } = {},
   ): Promise<void> {
+    if (!isKeyAllowed(code, key, mods))
+      throw new ForbiddenActionError(`key ${mods.shift ? 'Shift+' : ''}${code}`, 'key');
     const target = (
       doc.activeElement && doc.activeElement !== doc.documentElement ? doc.activeElement : doc.body
     ) as Element;
@@ -109,6 +114,7 @@ export class Actor {
 
   /** Pointer drag from one element to another in small steps. */
   async drag(from: Element, to: Element, steps = 8): Promise<void> {
+    assertAllowedTargets('drag', from, to);
     const a = point(from, this.rng);
     const b = point(to, this.rng);
     fire(from, 'pointerdown', a.x, a.y, { buttons: 1 });
