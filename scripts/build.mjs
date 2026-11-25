@@ -10,6 +10,7 @@ import {
   NO_GRANT_NEEDED,
   buildMeta,
   checkUserscript,
+  es2020SyntaxError,
   toTemplateLiteral,
   usedGmApis,
 } from './userscript-meta.mjs';
@@ -197,6 +198,9 @@ async function buildChrome() {
 async function buildUserscript() {
   mkdirSync(dist, { recursive: true });
   const bridge = await bundleToString('src/platform/chrome/bridge-main.ts');
+  // the bridge is embedded as text, so checkUserscript cannot parse it – check its syntax here (R-107)
+  const bridgeSyntax = es2020SyntaxError(bridge);
+  if (bridgeSyntax) throw new Error(`page bridge is not valid ES2020 (R-107): ${bridgeSyntax}`);
   const r = await build({
     ...common,
     target: USERSCRIPT_TARGET,

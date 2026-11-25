@@ -5,6 +5,7 @@ import {
   RAW_BASE,
   buildMeta,
   checkUserscript,
+  es2020SyntaxError,
   toTemplateLiteral,
   usedGmApis,
 } from '../../scripts/userscript-meta.mjs';
@@ -108,11 +109,30 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
       /minified/,
     ],
     ['aliased GM', () => bundle(CODE + 'const g = GM;\n'), /alias/],
+    ['syntax newer than ES2020 (class static block)', () => bundle(CODE + 'class A { static { } }\n'), /ES2020/],
+    ['API newer than Safari 15.0 (Array.prototype.at)', () => bundle(CODE + 'const z = [1].at(-1);\n'), /Safari 15/],
+    [
+      'API newer than Safari 15.0 inside the embedded bridge text',
+      () => bundle(CODE + 'const b = `structuredClone(x)`;\n'),
+      /Safari 15/,
+    ],
   ])('checkUserscript flags %s', (_name, make, re) => {
     const errs = checkUserscript(make());
     expect(
       errs.some((e: string) => re.test(e)),
       errs.join(' | '),
     ).toBe(true);
+  });
+
+  it('accepts a newer global that is feature-detected on the same line', () => {
+    const guarded =
+      'var clone = (v) => typeof structuredClone === "function" ? structuredClone(v) : JSON.parse(JSON.stringify(v));\n';
+    expect(checkUserscript(bundle(CODE + guarded))).toEqual([]);
+  });
+
+  it('es2020SyntaxError accepts ES2020 and rejects newer syntax', () => {
+    expect(es2020SyntaxError('const a = b?.c ?? 1; async function f() { await g(); }')).toBeNull();
+    expect(es2020SyntaxError('let a; a ||= 1;')).toMatch(/./);
+    expect(es2020SyntaxError('class A { #x = 1 }')).toMatch(/./);
   });
 });

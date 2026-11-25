@@ -9,6 +9,7 @@ import { READY_ATTR } from '../../core/bridge/protocol';
 import { noteError } from '../../core/log/note';
 import { copyViaDom } from '../clipboard';
 import { bindPageShortcuts, type Platform } from '../types';
+import { copyWithFallback } from './copy';
 import { makeStorage, type StorageEnv } from './storage';
 
 declare const __BRIDGE_CODE__: string;
@@ -52,15 +53,9 @@ const platform: Platform = {
   name: 'userscript',
   storage: makeStorage({ gm: gmStorage(), local: safeLocalStorage() }),
   async copyText(text) {
-    if (hasGM && typeof GM.setClipboard === 'function') {
-      try {
-        const ok = await GM.setClipboard(text, 'text/plain');
-        if (ok !== false) return true; // Userscripts resolves a boolean, TM/VM resolve undefined
-      } catch (e) {
-        noteError('userscript:clipboard', e);
-      }
-    }
-    return copyViaDom(text);
+    const gmCopy =
+      hasGM && typeof GM.setClipboard === 'function' ? (d: string, t?: string) => GM.setClipboard!(d, t) : null;
+    return copyWithFallback(gmCopy, text, (t) => copyViaDom(t));
   },
   async notify() {
     return false; // userscript → in-page toast

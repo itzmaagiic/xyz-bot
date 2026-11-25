@@ -24,6 +24,7 @@
     "@types/node": "^22.20.5",
     "esbuild": "^0.25.12",
     "eslint": "^9.39.5",
+    "espree": "10.4.0",
     "happy-dom": "^18.0.1",
     "prettier": "^3.10.1",
     "typescript": "^5.9.3",

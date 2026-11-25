@@ -1,5 +1,6 @@
 // Userscript metadata block, GM-API usage detection and the bundle check (R-099, R-103–R-105, R-107, R-192, R-193).
 // Pure functions: used by scripts/build.mjs (fails the build), scripts/check-userscript.mjs and the unit tests.
+import * as espree from 'espree';
 
 /** GM API intersection of Userscripts (iOS), Tampermonkey and Violentmonkey (R-099, docs/USERSCRIPT_API.md). */
 export const ALLOWED_GM = Object.freeze([
@@ -38,6 +39,44 @@ export function usedGmApis(code) {
     aliased++;
   }
   return { gm: [...gm].sort(), legacy: [...legacy].sort(), aliased };
+}
+
+/**
+ * Built-ins and CSS that Safari only has after 15.0 (R-107: "läuft ab Safari iOS 15"). Scanned in the whole file,
+ * including the embedded bridge text. Source: MDN browser-compat data (Safari versions in the messages).
+ */
+const POST_SAFARI15 = [
+  // [pattern, what, global name that may be feature-detected with `typeof <name>` on the same line (R-100)]
+  [/\.at\(/, 'Array/String.prototype.at (Safari 15.4)'],
+  [/\bstructuredClone\(/, 'structuredClone (Safari 15.4)', 'structuredClone'],
+  [/\bObject\.hasOwn\(/, 'Object.hasOwn (Safari 15.4)', 'Object.hasOwn'],
+  [/\.findLast(?:Index)?\(/, 'Array.prototype.findLast (Safari 15.4)'],
+  [/\bcrypto\.randomUUID\(/, 'crypto.randomUUID (Safari 15.4)', 'crypto.randomUUID'],
+  [/:has\(/, 'CSS :has() (Safari 15.4)'],
+  [/\.(?:toSorted|toReversed|toSpliced)\(/, 'Array change-by-copy (Safari 16)'],
+  [/\bAbortSignal\.timeout\(/, 'AbortSignal.timeout (Safari 16)', 'AbortSignal.timeout'],
+  [/\bArray\.fromAsync\(/, 'Array.fromAsync (Safari 16.4)', 'Array.fromAsync'],
+  [/\b(?:Object|Map)\.groupBy\(/, 'Object/Map.groupBy (Safari 17.4)'],
+  [/\bPromise\.withResolvers\(/, 'Promise.withResolvers (Safari 17.4)', 'Promise.withResolvers'],
+];
+
+/** lines of `text` that use a post-Safari-15.0 feature without a same-line `typeof <global>` guard */
+function unguardedNewApis(text) {
+  const found = new Set();
+  for (const line of text.split('\n'))
+    for (const [re, what, global] of POST_SAFARI15)
+      if (re.test(line) && !(global && line.includes(`typeof ${global}`))) found.add(what);
+  return [...found];
+}
+
+/** null if `code` parses as ES2020 script, else the parser message (R-107). */
+export function es2020SyntaxError(code) {
+  try {
+    espree.parse(code, { ecmaVersion: 2020, sourceType: 'script' });
+    return null;
+  } catch (e) {
+    return `${e.message} (line ${e.lineNumber ?? '?'})`;
+  }
 }
 
 /** Backtick literal that evaluates to exactly `s` and keeps its line breaks (readable embedding, R-107). */
@@ -120,6 +159,10 @@ export function checkUserscript({ userJs, metaJs, version }) {
     errs.push('@grant none expected when no GM API is used');
 
   if (/\?\?=|\|\|=|&&=/.test(code)) errs.push('ES2021 logical assignment in bundle – target must be es2020 (R-107)');
+  const syntax = es2020SyntaxError(code);
+  if (syntax) errs.push(`bundle is not valid ES2020 (Safari iOS 15, R-107): ${syntax}`);
+  for (const what of unguardedNewApis(userJs))
+    errs.push(`uses ${what} – newer than Safari 15, not feature-detected (R-107)`);
   const long = code.split('\n').filter((l) => l.length > MAX_LINE).length;
   if (long > MAX_LONG_LINES) errs.push(`${long} lines longer than ${MAX_LINE} chars – bundle looks minified (R-107)`);
   return errs;
