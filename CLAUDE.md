@@ -52,6 +52,6 @@ Der SessionStart-Hook (`.claude/hooks/session-start.sh`) zeigt beim Start den St
 
 ### Git
 - Du arbeitest auf dem Branch, den die Umgebung vorgibt. Zu Beginn der Session: `git fetch origin main && git merge --ff-only origin/main`. Geht das nicht als Fast-Forward, nimm `git merge --no-edit origin/main`.
-- Nach jedem Schritt: committen, `git push -u origin <branch>` und danach `git push origin HEAD:main`, nur als Fast-Forward und **nie mit force**. Der Nutzer hat den Push nach `main` ausdrücklich und dauerhaft erlaubt (Einrichtungs-Session vom 2026-11-25).
+- Nach jedem Schritt: committen, `git push -u origin <branch>` und danach `git push origin HEAD:main`, nur als Fast-Forward und **nie mit force**. Der Nutzer hat den Push nach `main` ausdrücklich und dauerhaft erlaubt (Einrichtungs-Session vom 2026-11-25). In der Cloud-Umgebung funktioniert das (getestet am 2026-11-25).
 - Lehnt `main` den Push ab, weil es neuere Commits hat: `git fetch origin main && git merge --no-edit origin/main`, Tests laufen lassen, erneut pushen.
 - Verbietet die Umgebung den Push nach `main` (etwa mit 403): Am Ende der Session einen Pull Request nach `main` öffnen und dem Nutzer Bescheid sagen.

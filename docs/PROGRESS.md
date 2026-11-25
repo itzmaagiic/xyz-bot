@@ -18,4 +18,5 @@
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz ist erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1: Einrichtung auf den Session-Branch und per Fast-Forward nach `main` gepusht (`6bb73a4`). Der Push nach `main` ist in der Cloud-Umgebung erlaubt (R-024).
 - 2026-11-25 · Session 1 (Einrichtung): CLAUDE.md, docs/REQUIREMENTS.md (Gerüst R-001–R-027), PROGRESS.md, DECISIONS.md (D-001–D-010), PLAN.md (Phasen 0–7), UI.md, GAME.md und AUFTRAG.md angelegt. `.claude/settings.json` mit beiden Plugins und SessionStart-Hook. Drei Reviewer-Subagenten angelegt. Hook manuell getestet. pokelike.xyz headless auf Desktop und iPhone geprüft. Im Repo lag vorher nur eine leere README. Es gab nichts zu übernehmen und nichts zu löschen.
