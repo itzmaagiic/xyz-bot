@@ -23,6 +23,10 @@ const resp = await page.goto('https://pokelike.xyz/', { waitUntil: 'networkidle'
 await page.waitForTimeout(1500);
 
 const headers = resp ? resp.headers() : {};
+const idb = await page
+  .evaluate(async () => (indexedDB.databases ? (await indexedDB.databases()).map((d) => d.name) : 'unsupported'))
+  .catch((e) => `error: ${e}`);
+const lsKeys = await page.evaluate(() => Object.keys(localStorage).sort());
 const facts = await page.evaluate(() => {
   const g = (name) => {
     try {
@@ -99,6 +103,8 @@ await browser.close();
 
 const out = {
   fetchedAt: new Date().toISOString(),
+  indexedDB: idb,
+  localStorageKeysFreshProfile: lsKeys,
   csp: headers['content-security-policy'] ?? null,
   xfo: headers['x-frame-options'] ?? null,
   ...facts,

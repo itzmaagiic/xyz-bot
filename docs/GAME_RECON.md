@@ -189,11 +189,11 @@ Dieser Abschnitt kam in der Einrichtungs-Session hinzu, als der Hauptauftrag zer
 | Run-Ablauf Charakter → Starter → Karte → Orden → Next Map → Top 4 → Champ | **bestätigt** (§4) |
 | Bildschirme Wild, Item, Relic, Team Full, Trade, Badge, Choose Your Order, FIGHT!, Game Over, Champion | **bestätigt** (§4, §9). Top 4 und Champ wurden live gespielt (Champion-Sieg, STRATEGY.md). Shop/Pokémart und einzelne Entwicklungs-Overlays sind **offen** |
 | Der erste lebende Pokémon kämpft zuerst | **bestätigt** (`runBattle`, §8) |
-| Gehaltene Items können **Angriffstyp** und Wirkung ändern | Wirkung **bestätigt** (`calcDamage`, §8). Ob es Items gibt, die den Angriffstyp ändern: **offen** |
-| Traits: 2 Punkte pro Stufe, normal 1 Punkt pro Typ, Shiny 2 | **teilweise bestätigt** („Shinys zählen doppelt“, `computeTraitTiers`, §9). Die Schwelle von 2 Punkten pro Stufe ist noch zu belegen |
+| Gehaltene Items können **Angriffstyp** und Wirkung ändern | **bestätigt** (§12.2). Die 17 Typ-Booster lassen den Träger Angriffe ihres Typs versuchen („attempts X-type attacks if able“), Metronome lässt doppeltypige Pokémon mit ihrem **anderen** Typ angreifen |
+| Traits: 2 Punkte pro Stufe, normal 1 Punkt pro Typ, Shiny 2 | **bestätigt** (`computeTraitTiers`, §12.3): Stufe = min(`TRAIT_MAX_TIER`, ⌊Punkte/2⌋ + Bonus). Grundwert 1 Punkt pro Typ und Pokémon, Shiny +1. Dazu kommen weitere +1-Quellen, etwa Legendäre mit Relikt und Reroll-Fänge mit Relikt |
 | Level und Sonderbonbons beleben Besiegte nicht | **bestätigt** (§8 „Besiegte bekommen nichts“) |
-| Nuzlocke: ein Fang pro Zone, Besiegte sind weg | **offen** (`state.nuzlockeMode` ist vorhanden, die Regeln sind nicht live geprüft) |
-| Tower: dauerhafte EV-Upgrades (Vitamine) für Pokédollar | **teilweise** (`poke_stat_buffs`, `.pc-buff-stars`, `vitamin-apply-modal`) |
+| Nuzlocke: ein Fang pro Zone, Besiegte sind weg | **teilweise** (§12.4): Im Nuzlocke wird auf festem Level gefangen (`nuzlockeCatchLevel` = Mitte von `MAP_LEVEL_RANGES[currentMap]`), „?“ führt zum Kampf statt zum Fang (§8). „Ein Fang pro Zone“ und Permadeath sind im Code noch nicht belegt, das ist eine Aufgabe für P4 (R-062) |
+| Tower: dauerhafte EV-Upgrades (Vitamine) für Pokédollar | **bestätigt** (§12.5): `buyVitamin` gibt dauerhafte Pokédollar aus (`spendPokedollars(VITAMIN_COST)`), maximal 10 pro Wert, mit Gesamtgrenze `getVitaminCap()`. Der Kauf wird dauerhaft gespeichert und synchronisiert (`savePersistentBuffs`, `syncToCloud`). **Fällt unter R-237** |
 
 ### 10.1a Teilweise überholte Angaben in §7
 §7 stammt aus einem früheren Stand des Vorgängers. **Überholt:** „`runBattle` … bewusst nicht verwendet“. Der Simulator nutzt es inzwischen, siehe §8 „Simulation durch den Bot“ und D-019. Ebenfalls überholt ist „Relic/Passive … Top 4/Champ noch nicht live gesehen“: Relikte sind in §9 live erfasst, Top 4 und Champ wurden live gespielt. Weiterhin offen sind Shop/Pokémart, einzelne Entwicklungs-Overlays, der Tower-Stat-Buff und der Pokésort-Löser.
@@ -228,3 +228,49 @@ Diese Angaben stammen aus der Vorab-Aufklärung in Session 1 (Hauptmenü headles
 1. Gibt es zusätzlich eine Meta-CSP im HTML?
 2. Wann schreibt das Spiel `poke_current_run` in den localStorage, nach jeder Aktion oder nur an Speicherpunkten? Das ist wichtig für Resume (R-194) und R-241.
 3. Wie zeigt das Spiel den nächsten Boss an (Boss-Vorschau, Einstellung `hideBossPreview`, R-121)?
+
+## 12. Phase-1-Befunde (Spielcode, nur lesend gelesen, v3.8 vom 2026-11-20, abgerufen am 2026-11-25)
+Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockiert). Die Ausgabe landet in `artifacts/recon/read-game.json` und ist nicht eingecheckt.
+
+### 12.1 Technik und Version (R-067, R-068, R-069, R-077)
+- **Version:** `PATCH_NOTES[0].version = "3.8"`, Patch-Datum `2026-11-20`, `.title-version` = „v3.8“.
+- **CSP:** Der Header lautet `object-src 'none'; base-uri 'self'; frame-ancestors 'self'`, dazu `X-Frame-Options: SAMEORIGIN`. Eine **Meta-CSP gibt es nicht**, im HTML steht nur eine `Permissions-Policy` (camera, microphone, geolocation, payment, usb aus). **Ein eingeschleustes `<script>`-Element wird ausgeführt** (Test über `window.__pkCspTest`). Der Weg über ein Seiten-Skript für das Userscript funktioniert also (R-106).
+- **Zustand:** `state` ist eine lexikalische globale Variable auf oberster Ebene, nicht `window.state`, und nur im Hauptkontext lesbar (bestätigt §1). Es gibt 1813 globale Funktionen. Die Bildschirme sind 20 `div.screen[id]`: title, trainer, starter, map, battle, catch, item, passive, swap, trade, shiny, badge, transition, elite-prep, gameover, win, stat-buff, history-region-select, endless-stage-select, endless-stage-complete.
+- **Speicher:** keine IndexedDB-Datenbank (`indexedDB.databases()` liefert `[]`). Ein frisches Profil hat nur `poke_ach_backfill_v24`, `poke_ach_backfill_v24b` und `poke_storage_migrated_v1`. `poke_current_run` und die übrigen Schlüssel entstehen erst beim Spielen (§2, §10.2).
+- **Standard-Einstellungen eines frischen Profils:** alle Auto-Skips aus, `language: "en"`, `darkMode: false`, `hideBossPreview: false`, Musik und SFX an.
+
+### 12.2 Items (R-059, R-118, R-128 bis R-131, R-221)
+- Es gibt 37 tragbare Items (`ITEM_POOL`), 4 nutzbare (`USABLE_ITEM_POOL`: `sacred_ash` belebt wieder, auch Besiegte, `rare_candy` gibt +3 Level, `moon_stone` erzwingt eine Entwicklung, `tm_normal` erhöht die Attackenstufe um 1) und 256 Relikte bzw. Passive (`PASSIVE_ITEM_POOL`).
+- **Typwechsel:** 17 Typ-Booster (z. B. `charcoal`: „+40% Fire move damage; attempts Fire-type attacks if able“) und `metronome` („Dual-type holder uses its OTHER type for attacks; +20% damage“). Das Relikt `neutralize` macht alle Attacken neutral effektiv. Alle weiteren Item-Effekte stehen in `read-game.json`.
+- **XP:** `lucky_egg` gibt mit 30 % Chance +1 Level nach jedem Kampf. Das bestätigt die Vorgabe „Glücks-Ei früh“ (R-130).
+
+### 12.3 Traits (R-060, R-120)
+`computeTraitTiers(team, bonus, passives, gegner)` zählt pro Typ und Pokémon Punkte: 1, plus 1 bei Shiny, plus je 1 für zwei weitere Eigenschaften (Felder obfuskiert, vermutlich Aurora/Mutation), plus 1 für Reroll-Fänge mit Relikt, plus 1 für Legendäre mit Relikt. Bei `gem_collector` kommen zwei zusätzliche Typen dazu. Danach gilt Stufe = min(`TRAIT_MAX_TIER`, ⌊Punkte/2⌋ + bonus), Typen mit Stufe 0 entfallen.
+
+### 12.4 Nuzlocke (R-062, R-127)
+`nuzlockeCatchLevel()` liefert im Nuzlocke-Story-Modus `round((min+max)/2)` von `MAP_LEVEL_RANGES[currentMap]`, sonst `null`. „Ein Fang pro Zone“ und dauerhaften Tod live bzw. im Code zu belegen, ist Teil von P4.
+
+### 12.5 Pokédollar, Shop und Vitamine (R-136, R-137, R-237)
+- `buyVitamin` bezahlt mit **dauerhaften Pokédollar** und speichert dauerhaft (siehe §10.1). Kauft der Bot Vitamine, braucht das immer die Freigabe nach R-237.
+- `doPokeMartNode` (Knoten im Run, Endless/ER) tauscht Items aus dem Team-Inventar (ohne Rare Candy) gegen einen Candy-Wert (`erMartCandyValue`). Nach dem Codeausschnitt werden dabei **keine** dauerhaften Pokédollar ausgegeben, live noch zu bestätigen. `openShopModal` (Poké Mart in der oberen Leiste) gehört zum dauerhaften Shop.
+
+### 12.6 Speichern und Fairness (R-069, R-194, R-239)
+- `saveRun()` schreibt `{...state, currentNodeId, currentNode: null, rngSeed: getRngSeed()}` in den Run-Slot `poke_current_run`, sofern `runWritesAllowed()` gilt. **Der Spielstand enthält damit den echten Zufalls-Seed (`rngSeed`) und `runSeed`.** Das ist verborgenes Wissen: Der Bot darf beides nie für Entscheidungen nutzen (R-239, `sim-seed.ts` ignoriert sie). Wann gespeichert wird, misst der Live-Test (`saveChangesByScreen`, §12.7).
+
+### 12.7 Boss-Vorschau und Starter (R-121, R-138, R-160)
+- `bossPreviewMon(boss, i)` berechnet die Vorschau-Pokémon eines Bosses (Level, Entwicklung). Die Boss-Vorschau ist also im Spiel vorhanden, abschaltbar über `hideBossPreview`.
+- Der Starter wird auf dem `starter-screen` gewählt (`selectStarter`, Karten in `#starter-choices`). Die Bot-Einstellung „Starter“ (R-160) legt fest, welche Karte er wählt. In Challenges kommt der Starter aus dem PC (§9).
+
+## 11. Externe Quellen (R-064), abgerufen am 2026-11-25
+Sie sind **nur Hinweise**. Maßgeblich ist das Spiel (§12). Alle Seiten sind ein Fan-Projekt ohne gefundenen Lizenztext. Übernommene Daten brauchen deshalb eine Quellenangabe, und vor einer Übernahme (P4, R-221) sind `/sources/`, `/disclaimer/` und `/methodology/` zu prüfen.
+
+| Quelle | Inhalt | Stand laut Seite | Abgleich mit dem Spiel |
+|---|---|---|---|
+| https://pokelike.wiki/guides/kanto/ | Tabellen: 8 Arenen, Top 4 und Champ Gary mit Pokémon, Level und „Ace-Item“, Fänge pro Kartenabschnitt | Client gelesen am 17.09.2026, Version nicht angegeben | Die Teams decken sich mit §8 (z. B. Brock Geodude 12 und Onix 14). Neu ist die **Ace-Regel**: Im Kanto-Story-Kampf behält nur das höchstlevelige Gegner-Mitglied sein Item, bei Gleichstand das später stehende. Das ist im Code zu prüfen (P4) |
+| https://pokelike.wiki/battle-tower/ | 7 Stufen (Kanto bis ORAS) mit je 9 festen Gegnern, also 63 Teams, die Details auf Unterseiten. Belohnung 200 bis 1100 ₽ pro Sieg | v3.5, importiert am 19.10.2026 | Vitamine kosten **200 ₽**, „Free reset removes the allocation without refunding coins“, 10 Punkte pro Stufe, höchstens 50 pro Linie und 10 pro Wert. Sie gelten **nur im Tower und in Challenges**, nicht in der Story. Das passt zu `buyVitamin` (§12.5) |
+| https://pokelike.wiki/traits/ | 18 Typ-Traits mit Stufen T1 bis T6 (ca. 108 Effektzeilen), Punktregeln mit Beispielen | Kopf „Official v3.6 · 2026-11-01“, Karten teils v3.1 | **Bestätigt §12.3**: „A normal Pokémon contributes 1 point to each type; Shiny adds 1 and Mutant adds 1 more“, Stufe = ⌊Summe/2⌋. Das Spiel kennt laut Seite bis T12 |
+| https://pokelike.wiki/items/ | Katalog mit 164 Einträgen (36 Items, 128 Passive), Effekttext, Modus, Stapelregel meist „not established“ | v3.1, importiert am 12.09.2026 | **Bestätigt §12.2** (Typ-Items „attempts X-type attacks if able“). Das Spiel hat inzwischen 37 Items, 256 Relikte und 4 nutzbare (v3.8), die Seite ist also veraltet |
+| https://pokelike.wiki/ | Startseite, Verweise u. a. auf `/challenges/` („twelve permanent rules“) und `/guides/evs-and-vitamins/` | – | `/challenges/` und die Tower-Unterseiten sind noch nicht gelesen, das folgt in P4 |
+| https://pokelike-guide.fr/ | Nur „Pokelike Tips and Tricks“, ohne verwertbaren Inhalt (vermutlich JS-gerendert) | – | nicht nutzbar |
+
+Zu Nuzlocke („ein Fang pro Zone, Besiegte sind weg“) gibt es auf den gelesenen Seiten **keine** Angaben. Der Punkt bleibt offen für P4 (R-062).
