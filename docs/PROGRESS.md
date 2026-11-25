@@ -5,7 +5,7 @@
 _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Task 1 (Seeds) und Task 2 (Guard) sind erledigt, aktuell: Task 3, WebKit und volle Testläufe.
+- **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Tasks 1 bis 3 sind erledigt (Seeds, Guard, WebKit), aktuell: Task 4, Live-Aufklärung.
 
 ## Nächster Schritt
 1. **Session 2, zuerst:** Die Projekt-Aktivierung der Plugins prüfen (R-020, D-021). In der Cloud kommen sie auch über den Konto-Sync, ein unterscheidender Nachweis gelingt nur lokal (`/plugin`). Die Agententypen sind bestätigt (R-022 ✅).
@@ -40,13 +40,13 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 
 ## Bekannte Probleme
 - `playwright.config.ts` nutzt für `userscript-webkit-iphone` das unveränderte iPhone 13 (390×664, entspricht `iphone-safari`). Es fehlt `iphone` mit 390×844 (UI.md §1). Wird in P2/P5 korrigiert.
-- **WebKit startet in der Cloud noch nicht:** Der Download klappt, aber Systembibliotheken fehlen (`libgtk-4.so.1`, `libgraphene-1.0.so.0` u. a.). Lösung in Phase 1 (D-011).
 - **Fast alle R-Punkte sind formal noch ❌.** Der übernommene Code erfüllt viele davon wahrscheinlich schon, aber ohne Abnahme mit Nachweis. Das ist Phase 1.
 - R-020 und R-022 lassen sich erst in einer neuen Session prüfen (D-021).
 - `dist/` ist gitignored. Für die GitHub-raw-Links (R-203) muss das in Phase 7 angepasst werden.
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1, P1 Task 3: WebKit läuft in der Cloud (R-065 ✅). Die volle E2E-Suite ergab 17 bestanden und 1 gewollt übersprungen. Das Setup-Skript der Umgebung installiert künftig Abhängigkeiten und WebKit (D-026, R-016 🟡, in einer frischen Session bestätigen).
 - 2026-11-25 · Session 1, P1 Task 2: Actor-Guard gegen Reset Run, Account und Taste R (`guard.ts`, R-147 🟡). Der Bot pausiert, statt es erneut zu versuchen. Tests 109/109, Chromium-E2E 12/12.
 - 2026-11-25 · Session 1, P1 Task 1: Die Simulations-Seeds kommen jetzt aus dem sichtbaren Zustand (`sim-seed.ts`), nicht mehr aus dem echten Spielzufall (R-248 ✅, R-239 🟡). Die Kommentare in `simulator.ts` und `page-bridge.ts` sind korrigiert. Tests 102/102 grün, Lint und Build ebenfalls.
 - 2026-11-25 · Session 1: **Git-Verlauf bereinigt** (D-024): private Autor-Adresse ersetzt, Spielstand-Datei aus dem Verlauf entfernt, `main` und Session-Branch per `--force-with-lease` neu gesetzt, Tree unverändert. Die Commit-Hashes in den Docs sind angepasst. Das Löschen des alten Branches lehnt der Proxy ab (403), das übernimmt der Nutzer.
