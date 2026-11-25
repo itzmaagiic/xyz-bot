@@ -45,6 +45,7 @@ test('bot plays the real game without getting stuck', async () => {
   if (process.env.LIVE_CHAL) await page.locator('#pk-chalkind').selectOption(process.env.LIVE_CHAL);
 
   const screens = new Map<string, number>();
+  const saveChangesByScreen = new Map<string, number>();
   const start = Date.now();
   const readState = () =>
     page.evaluate(() => {
@@ -52,6 +53,13 @@ test('bot plays the real game without getting stuck', async () => {
       const s = (0, eval)('typeof state !== "undefined" ? state : null') as any;
       return {
         screen: (window as unknown as { _currentScreenId?: string })._currentScreenId ?? '?',
+        // recon (GAME_RECON §10.7): when does the game write its run save? length+checksum only, never the content
+        saveSig: (() => {
+          const v = localStorage.getItem('poke_current_run') ?? '';
+          let h = 0;
+          for (let i = 0; i < v.length; i += 7) h = (h * 31 + v.charCodeAt(i)) | 0;
+          return `${v.length}:${h}`;
+        })(),
         badges: s?.badges ?? 0,
         map: s?.currentMap ?? 0,
         node: s?.currentNode?.id ?? null,
@@ -73,6 +81,7 @@ test('bot plays the real game without getting stuck', async () => {
     const st = await readState().catch(() => last);
     screens.set(st.screen, (screens.get(st.screen) ?? 0) + 1);
     if (st.node !== last.node || st.map !== last.map || st.badges !== last.badges) progressEvents++;
+    if (st.saveSig !== last.saveSig) saveChangesByScreen.set(st.screen, (saveChangesByScreen.get(st.screen) ?? 0) + 1);
     last = st;
     console.log(
       `[live] ${Math.round((Date.now() - start) / 1000)}s screen=${st.screen} map=${st.map} node=${st.node} badges=${st.badges} team=${st.team}`,
@@ -106,7 +115,15 @@ test('bot plays the real game without getting stuck', async () => {
   writeFileSync(
     join(OUT, 'live-run.json'),
     JSON.stringify(
-      { minutes: MINUTES, first, last, progressEvents, screens: Object.fromEntries(screens), pauseReason },
+      {
+        minutes: MINUTES,
+        first,
+        last,
+        progressEvents,
+        screens: Object.fromEntries(screens),
+        saveChangesByScreen: Object.fromEntries(saveChangesByScreen),
+        pauseReason,
+      },
       null,
       2,
     ),
