@@ -8,10 +8,14 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 - **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Tasks 1 bis 6 erledigt. Task 7: Zielwert (D-027) und R-020 (D-028) erledigt, **das Review-Tor P1 läuft**. Alle P1-Punkte sind ✅, die Restlücken der Aufklärung liegen in P3 (D-029).
 
 ## Nächster Schritt
-1. **Session 2, zuerst:** Die Projekt-Aktivierung der Plugins prüfen (R-020, D-021). In der Cloud kommen sie auch über den Konto-Sync, ein unterscheidender Nachweis gelingt nur lokal (`/plugin`). Die Agententypen sind bestätigt (R-022 ✅).
-2. **Phase 1, Bestandsaufnahme:** `npm ci`, `npm test`, `npm run e2e` und einen kurzen Live-Test laufen lassen. Dann jede R-ID gegen den übernommenen Code prüfen und den Status mit Nachweis setzen (✅ nur mit Test, Screenshot oder Prüfprotokoll). Dafür am besten den requirements-reviewer pro Abschnitt einsetzen.
-3. **Phase 1, Aufklärung:** WebKit samt Bibliotheken lauffähig machen (D-011, R-065). Die offenen Fragen in `docs/GAME_RECON.md` §7 und §10.5 klären. Den Zielwert für „starke Runs“ festlegen (R-230).
-4. Für Phase 1 einen Superpowers-Plan anlegen (`docs/superpowers/plans/`) mit den R-IDs aus PLAN.md.
+1. **Review-Tor P1 abschließen:** Die Funde aus Runde 1 sind eingearbeitet, es folgt eine kurze zweite Prüfung durch den requirements-reviewer. Danach `**Aktuelle Phase:** P2`.
+2. **Phase 2 (Gerüst und Build):** Superpowers-Plan anlegen. Schwerpunkte laut Bestandsaufnahme:
+   - `@updateURL`/`@downloadURL`, keine minifizierte Bridge, nur die GM-Schnittmenge, localStorage-Fallback (R-102 bis R-107)
+   - Checks für API-Schnittmenge und Metadaten (R-192, R-193), Import-Grenzen (R-032)
+   - keine leeren oder stillen catch-Blöcke (R-199)
+   - `check:docs` (R-246), Branch-Warnung im Hook (R-247), CHANGELOG (R-208)
+   - Setup-Skript in einer frischen Session bestätigen (R-015, R-016)
+3. **Phase 3 beginnt mit** der Aufklärung der Restbildschirme (D-029) und dem **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8).
 
 ## Entscheidungen (Nutzer hat delegiert, D-023)
 - **Pokédollar:** Die strenge Regel bleibt, Ausgaben nur mit Freigabe, Budget-Standard 0. **Erledigt.**
@@ -38,6 +42,15 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 7. Die Texte sind fest auf Deutsch, kein i18n (R-174). Hell und dunkel folgen `prefers-color-scheme` statt `darkMode` des Spiels (R-218).
 8. Design-System (UI.md §6) und Mockups fehlen (R-177, R-179).
 
+**strategy-reviewer, Review-Tor P1** (für P1 nicht anwendbar, Vorbefunde für P4, Belege in `artifacts/live/console.txt`):
+14. **Sacred Ash verschwendet:** Der Bot setzt sie ein, obwohl die Route noch ein Pokécenter vor dem Boss hat (`items.ts:29-33`, gespart wird erst ab Karte 7 laut `engine.ts:557`). Regel: behalten, solange vor dem nächsten riskanten Kampf ein Pokécenter auf dem Pfad liegt (R-223).
+15. **Boss ohne Heilung, obwohl der Konter besiegt ist:** Die Routenwahl entscheidet nur nach der Erfolgsquote, ohne Sicherheitsmarge (`sim-route.ts:127-134`, R-124).
+16. **Systematisch zu optimistische Prognosen (Winner's Curse):** Der Bot nimmt das Maximum über bis zu 36 Routen mit je 26 bis 30 Simulationen. Danach sinkt der Wert fast immer, etwa 62 → 29 → 17 % oder 27 → 14 → 3 → 0 %. Lösung: beste Kandidaten nachsimulieren, nach Untergrenze ranken, Prognose und Ausgang zur Kalibrierung loggen (R-250).
+17. **Keine Notbremse:** Bei ≥ 50 % besiegten Pokémon geht der Bot trotzdem in weitere Kämpfe (R-251).
+18. **Kampfreihenfolge bei gesättigter Simulation:** Bei 100 % wird nicht umgestellt (`engine.ts:216-217` verlangt +4 %). Lösung: bei Gleichstand nach Überlebenden bzw. Rest-KP umstellen (R-133, R-135).
+19. **Fang gegen den nächsten Boss:** Ponyta (Feuer) vor Misty (Wasser), unsicher, weil die Fangoptionen nicht geloggt sind (R-125).
+20. **Log-Anforderungen für P3 (D-005):** vollständige `options`, `scores` je Faktor mit Simulationszahl und Konfidenz, `state` mit KP, Revives und Boss-Vorschau, `outcome` je Kampf neben der Prognose, Pausen mit Signatur und Button-Zustand, `summary.json` mit Todesursache. Keine veralteten Entscheidungstexte.
+
 **ui-reviewer, Review-Tor P1** (für P1 nicht anwendbar, neue Vorbefunde für P5, gemessen an `artifacts/live/live-run.png`):
 9. **Verdeckung gemessen:** Das Panel liegt bei x 12–341 und y 12–887, das sind 97 % der Höhe. Es verdeckt ≈29 % jeder Team-Karte, darunter die **KP-Zahlen des Spielers vollständig**. In R-002 auch `#btn-continue-battle` und das Ziehen in „Choose Your Order“ prüfen.
 10. Der Fehlerzustand ist nicht unterscheidbar: Er sieht aus wie eine Pause, der Text ist englisch und enthält einen Selektor, es gibt keinen nächsten Schritt, und die „Entscheidung“ ist veraltet.
@@ -47,15 +60,14 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 
 ## Bekannte Probleme
 - **Live-Lauf 1 (P1, 2026-11-25, Story Classic Kanto, frisches Profil):** Nach 2,3 Minuten 3 Orden, 31 Fortschrittsschritte, Team Venusaur 36, Weepinbell 31, Beedrill 31, Butterfree 31, Magnemite 29. Dann **Pause**: „action keeps failing: no effect after clicking #btn-auto-battle[0]“ im Bosskampf auf Karte 3 (Knoten `n8_0`). Der Test zählt das als „bestanden“, weil er nur Fortschritt prüft. Er muss Hänger künftig als Fehler werten (R-190). Möglicherweise hat parallele CPU-Last durch E2E-Läufe eines Reviewers mitgewirkt. Wiederholung ohne Parallelität und mit `PKBOT_OUT=artifacts/live` steht aus. Gespeichert wurde in fast jedem Bildschirm (Karte 17×, Kampf 17×, Item 3×, Fang 2×, Elite-Prep 2×), gut für Resume (R-194).
-- **Live-Lauf 2 (P1, 2026-11-25, isoliert, `PKBOT_OUT=artifacts/live`):** 6,5 Minuten, 105 Fortschrittsschritte. Laut Overlay-Zähler 4 Runs, 0 Siege, 4 Niederlagen. In den 2-s-Stichproben war der Game-Over-Bildschirm 2× zu sehen, die übrigen Niederlagen liefen dazwischen ab. Das Bot-Log ist einzeilig und vom Ringpuffer abgeschnitten, als Lauf-Log also unbrauchbar (R-006). Dann **derselbe Hänger**: Arenakampf gegen Erika (Karte 3, `n8_0`), das Team ist besiegt, `#btn-auto-battle` („SKIP“) ist ausgegraut, und der Bot klickt ihn weiter, bis der Backoff pausiert. **Der Fehler ist reproduzierbar und liegt nicht an CPU-Last.** Vermutete Ursache: Das Kampfende (Niederlage, kein Weiter- bzw. Game-Over-Schritt) wird nicht erkannt, die Engine bleibt bei „skip battle animation“. Eventuell verdeckt das Overlay links unten den Weiter-Knopf (R-002). **Erste Aufgabe in P3** (R-045 bis R-052, R-087, R-190). Außerdem gesehen: „Runs fortsetzen“ steht standardmäßig an (R-214).
+- **Live-Lauf 2 (P1, 2026-11-25, isoliert, `PKBOT_OUT=artifacts/live`):** 6,5 Minuten, 105 Fortschrittsschritte. Laut Overlay-Zähler 4 Runs, 0 Siege, 4 Niederlagen (Brock, 2× Normalkampf Karte 2, Misty). Dann **derselbe Hänger wie in Lauf 1** im Arenakampf gegen Erika. **Korrigierte Diagnose (Review-Tor P1):** Der Kampf lief noch, SKIP war gesperrt. Der Bot wertet „läuft noch“ als „Klick ohne Wirkung“ und pausiert nach ≈15 s Backoff. Das Kampfende nach Niederlagen funktioniert dagegen (GAME_RECON §12.8). **Erste Aufgabe in P3:** gesperrte Knöpfe nicht klicken, sondern warten, und Kampffortschritt erkennen (R-087, R-094, R-190). Außerdem gesehen: „Runs fortsetzen“ steht standardmäßig an (R-214).
 - Playwright leert `test-results/` bei jedem Start. Live-Läufe deshalb mit `PKBOT_OUT=artifacts/live` starten und nie parallel zu anderen Playwright-Läufen.
 - `playwright.config.ts` nutzt für `userscript-webkit-iphone` das unveränderte iPhone 13 (390×664, entspricht `iphone-safari`). Es fehlt `iphone` mit 390×844 (UI.md §1). Wird in P2/P5 korrigiert.
-- **Fast alle R-Punkte sind formal noch ❌.** Der übernommene Code erfüllt viele davon wahrscheinlich schon, aber ohne Abnahme mit Nachweis. Das ist Phase 1.
-- R-020 und R-022 lassen sich erst in einer neuen Session prüfen (D-021).
 - `dist/` ist gitignored. Für die GitHub-raw-Links (R-203) muss das in Phase 7 angepasst werden.
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1: Review-Tor P1, Runde 1. ui-reviewer und strategy-reviewer: „nicht anwendbar“, ihre Vorbefunde stehen oben. requirements-reviewer: nicht bestanden wegen Doku-Nacharbeit, alles eingearbeitet: R-016, R-244 und R-248 mit durchgestrichener alter Fassung, R-036 und R-064 nachgebessert (pokelike-guide.fr gerendert), PLAN.md P1/P3 konsistent, GAME_RECON §7 und §10.5 markiert. **Korrektur der Hänger-Diagnose:** Der Kampf lief noch, SKIP war gesperrt. E2E auf HEAD `4d35525`: 17 bestanden, 1 gewollt übersprungen. Neu sind R-250 (kalibrierte Prognosen) und R-251 (Notbremse).
 - 2026-11-25 · Session 1, P1 Tasks 4–7: Bestandsaufnahme vollständig (4 Prüfprotokolle in `docs/superpowers/audits/`, alle 249 R-Zeilen mit Status und Fundstelle). GAME_RECON bereinigt, mit gebündelten offenen Fragen (§13) und Wiki-Unterseiten (§11). Zielwert in D-027, R-020 nach P7 (D-028), Restlücken nach P3 (D-029). Live-Lauf 2 zeigt einen reproduzierbaren Hänger am Kampfende (§12.8), Ursache wahrscheinlich ein ausgegrauter Knopf, der als klickbar gilt.
 - 2026-11-25 · Session 1, P1 Task 6 (Teil): Bestandsaufnahme durch 3 requirements-reviewer für E/F/H/N, G/J und I/K/L/M/O/P/Z. 151 R-Zeilen haben jetzt Status, Fundstelle und Lücke, die Prüfprotokolle liegen in `docs/superpowers/audits/`. Neu ist **R-249**: kein `await` unter dem Simulations-Seed. Der Guard sperrt zusätzlich Teilen, Shop/Vitamine und App-Installation (Tests 111/111).
 - 2026-11-25 · Session 1, P1 Task 3: WebKit läuft in der Cloud (R-065 ✅). Die volle E2E-Suite ergab 17 bestanden und 1 gewollt übersprungen. Das Setup-Skript der Umgebung installiert künftig Abhängigkeiten und WebKit (D-026, R-016 🟡, in einer frischen Session bestätigen).

@@ -23,13 +23,13 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 **Ziel:** Den übernommenen Code mit Nachweisen gegen alle R-IDs abgleichen und die Aufklärungslücken schließen. Für Bildschirme, die noch nicht live gesehen wurden, gilt: erst Aufklärung, dann Logik (R-224).
 **R-IDs:** R-022, R-027, R-036, R-064, R-065, R-067 bis R-069, R-071, R-072, R-076 (sechs Aufklärungspunkte mit Restlücken nach P3 verschoben, siehe D-029)
 **Abnahmekriterien**
-- **Bestandsaufnahme:** Für jede R-ID ist geprüft, ob und wo sie im übernommenen Code umgesetzt ist. Der Status ist mit Nachweis gesetzt (✅ nur mit Test, Screenshot oder Prüfprotokoll, sonst 🟡 mit Fundstelle). `npm test`, `npm run e2e` und ein Live-Test sind gelaufen, die Ergebnisse stehen in PROGRESS.md. Der Zielwert für R-230 ist festgelegt.
-- Die Plugins und die Agententypen `requirements-reviewer`, `ui-reviewer` und `strategy-reviewer` sind als ladbar bestätigt (R-020, R-022).
-- Playwright mit Chromium **und** WebKit läuft in der Cloud (R-065, D-011).
-- Mehrere Runs wurden selbst gespielt. **Jeder** Bildschirm ist in `docs/GAME_RECON.md` mit Erkennungsmerkmalen und Selektoren beschrieben, in deutscher **und** englischer Spielsprache.
-- Geklärt sind DOM oder Canvas, das Framework, die CSP (mit Test, ob ein Seiten-Skript per script-Element läuft), der globale Zustand bzw. localStorage/IndexedDB, das Auslesen von Team und Karte, die Spieleinstellungen und die Spielversion. Vieles davon steht schon in GAME_RECON §1 bis §9 und ist hier nur gegenzuprüfen. Die offenen Fragen aus §7 und §10.5 sind beantwortet.
-- Echte, bereinigte DOM-Snapshots jedes Bildschirms liegen in `tests/fixtures/dom/`.
-- Jede Angabe aus HA §1 ist als bestätigt, widerlegt oder offen markiert. Die Wiki-Quellen sind ausgewertet.
+- [x] **Bestandsaufnahme:** Für jede R-ID ist geprüft, ob und wo sie im übernommenen Code umgesetzt ist. Der Status ist mit Nachweis gesetzt (✅ nur mit Test, Screenshot oder Prüfprotokoll, sonst 🟡 mit Fundstelle). `npm test`, `npm run e2e` und ein Live-Test sind gelaufen, die Ergebnisse stehen in PROGRESS.md. Der Zielwert für R-230 ist festgelegt.
+- [x] Die Agententypen sind als ladbar bestätigt (R-022). *R-020 (Plugins) ist nach P7 verschoben (D-028).*
+- [x] Playwright mit Chromium **und** WebKit läuft in der Cloud (R-065, D-011, D-026).
+- [x] Mehrere Runs wurden selbst gespielt (Live-Läufe 1 und 2). *Fixtures für die restlichen Bildschirme und DE/EN-Paare über catch und starter hinaus sind nach P3 verschoben (D-029, GAME_RECON §13).*
+- [x] Geklärt sind DOM oder Canvas, das Framework, die CSP (mit Test, ob ein Seiten-Skript per script-Element läuft), der globale Zustand bzw. localStorage/IndexedDB, das Auslesen von Team und Karte, die Spieleinstellungen und die Spielversion. Vieles davon steht schon in GAME_RECON §1 bis §9 und ist hier nur gegenzuprüfen. Die offenen Fragen aus §7 und §10.5 sind beantwortet oder gebündelt nach §13 überführt und den Phasen P3 und P4 zugeordnet (D-029).
+- [x] Echte, bereinigte DOM-Snapshots liegen für 16 von 20 Bildschirmen vor, dazu challenge-select und weekly-select. *Der Rest ist nach P3 verschoben (D-029).*
+- [x] Jede Angabe aus HA §1 ist als bestätigt, teilweise oder offen markiert (§10.1). Die Wiki-Quellen und pokelike-guide.fr sind ausgewertet (§11).
 - Die offenen Fragen sind in GAME_RECON.md gelistet und, wo möglich, beantwortet.
 
 ## Phase 2 – Projektgerüst und Build-Pipeline
@@ -46,6 +46,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 **Ziel:** Der Bot erkennt jeden Bildschirm, handelt verlässlich und spielt mit einer einfachen, sicheren Baseline-Strategie einen kompletten Story-Run ohne Hänger.
 **R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245, R-249, R-066, R-070, R-073, R-075, R-077, R-224
 **Abnahmekriterien**
+- **Aufklärung der Restbildschirme zuerst (aus P1, D-029, R-224):** Fixtures und GAME_RECON-Einträge für `transition`, `win`, `stat-buff`, `endless-stage-complete`, laufende und beendete Bosskämpfe (§12.8), Shop/Mart und echte Modals. DE/EN-Paare über catch und starter hinaus. Die Wirkung jeder Spieleinstellung ist geklärt (R-073), die Version steht in Logs und Fixtures (R-077). Alle offenen Punkte aus GAME_RECON §13, die P3 zugeordnet sind, sind beantwortet.
 - Der ScreenDetector besteht alle Fixture-Tests (R-186). Ein unbekannter Bildschirm führt zu Pause, Meldung und Snapshot.
 - Der Actor nutzt Pointer- und Touch-Events, prüft die Wirkung jeder Aktion und arbeitet mit Backoff. Das Warten läuft über MutationObserver plus Stabilitätserkennung, dazu kommt der Watchdog.
 - Plattform-Adapter, Typentabelle, Pokémon-Daten und das Log als Ringpuffer sind getestet.
@@ -55,7 +56,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 4 – Strategie (das Herzstück)
 **Ziel:** Der Bot entscheidet wie ein erfahrener Spieler und gewinnt messbar öfter als die Baseline.
-**R-IDs:** R-008, R-029 bis R-031, R-037, R-039 bis R-041, R-058 bis R-063, R-085, R-090, R-116 bis R-141, R-184, R-185, R-191, R-207, R-221, R-223, R-230, R-234 bis R-236, R-239, R-248
+**R-IDs:** R-008, R-029 bis R-031, R-037, R-039 bis R-041, R-058 bis R-063, R-085, R-090, R-116 bis R-141, R-184, R-185, R-191, R-207, R-221, R-223, R-230, R-234 bis R-236, R-239, R-248, R-250, R-251
 **Abnahmekriterien**
 - Für jeden Entscheidungstyp gibt es eine reine Funktion mit Unit-Tests für konkrete Szenarien und alle Grenzfälle (R-184, R-185).
 - Team-Bewertung, Vorausschau, Routenwahl, Fangen und Team Full, Items und Relikte, Tausch, Kampfreihenfolge, Shop, Tower-EVs, Profile und zentrale Gewichte sind umgesetzt.

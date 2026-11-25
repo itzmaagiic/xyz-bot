@@ -79,6 +79,7 @@ Erkennung: Element am Bildschirmmittelpunkt, das nicht zum aktiven Screen gehör
 - Typen: `TYPE_CHART[atk][def]` (18 Typen inkl. Fee), `getTypeEffectiveness(atkType, defTypes[])`.
 
 ## 7. Offene Fragen
+_Stand 2026-11-25: teilweise überholt, siehe §10.1a. Was noch offen ist, steht gebündelt in §13._
 
 - Relic-/Passive-Screen, Shop/Pokémart, Entwicklungs-Overlays, Top 4/Champ und Tower-Stat-Buff noch nicht live gesehen → Bot pausiert dort bis zur Implementierung („niemals raten“).
 - Pokésort: Lösungslogik nicht umgesetzt (Modal `pokechain-modal`).
@@ -192,11 +193,12 @@ Dieser Abschnitt kam in der Einrichtungs-Session hinzu, als der Hauptauftrag zer
 | Gehaltene Items können **Angriffstyp** und Wirkung ändern | **bestätigt** (§12.2). Die 17 Typ-Booster lassen den Träger Angriffe ihres Typs versuchen („attempts X-type attacks if able“), Metronome lässt doppeltypige Pokémon mit ihrem **anderen** Typ angreifen |
 | Traits: 2 Punkte pro Stufe, normal 1 Punkt pro Typ, Shiny 2 | **bestätigt** (`computeTraitTiers`, §12.3): Stufe = min(`TRAIT_MAX_TIER`, ⌊Punkte/2⌋ + Bonus). Grundwert 1 Punkt pro Typ und Pokémon, Shiny +1. Dazu kommen weitere +1-Quellen, etwa Legendäre mit Relikt und Reroll-Fänge mit Relikt |
 | Level und Sonderbonbons beleben Besiegte nicht | **bestätigt** (§8 „Besiegte bekommen nichts“) |
-| Nuzlocke: ein Fang pro Zone, Besiegte sind weg | **teilweise**. „Besiegte sind weg“ bestätigt das Wiki (§11, Nuzlocke-Challenge). **„Ein Fang pro Zone“ ist im Wiki nicht belegt**, es nennt nur Varianten mit einem Fangknoten pro Karte. Vermutlich ist das eine Ungenauigkeit im Auftrag, im Code zu prüfen. Aus §12.4: Im Nuzlocke wird auf festem Level gefangen (`nuzlockeCatchLevel` = Mitte von `MAP_LEVEL_RANGES[currentMap]`), „?“ führt zum Kampf statt zum Fang (§8). „Ein Fang pro Zone“ und Permadeath sind im Code noch nicht belegt, das ist eine Aufgabe für P4 (R-062) |
+| Nuzlocke: ein Fang pro Zone, Besiegte sind weg | **teilweise**. „Besiegte sind weg“ bestätigen das Wiki (§11, Nuzlocke-Challenge) und pokelike-guide.fr. **„Ein Fang pro Zone“ steht auf pokelike-guide.fr** („Permadeath on faints, one catch per zone“ für den Nuzlocke-Modus), das Wiki nennt nur Varianten mit einem Fangknoten pro Karte. Im Code ist das noch zu prüfen (P4). Aus §12.4: Im Nuzlocke wird auf festem Level gefangen (`nuzlockeCatchLevel` = Mitte von `MAP_LEVEL_RANGES[currentMap]`), „?“ führt zum Kampf statt zum Fang (§8). „Ein Fang pro Zone“ und Permadeath sind im Code noch nicht belegt, das ist eine Aufgabe für P4 (R-062) |
 | Battle Tower: Start mit freigeschalteten Pokémon, Stage Select | **teilweise**: Die Region bzw. Stufe wird in `endless-stage-select` gewählt (§4). Ob der Tower-Starter aus dem PC kommt, ist nur für Challenges belegt (§9). Für den Tower ist das **offen** (§13) |
 | Champion-Bildschirm mit Play Again, Share, Climb the Tower, Home | **teilweise**: Laut Markup bzw. §4 gibt es `#btn-play-again`, `#btn-win-home` und `shareRun()` (Fixtures mit Run-Menü). Ein `win`-Fixture fehlt (§13) |
 | Sonderbonbons beleben nicht wieder | **bestätigt**: `rare_candy` = „Gives a Pokémon +3 levels“ (`USABLE_ITEM_POOL`), wiederbeleben kann nur `sacred_ash` (§12.2). Besiegte bekommen kein Level (§8) |
-| Daily Pokésort: 6 Pokémon so ordnen, dass jede Verbindung passt | **bestätigt** im Hauptmenü (§3) und als `pokechain-modal` (§5). Die Lösungslogik fehlt (R-144, P7) |
+| Daily Pokésort: 6 Pokémon so ordnen, dass jede Verbindung passt | **teilweise**: Der Modus existiert (Hauptmenü §10.6, `pokechain-modal` §5, Spielstand `poke_pokechain` §2). Die Regel „jede Verbindung passt“ ist nicht live geprüft. pokelike-guide.fr bietet eine tägliche Lösung (§11). **Offen** bis zum Löser (R-144, P7) |
+| Resume-Buttons | **bestätigt**: `#btn-continue-run`, `#btn-continue-endless` und `#btn-continue-challenge` auf `title-screen` (§4), behandelt in `engine.ts:90-101`. Runs mit Speicherstand werden fortgesetzt (Speicherzeitpunkte §12.6) |
 | Tower: dauerhafte EV-Upgrades (Vitamine) für Pokédollar | **bestätigt** (§12.5): `buyVitamin` gibt dauerhafte Pokédollar aus (`spendPokedollars(VITAMIN_COST)`), maximal 10 pro Wert, mit Gesamtgrenze `getVitaminCap()`. Der Kauf wird dauerhaft gespeichert und synchronisiert (`savePersistentBuffs`, `syncToCloud`). **Fällt unter R-237** |
 
 ### 10.1a Teilweise überholte Angaben in §7
@@ -214,12 +216,12 @@ Ein echter Spielstand enthält außerdem `poke_progress_backup` (Kopie des Forts
 ### 10.4 WebKit in der Cloud (D-011, D-026)
 **Gelöst am 2026-11-25:** WebKit (`webkit-2359`) läuft samt Systembibliotheken (`npx playwright install-deps webkit`). Die E2E-Suite ergab 17 bestanden und 1 gewollt übersprungen (R-065). Neue Sessions bekommen WebKit über das Setup-Skript der Umgebung (D-026).
 
-### 10.5 Weitere offene Fragen (zusätzlich zu §7)
-1. Ändern bestimmte Items den Angriffstyp, etwa Platten oder Typ-Items? Das betrifft R-059 und R-118.
-2. Liegt die Trait-Schwelle wirklich bei 2 Punkten pro Stufe? Das betrifft R-060.
-3. Wie gehen die Nuzlocke-Regeln im Code und live? Das betrifft R-062.
-4. Mit welcher Währung bezahlt man im Shop bzw. Pokémart während eines Runs? Ist das dieselbe wie die dauerhaften Pokédollar? Das betrifft R-136 und R5.1/D-017.
-5. Wo stellt man den Starter für die Story ein? Das betrifft R-138 und R-160.
+### 10.5 Weitere offene Fragen (zusätzlich zu §7). Stand 2026-11-25: Frage 1, 2 und 5 sind beantwortet, 3 und 4 teilweise, der Rest steht in §13
+1. ~~Ändern bestimmte Items den Angriffstyp, etwa Platten oder Typ-Items?~~ **Ja (§12.2).** Das betrifft R-059 und R-118.
+2. ~~Liegt die Trait-Schwelle wirklich bei 2 Punkten pro Stufe?~~ **Ja (§12.3).** Das betrifft R-060.
+3. Wie gehen die Nuzlocke-Regeln im Code und live? **Teilweise (§12.4, §11), Rest in §13 Nr. 5.** Das betrifft R-062.
+4. Mit welcher Währung bezahlt man im Shop bzw. Pokémart während eines Runs? Ist das dieselbe wie die dauerhaften Pokédollar? **Teilweise (§12.5): Vitamine kosten dauerhafte ₽, der Mart-Knoten vermutlich nicht, Rest in §13 Nr. 7.** Das betrifft R-136 und R5.1/D-017.
+5. ~~Wo stellt man den Starter für die Story ein?~~ **Auf `starter-screen` (§12.7).** Das betrifft R-138 und R-160.
 
 ### 10.6 Obere Leiste, Run-Menü und Hauptmenü
 Diese Angaben stammen aus der Vorab-Aufklärung in Session 1 (Hauptmenü headless, frisches Profil, englische UI). Die Selektoren `#run-menu-toggle`, `.run-menu-btn[data-menu=…]`, `data-shortcut="R"`, `confirmResetRun`, `#btn-fullscreen` und `#btn-mart-nav` sind am 2026-11-25 in allen 29 DOM-Fixtures geprüft. Das Modal `reset-run-modal` steht nur in der Modal-Liste (§5), in keinem Fixture. Die Elemente sind auf jedem Bildschirm vorhanden, deshalb darf das Overlay sie nie verdecken (R-002).
@@ -242,11 +244,11 @@ Sie sind **nur Hinweise**. Maßgeblich ist das Spiel (§12). Alle Seiten sind ei
 | https://pokelike.wiki/battle-tower/ | 7 Stufen (Kanto bis ORAS) mit je 9 festen Gegnern, also 63 Teams, die Details auf Unterseiten. Belohnung 200 bis 1100 ₽ pro Sieg | v3.5, importiert am 19.10.2026 | Vitamine kosten **200 ₽**, „Free reset removes the allocation without refunding coins“, 10 Punkte pro Stufe, höchstens 50 pro Linie und 10 pro Wert. Sie gelten **nur im Tower und in Challenges**, nicht in der Story. Das passt zu `buyVitamin` (§12.5) |
 | https://pokelike.wiki/traits/ | 18 Typ-Traits mit Stufen T1 bis T6 (ca. 108 Effektzeilen), Punktregeln mit Beispielen | Kopf „Official v3.6 · 2026-11-01“, Karten teils v3.1 | **Bestätigt §12.3**: „A normal Pokémon contributes 1 point to each type; Shiny adds 1 and Mutant adds 1 more“, Stufe = ⌊Summe/2⌋. Das Spiel kennt laut Seite bis T12 |
 | https://pokelike.wiki/items/ | Katalog mit 164 Einträgen (36 Items, 128 Passive), Effekttext, Modus, Stapelregel meist „not established“ | v3.1, importiert am 12.09.2026 | **Bestätigt §12.2** (Typ-Items „attempts X-type attacks if able“). Das Spiel hat inzwischen 37 Items, 256 Relikte und 4 nutzbare (v3.8), die Seite ist also veraltet |
-| https://pokelike.wiki/ | Startseite, Verweise u. a. auf `/challenges/` („twelve permanent rules“) und `/guides/evs-and-vitamins/` | – | `/challenges/` und die Tower-Unterseiten sind noch nicht gelesen, das folgt in P4 |
+| https://pokelike.wiki/ | Startseite, Verweise u. a. auf `/challenges/` („twelve permanent rules“) und `/guides/evs-and-vitamins/` | – | Die Unterseiten `/challenges/`, `/battle-tower/kanto/` und `/guides/evs-and-vitamins/` sind ausgewertet (Zeilen unten) |
 | https://pokelike.wiki/battle-tower/kanto/ | 9 feste Gegner in Kartenreihenfolge (Erika, Misty, Flint, Falkner, Bugsy, Lorelei, Sabrina, Agatha, Ash Ketchum), Team in Kampfreihenfolge mit Level, Trait-Regel („Team-computed Traits“, bei Ash „+ 1 Tier bonus“). Keine Items je Gegner | v3.5, geprüft am 19.10.2026 | Beispiel: „1 \| Erika \| Bellsprout Lv.7; Bulbasaur Lv.8“. Ein Clear gibt 200 ₽ und öffnet Johto. Für Tower-Gegnerdaten in P4 gegen `endlessState` prüfen (R-090) |
 | https://pokelike.wiki/challenges/ | 12 Dauerregeln: Monotype, Wish Upon a Star, Trick Room, Nuzlocke, Inverse World, Legendary Opposition, Arena Floors, Ride or Die, Little League, Walk It Off, Wanted, Ultimate Challenge. Dazu Belohnungen (Clear 1.000 ₽, Daily 2.000/500 ₽) | Regeln v3.5 (19.10.2026), Snapshot v3.6 (01.11.2026) | **Nuzlocke-Challenge**: „A Pokémon that faints is lost for the rest of this run.“ Von **„ein Fang pro Zone“ steht dort nichts**, nur „one catch node per map“ bei Nuzlocke Randomizer und „one catch per map“ bei einem Weekly. Relevant für R-062 und R-234 (Challenge-Regeln je Art) |
 | https://pokelike.wiki/guides/evs-and-vitamins/ | Vitamine: HP Up, Protein (ATK und SpATK gekoppelt), Iron, Zinc, Carbos | v3.5, geprüft am 19.10.2026 | Die Angaben: 200 ₽ pro Punkt, +5 % pro Punkt, höchstens 10 pro Wert, Gesamtgrenze pro Entwicklungslinie = min(10 × höchste geschaffte Tower-Stufe, 50). Ein kostenloser EV-Reset im Poké Mart erstattet nichts. Gilt für Tower- und Challenge-artige Runs, **nicht gleichermaßen für die Story**. Passt zu §12.5 (R-063, R-137, R-237) |
-| https://pokelike-guide.fr/ | Nur „Pokelike Tips and Tricks“, ohne verwertbaren Inhalt (vermutlich JS-gerendert) | – | nicht nutzbar |
+| https://pokelike-guide.fr/ | **JS-gerendert**, in Chromium geprüft am 2026-11-25. Inoffizieller Guide mit den Bereichen Normal, Nuzlocke, Battle Tower, Challenge, Basics, Mechanics, Tips, Data, Videos und Pokésort (tägliche Lösung), mehrsprachig (en, fr, de, ko, it, es) | ohne Versionsangabe auf der Startseite | Modus-Beschreibungen: Normal „8 badges then Champion“, **Nuzlocke „Permadeath on faints, one catch per zone“**, Battle Tower „Post-Champion endgame by region (Kanto → Unova)“. Die Unterseiten sind in P4 auszuwerten (R-062, R-221) |
 
 Zu Nuzlocke („ein Fang pro Zone, Besiegte sind weg“) gibt es auf den gelesenen Seiten **keine** Angaben. Der Punkt bleibt offen für P4 (R-062).
 
@@ -282,15 +284,19 @@ Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockier
 - `bossPreviewMon(boss, i)` berechnet die Vorschau-Pokémon eines Bosses (Level, Entwicklung). Die Boss-Vorschau ist also im Spiel vorhanden, abschaltbar über `hideBossPreview`.
 - Der Starter wird auf dem `starter-screen` gewählt (`selectStarter`, Karten in `#starter-choices`). Die Bot-Einstellung „Starter“ (R-160) legt fest, welche Karte er wählt. In Challenges kommt der Starter aus dem PC (§9).
 
-### 12.8 Kampfende (Live-Lauf 2, 2026-11-25)
-Nach einem verlorenen Arenakampf (Kanto, Erika) bleibt `battle-screen` aktiv. „SKIP“ (`#btn-auto-battle`) ist dann ausgegraut, alle KP-Balken des Teams sind leer, und es geht nicht über diesen Knopf weiter. Wie es danach weitergeht, ist **offen** und braucht ein Fixture: Weiter-Knopf (`#btn-continue-battle`, §4) oder automatischer Übergang zu `gameover-screen` (P3). Der Bot hat das zweimal reproduzierbar nicht erkannt (PROGRESS, „Bekannte Probleme“).
+### 12.8 Lange Bosskämpfe und gesperrtes SKIP (Live-Läufe 1 und 2, 2026-11-25, korrigiert nach dem Review-Tor P1)
+- **Beobachtung:** Im Arenakampf gegen Erika (Kanto, Karte 3) pausiert der Bot zweimal mit „no effect after clicking #btn-auto-battle[0]“. Laut Screenshot **läuft der Kampf zu diesem Zeitpunkt noch**: Vulpix auf Platz 6 kämpft gegen Vileplume mit 2/90 KP. „SKIP“ ist ausgegraut.
+- **Das Kampfende funktioniert:** Nach Brock und Misty (Niederlagen) klickt der Bot korrekt `#btn-continue-battle`, danach folgt der Game-Over-Bildschirm.
+- **Muster:** In Bosskämpfen bleibt schon der erste SKIP-Klick ohne Wirkung. Kurze Bosskämpfe enden vor dem dritten Versuch, der lange Erika-Kampf nicht. Das Budget liegt bei etwa 15 s (`bot.ts:42-43, 496-509`).
+- **Wahrscheinliche Ursache:** `isShown` (`detector.ts:59-76`) prüft weder `disabled`, `aria-disabled` noch `pointer-events`. Die Engine klickt deshalb SKIP, statt zu warten (`engine.ts:183`). Die Kampfsignatur (`detector.ts:127-131`) enthält keinen Fortschritt wie KP oder Kampflog, deshalb gilt „läuft noch“ als „keine Wirkung“.
+- **Offen:** Sperrt das Spiel SKIP in Bosskämpfen generell? Hängt das an `autoSkipBattles` bzw. `autoSkipAllBattles` (§13 Nr. 4)?
 
 ## 13. Offene Fragen, gebündelt (Stand 2026-11-25, Ende Phase 1)
 Diese Liste ersetzt §7, §10.5 und §10.7 als Arbeitsliste. Erledigtes ist dort markiert.
 
 | # | Frage | Status | Wo gelöst |
 |---|---|---|---|
-| 1 | **Kampfende nach Niederlage**: Was erscheint nach einem verlorenen Arenakampf, `#btn-continue-battle` oder ein automatischer Übergang? Wie erkennt man „Kampf vorbei“? (§12.8) | offen, **blockiert vollständige Runs** | P3 (R-087, R-190) |
+| 1 | **Lange Bosskämpfe mit gesperrtem SKIP** (§12.8): Wie erkennt man „Kampf läuft noch“ (KP, Kampflog) gegenüber „Kampf vorbei“? Wie lange ist SKIP gesperrt, und hängt das an den Skip-Einstellungen? | offen, **blockiert vollständige Runs** | P3 (R-087, R-094, R-190) |
 | 2 | Fixtures fehlen für `transition`, `win`, `stat-buff`, `endless-stage-complete`, das Kampfende bei Niederlage, Shop/Mart (`shop-modal`, Mart-Knoten) und echte Modals (Entwicklung, `usable-item`, `eevee-choice`, `reset-run-modal`) | offen | P3 (R-075, R-224: erst Fixture, dann Logik) |
 | 3 | DE/EN-Paare gibt es nur für catch und starter. Weitere Bildschirme brauchen eine zweite Sprache | offen | P3 (R-212) |
 | 4 | Was bewirkt jede Spieleinstellung genau (`autoSkipBattles` vs. `autoSkipAllBattles`, `misclickProtection`, `skipTraitFx`)? | offen | P3 (R-073, R-074) |
