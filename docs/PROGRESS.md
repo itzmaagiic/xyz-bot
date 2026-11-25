@@ -5,7 +5,7 @@
 _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Tasks 1 bis 3 sind erledigt (Seeds, Guard, WebKit), aktuell: Task 4, Live-Aufklärung.
+- **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Tasks 1 bis 3 erledigt. Task 4/5 (Aufklärung, Wiki) inhaltlich erledigt, Live-Lauf 2 läuft. Task 6 (Bestandsaufnahme) zu 3/4 eingetragen, Gruppe A–D läuft.
 
 ## Nächster Schritt
 1. **Session 2, zuerst:** Die Projekt-Aktivierung der Plugins prüfen (R-020, D-021). In der Cloud kommen sie auch über den Konto-Sync, ein unterscheidender Nachweis gelingt nur lokal (`/plugin`). Die Agententypen sind bestätigt (R-022 ✅).
@@ -48,6 +48,7 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1, P1 Task 6 (Teil): Bestandsaufnahme durch 3 requirements-reviewer für E/F/H/N, G/J und I/K/L/M/O/P/Z. 151 R-Zeilen haben jetzt Status, Fundstelle und Lücke, die Prüfprotokolle liegen in `docs/superpowers/audits/`. Neu ist **R-249**: kein `await` unter dem Simulations-Seed. Der Guard sperrt zusätzlich Teilen, Shop/Vitamine und App-Installation (Tests 111/111).
 - 2026-11-25 · Session 1, P1 Task 3: WebKit läuft in der Cloud (R-065 ✅). Die volle E2E-Suite ergab 17 bestanden und 1 gewollt übersprungen. Das Setup-Skript der Umgebung installiert künftig Abhängigkeiten und WebKit (D-026, R-016 🟡, in einer frischen Session bestätigen).
 - 2026-11-25 · Session 1, P1 Task 2: Actor-Guard gegen Reset Run, Account und Taste R (`guard.ts`, R-147 🟡). Der Bot pausiert, statt es erneut zu versuchen. Tests 109/109, Chromium-E2E 12/12.
 - 2026-11-25 · Session 1, P1 Task 1: Die Simulations-Seeds kommen jetzt aus dem sichtbaren Zustand (`sim-seed.ts`), nicht mehr aus dem echten Spielzufall (R-248 ✅, R-239 🟡). Die Kommentare in `simulator.ts` und `page-bridge.ts` sind korrigiert. Tests 102/102 grün, Lint und Build ebenfalls.

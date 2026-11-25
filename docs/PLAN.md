@@ -40,11 +40,11 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - Die MV3-Erweiterung lässt sich in Chromium entpackt laden (E2E). Das Userscript hat einen vollständigen Metadaten-Block, und ein GM-Shim lädt es in Chromium und WebKit (E2E).
 - Automatische Checks laufen: Import-Grenzen `core/`/`ui/` gegen `platform/` (R-032), erlaubte GM-API-Schnittmenge und `@grant`-Abgleich (R-192, R-104), Metadaten (R-193), keine leeren catch-Blöcke (R-199).
 - Der API-Abgleich mit der README von quoid/userscripts ist dokumentiert (R-098).
-- Der SessionStart-Hook installiert die Abhängigkeiten idempotent, inklusive der WebKit-Bibliotheken (R-016). Die Befehle stehen in CLAUDE.md. Das CHANGELOG ist angelegt.
+- Das Setup-Skript der Cloud-Umgebung installiert die Abhängigkeiten idempotent, inklusive WebKit und seiner Bibliotheken (R-016, D-026). In einer frischen Session ist das bestätigt. Die Befehle stehen in CLAUDE.md. Das CHANGELOG ist angelegt.
 
 ## Phase 3 – Kern: Zustand, Bildschirme, Aktionen, Daten, Logs und Baseline-Run
 **Ziel:** Der Bot erkennt jeden Bildschirm, handelt verlässlich und spielt mit einer einfachen, sicheren Baseline-Strategie einen kompletten Story-Run ohne Hänger.
-**R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245
+**R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245, R-249
 **Abnahmekriterien**
 - Der ScreenDetector besteht alle Fixture-Tests (R-186). Ein unbekannter Bildschirm führt zu Pause, Meldung und Snapshot.
 - Der Actor nutzt Pointer- und Touch-Events, prüft die Wirkung jeder Aktion und arbeitet mit Backoff. Das Warten läuft über MutationObserver plus Stabilitätserkennung, dazu kommt der Watchdog.
