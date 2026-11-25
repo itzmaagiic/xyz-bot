@@ -1,73 +1,85 @@
 # Plan – Phasen mit Ziel und Abnahmekriterien
 
 Jede Phase endet mit dem **Review-Tor**: eigenes Review → `requirements-reviewer`, `ui-reviewer` und `strategy-reviewer` (parallel) → alle Funde beheben → erneut prüfen → Ergebnis in PROGRESS.md. Erst danach beginnt die nächste Phase.
-Reviewer ohne passendes Material, etwa der strategy-reviewer ohne echte Runs, melden das ausdrücklich. Das zählt dann nicht als „bestanden“.
-
-> ⚠️ Die Phasen 2–7 sind **vorläufig** (D-009). Sie leiten sich aus dem Einrichtungsauftrag ab. In Phase 1 werden sie an den Hauptauftrag angepasst.
+Ein Reviewer ohne passendes Material, etwa der ui-reviewer ohne Oberfläche, meldet das ausdrücklich. Das gilt als „nicht anwendbar“, nicht als „bestanden“.
+Allgemeines Abnahmekriterium jeder Phase: Alle R-IDs mit diesem Phasen-Tag sind ✅ mit Nachweis, oder sie sind begründet verschoben (D-Eintrag, Tag geändert).
+Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (CLAUDE.md). Pläne liegen in `docs/superpowers/plans/` und nennen ihre R-IDs.
 
 ---
 
-## Phase 0 – Einrichtung ✅ (Session 1, 2026-11-25)
-**Ziel:** Jede spätere Session arbeitet gründlich, selbstständig und ohne Vergessen.
+## Phase 0 – Einrichtung und Zerlegung des Auftrags ✅ (Session 1, 2026-11-25)
+**Ziel:** Jede spätere Session arbeitet gründlich, selbstständig und ohne Vergessen. Der Auftrag ist vollständig in prüfbare Anforderungen zerlegt.
 **Abnahmekriterien**
-- [x] CLAUDE.md, REQUIREMENTS.md, PROGRESS.md, DECISIONS.md, PLAN.md, UI.md, GAME.md und AUFTRAG.md sind angelegt.
-- [x] Die Plugins sind in `.claude/settings.json` über `enabledPlugins` aktiviert (D-001).
-- [x] Die drei Reviewer-Subagenten liegen in `.claude/agents/`.
-- [x] Der SessionStart-Hook gibt den Stand aus (manuell getestet).
-- [x] Alles ist committet und gepusht.
+- [x] Die Gedächtnis-Dateien, Plugins, drei Reviewer-Subagenten und der SessionStart-Hook stehen (R-017 bis R-026).
+- [x] Der Hauptauftrag steht wörtlich in `docs/AUFTRAG.md` und ist in R-028 bis R-219 zerlegt, mit Zuordnungstabelle.
+- [x] Der Spielstand des Nutzers liegt bereinigt als Fixture vor (R-211). Der Repo-Sicherheitsscan ist erledigt (R-209).
 - [ ] In Session 2 bestätigt: Plugins und Subagenten werden geladen (R-020, R-022).
 
-## Phase 1 – Hauptauftrag erfassen und zerlegen ⛔ blockiert (Hauptauftrag fehlt)
-**Ziel:** eine vollständige, prüfbare Anforderungsliste und ein darauf abgestimmter Plan.
+## Phase 1 – Aufklärung (bevor Bot-Logik entsteht)
+**Ziel:** Pokelike genau verstehen und alle Bildschirme und Datenquellen belegt dokumentieren. Es gibt noch keine Bot-Logik.
+**R-IDs:** R-027, R-036, R-064 bis R-073, R-075 bis R-077
 **Abnahmekriterien**
-- Der Hauptauftrag steht wörtlich in `docs/AUFTRAG.md`.
-- Jeder Satz des Hauptauftrags ist mindestens einer R-ID zugeordnet. Dazu gibt es eine Zuordnungstabelle am Ende von REQUIREMENTS.md.
-- Eigene Ergänzungen als Product Owner sind als `[eigene Idee]` eingetragen.
-- Die Phasen 2–7 sind an den Hauptauftrag angepasst, jede R-ID ist einer Phase zugeordnet.
-- Projektziel und Architektur-Abschnitt in CLAUDE.md sind aktualisiert.
-- Der requirements-reviewer bestätigt, dass die Liste vollständig ist und kein Detail verloren gegangen ist.
+- Playwright mit Chromium **und** WebKit läuft in der Cloud (R-065, D-011).
+- Mehrere Runs wurden selbst gespielt. **Jeder** Bildschirm ist in `docs/GAME_RECON.md` mit Erkennungsmerkmalen und Selektoren beschrieben, in deutscher **und** englischer Spielsprache.
+- Geklärt sind DOM oder Canvas, das Framework, die CSP (mit Test, ob ein Seiten-Skript per script-Element läuft), der globale Zustand bzw. localStorage/IndexedDB, das Auslesen von Team und Karte, die Spieleinstellungen und die Spielversion.
+- Echte, bereinigte DOM-Snapshots jedes Bildschirms liegen in `tests/fixtures/dom/`.
+- Jede Angabe aus HA §1 ist als bestätigt, widerlegt oder offen markiert. Die Wiki-Quellen sind ausgewertet.
+- Die offenen Fragen sind in GAME_RECON.md gelistet und, wo möglich, beantwortet.
 
-## Phase 2 – Spielanalyse und Architektur (vorläufig)
-**Ziel:** Pokelike genau verstehen und eine tragfähige technische Grundlage wählen.
+## Phase 2 – Projektgerüst und Build-Pipeline
+**Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Die Ziele sind zunächst leere Hüllen.
+**R-IDs:** R-015, R-016, R-032 bis R-034, R-078 bis R-082, R-098 bis R-100, R-102 bis R-105, R-107, R-192, R-193, R-199, R-201, R-208
 **Abnahmekriterien**
-- `docs/GAME.md` beschreibt jeden Spielbildschirm eines Runs: Erkennungsmerkmale, Bedienelemente mit Selektoren, mögliche Aktionen. Dazu kommen die Regeln, die für Entscheidungen zählen (Typen, Items, Relikte, Team-Limit, Bosse), und Strategie-Grundwissen.
-- Die Architektur ist entschieden (D-Eintrag mit Alternativen und Begründung) und in CLAUDE.md beschrieben.
-- Ein technischer Spike liest den Zustand mindestens eines Spielbildschirms automatisiert aus, durch einen Test belegt.
+- TypeScript strict, Bundler (Entscheidung in DECISIONS), ESLint, Prettier, Vitest und Playwright sind eingerichtet. `npm run build`, `build:chrome`, `build:userscript`, `test`, `lint` und `e2e` laufen grün.
+- Die MV3-Hülle lässt sich in Chromium entpackt laden (E2E). Die Userscript-Hülle hat einen vollständigen Metadaten-Block, und ein GM-Shim lädt sie in Chromium und WebKit (E2E).
+- Automatische Checks laufen: Import-Grenzen `core/`/`ui/` gegen `platform/` (R-032), erlaubte GM-API-Schnittmenge und `@grant`-Abgleich (R-192, R-104), Metadaten (R-193), keine leeren catch-Blöcke (R-199).
+- Der API-Abgleich mit der README von quoid/userscripts ist dokumentiert (R-098).
+- Der SessionStart-Hook installiert die Abhängigkeiten idempotent, inklusive der WebKit-Bibliotheken (R-016). Die Befehle stehen in CLAUDE.md. Das CHANGELOG ist angelegt.
 
-## Phase 3 – Grundgerüst und Test-Infrastruktur (vorläufig)
-**Ziel:** Jede Session kann sofort bauen, testen, Screenshots erzeugen und Runs protokollieren.
+## Phase 3 – Kern: Zustand, Bildschirme, Aktionen, Daten, Logs und Baseline-Run
+**Ziel:** Der Bot erkennt jeden Bildschirm, handelt verlässlich und spielt mit einer einfachen, sicheren Baseline-Strategie einen kompletten Story-Run ohne Hänger.
+**R-IDs:** R-006, R-007, R-009 bis R-013, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219
 **Abnahmekriterien**
-- Ein Testbefehl läuft in einer frischen Cloud-Session grün, ohne manuelle Schritte (R-015, R-016).
-- Ein Screenshot-Befehl erzeugt Desktop-, iPhone- und iPhone-SE-Screenshots nach D-004.
-- Das Logging nach D-005 ist umgesetzt und getestet.
-- Die Befehle stehen in CLAUDE.md.
+- Der ScreenDetector besteht alle Fixture-Tests (R-186). Ein unbekannter Bildschirm führt zu Pause, Meldung und Snapshot.
+- Der Actor nutzt Pointer- und Touch-Events, prüft die Wirkung jeder Aktion und arbeitet mit Backoff. Das Warten läuft über MutationObserver plus Stabilitätserkennung, dazu kommt der Watchdog.
+- Plattform-Adapter, Typentabelle, Pokémon-Daten und das Log als Ringpuffer sind getestet.
+- Fair Play und Datenschutz sind per Test belegt (R-145 bis R-148).
+- **Meilenstein:** ein echter Story-Run bis Champ oder Game Over ohne Hänger, mit Log und Zusammenfassung unter `runs/` (R-190, R-007, R-009). Das ist die Baseline für Phase 4.
+- Bis zu Phase 5 genügt eine minimale Steuerung (Start, Pause, Stopp, Status), die Gestaltung folgt dort.
 
-## Phase 4 – Bot-Kern: Zustand erkennen und handeln (vorläufig)
-**Ziel:** Der Bot spielt einen kompletten Run zuverlässig von Anfang bis Ende.
+## Phase 4 – Strategie (das Herzstück)
+**Ziel:** Der Bot entscheidet wie ein erfahrener Spieler und gewinnt messbar öfter als die Baseline.
+**R-IDs:** R-008, R-029 bis R-031, R-037, R-039 bis R-041, R-058 bis R-063, R-085, R-090, R-116 bis R-141, R-184, R-185, R-191, R-207
 **Abnahmekriterien**
-- Alle Bildschirme aus GAME.md werden erkannt, belegt durch Tests mit gespeicherten DOM-Snapshots.
-- Ein echter Run läuft ohne Hängenbleiben bis „Game Over“ oder Sieg. Das Log liegt unter `runs/`.
-- Unbekannter Zustand führt zu sicherem Stopp mit Meldung (R-010). Pause und Stopp funktionieren (R-011). Die Versionserkennung funktioniert (R-012).
-
-## Phase 5 – Strategie (vorläufig)
-**Ziel:** Der Bot spielt wie ein erfahrener Spieler.
-**Abnahmekriterien**
-- Jede Entscheidung ist mit Begründung geloggt (R-006).
-- Mehrere echte Runs mit Zusammenfassung (R-007, R-009). Der Fortschritt ist gegenüber der Baseline aus Phase 4 messbar besser.
+- Für jeden Entscheidungstyp gibt es eine reine Funktion mit Unit-Tests für konkrete Szenarien und alle Grenzfälle (R-184, R-185).
+- Team-Bewertung, Vorausschau, Routenwahl, Fangen und Team Full, Items und Relikte, Tausch, Kampfreihenfolge, Shop, Tower-EVs, Profile und zentrale Gewichte sind umgesetzt.
+- Alle Modi sind spielbar: Story Classic und Nuzlocke, Battle Tower, Challenges.
+- Echte Runs zeigen, dass die Siegquote gegenüber der Baseline aus Phase 3 messbar steigt. Vorher und Nachher stehen in `docs/STRATEGY.md` (R-191).
 - Der strategy-reviewer meldet keinen P0- oder P1-Fund (R-008).
 
-## Phase 6 – Oberfläche (vorläufig)
-**Ziel:** eine übersichtliche, schöne und mit dem Daumen bedienbare Bot-Oberfläche auf Desktop und iPhone.
+## Phase 5 – Oberfläche
+**Ziel:** Ein übersichtliches, schönes und mit dem Daumen bedienbares Overlay, dazu Popup und Optionsseite für Chrome.
+**R-IDs:** R-001 bis R-005, R-074, R-092, R-110 bis R-114, R-142, R-143, R-149 bis R-183, R-216 bis R-218
 **Abnahmekriterien**
-- Alle UI-Zustände haben Screenshots auf Desktop, iPhone und iPhone SE (R-001, R-005).
-- Ein automatischer Test belegt, dass kein Spielbutton verdeckt wird (R-002).
-- Der ui-reviewer meldet keinen P0- oder P1-Mangel (R-003, R-004).
-- Umgesetzt mit frontend-design.
+- Das Design-System steht in `docs/UI.md`. Es gibt 2–3 Mockups mit Screenshots (Desktop 1440×900, iPhone 390×844), die Wahl ist in DECISIONS begründet. Umgesetzt wird mit frontend-design.
+- Alle Steuerungen, Einstellungen (mit Erklärung und Standardwert), die Live-Anzeige, Statistik, Log mit Filter, Export und Import, Fehlermeldungen, „Debug-Infos kopieren“, i18n (Deutsch und Englisch), Tastenkürzel, die Lern-Auswertung und das Nachjustieren mit Bestätigung und Rückgängig sind umgesetzt.
+- Jeder Zustand ist auf Desktop, iPhone und iPhone SE gescreenshottet. Mindestens zwei Runden mit dem ui-reviewer liegen hinter uns, keiner meldet mehr P0 oder P1. Ein Test belegt, dass kein Spielbutton verdeckt ist.
+- Die finalen Screenshots liegen in `docs/screenshots/`.
 
-## Phase 7 – Härtung und Abschluss (vorläufig)
-**Ziel:** robust im Alltag, vollständig dokumentiert.
+## Phase 6 – Härtung und E2E auf allen Zielen
+**Ziel:** Der Bot ist im Alltag robust, auf Chrome und iPhone.
+**R-IDs:** R-028, R-035, R-096, R-097, R-187 bis R-189, R-194 bis R-198
 **Abnahmekriterien**
-- Alle R-Punkte sind ✅ mit Nachweis, oder sie sind begründet gestrichen.
-- Fehlerfälle sind getestet: Netzwerkfehler, Spiel-Update, Neuladen mitten im Run.
-- Die README erklärt Nutzung und Installation für den Nutzer.
-- Alle drei Reviewer finden nichts mehr mit P0 oder P1.
+- Echte Runs laufen erfolgreich mit der Chrome-Erweiterung, mit dem Userscript in Chromium und mit dem Userscript in WebKit (iPhone-Emulation, Touch), jeweils mindestens ein vollständiger Story-Run ohne Hänger.
+- Getestet sind Reload mitten im Run (Resume), Spiel-Update (veränderte Fixtures), langsames Netz, Tab im Hintergrund und iOS-Display aus und an. Wake Lock wird genutzt, wo verfügbar.
+- Das Userscript ist mit Tampermonkey und Violentmonkey kompatibel (Abgleich plus Shim-Tests).
+
+## Phase 7 – Lieferung
+**Ziel:** Der Bot ist fertig verpackt, dokumentiert und sicher veröffentlichbar.
+**R-IDs:** R-144 (optional), R-202 bis R-206, R-210
+**Abnahmekriterien**
+- `dist/chrome/` plus zip, `dist/pokelike-bot.user.js` und `.meta.js` sind eingecheckt. Die GitHub-raw-Links funktionieren, und die Version ist überall gleich und erhöht.
+- README (Deutsch), `docs/GAME_RECON.md`, `docs/STRATEGY.md`, `docs/UI.md`, `docs/screenshots/` und `CHANGELOG` sind vollständig.
+- Der Secrets- und Personendaten-Scan per Skript ist grün (R-210).
+- Optional ist der Löser für das Daily Pokésort umgesetzt (R-144).
+- Alle R-Punkte sind ✅ oder begründet gestrichen. Alle drei Reviewer finden nichts mehr mit P0 oder P1.
