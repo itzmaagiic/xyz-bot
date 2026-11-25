@@ -274,3 +274,6 @@ Sie sind **nur Hinweise**. Maßgeblich ist das Spiel (§12). Alle Seiten sind ei
 | https://pokelike-guide.fr/ | Nur „Pokelike Tips and Tricks“, ohne verwertbaren Inhalt (vermutlich JS-gerendert) | – | nicht nutzbar |
 
 Zu Nuzlocke („ein Fang pro Zone, Besiegte sind weg“) gibt es auf den gelesenen Seiten **keine** Angaben. Der Punkt bleibt offen für P4 (R-062).
+
+### 12.8 Kampfende (Live-Lauf 2, 2026-11-25)
+Nach einem verlorenen Arenakampf (Kanto, Erika) bleibt `battle-screen` aktiv. „SKIP“ (`#btn-auto-battle`) ist dann ausgegraut, alle KP-Balken des Teams sind leer, und es geht nicht über diesen Knopf weiter. Wie es danach weitergeht, ist **offen** und braucht ein Fixture: Weiter-Knopf (`#btn-continue-battle`, §4) oder automatischer Übergang zu `gameover-screen` (P3). Der Bot hat das zweimal reproduzierbar nicht erkannt (PROGRESS, „Bekannte Probleme“).
