@@ -167,3 +167,10 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - esbuild hat keine Laufzeitabhängigkeiten, baut in unter einer Sekunde und kennt `target` (es2020) für Safari ab iOS 15.
   - Den Metadaten-Block, `@grant` und die Checks (R-104, R-192, R-193) erzeugen reine Funktionen in `scripts/userscript-meta.mjs`. Ein Build-Werkzeug mit eigenem Plugin-Ökosystem bringt dafür keinen Vorteil.
 - Übernommen vom Vorgänger-Branch (D-016), mit dieser Begründung jetzt festgehalten.
+
+**D-033 – `check:docs`: ✅ nur ohne offene Lücke; sechs Zeilen bereinigt** (2026-11-25)
+- Entscheidung: `npm run check:docs` (R-246) behandelt eine ✅-Zeile mit „**Lücke:**“ als Fehler. Grundlage ist die Regel in REQUIREMENTS: ✅ heißt umgesetzt **und** nachweislich getestet. Beim ersten Lauf traf das sechs Zeilen aus der Bestandsaufnahme P1. Jede wurde einzeln entschieden, die Regel wurde dafür nicht aufgeweicht:
+  - **R-047, R-115, R-131 → 🟡.** Die Lücke betrifft die Anforderung selbst: fragile Erkennung des neuen Relikts, ein E2E-Test, der `state` nicht wirklich prüft, und ungetesteter Integrationspfad `decide` → `decideEquip`. Sie werden in ihrer Phase (P3 bzw. P4) geschlossen.
+  - **R-048, R-242 bleiben ✅.** Die genannte Lücke (deutsche bzw. englische Fixtures) ist Gegenstand von **R-212** (P3, 🟡). Die Zeilen verweisen jetzt dorthin.
+  - **R-103 bleibt ✅.** Die Lücke „automatischer Check fehlt“ ist mit R-193 in P2 Task 4 geschlossen. Der Nachweis ist ergänzt.
+- Begründung: Ein Check, der Lücken nur umbenennt, wäre pro forma grün (Anti-Ziel im Phase-2-Design). Herabstufen ist ehrlich, und die Punkte bleiben in ihrer Phase sichtbar. Statusänderungen sind keine Kürzung der Anforderungen: Der Anforderungstext bleibt unverändert, ergänzt wird nur der Nachweis.

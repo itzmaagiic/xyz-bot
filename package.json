@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "check:docs": "node scripts/check-docs.mjs",
     "test": "vitest run",
     "e2e": "npm run build && playwright test --trace off",
     "e2e:live": "npm run build:chrome && LIVE=1 playwright test --trace off"
