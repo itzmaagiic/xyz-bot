@@ -12,7 +12,10 @@ async function ruleIds(code: string, filePath: string): Promise<string[]> {
 
 describe('import boundaries (R-032)', () => {
   it('core may not import platform/chrome', async () => {
-    const ids = await ruleIds("import { a } from '../platform/chrome/content';\nexport const b = a;\n", 'src/core/x.ts');
+    const ids = await ruleIds(
+      "import { a } from '../platform/chrome/content';\nexport const b = a;\n",
+      'src/core/x.ts',
+    );
     expect(ids).toContain('no-restricted-imports');
   });
 

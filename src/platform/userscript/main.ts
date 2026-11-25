@@ -1,63 +1,28 @@
 /**
  * Userscript entry (Userscripts for iOS/iPadOS Safari, Tampermonkey, Violentmonkey).
+ * Only the GM.* API intersection is used (R-099, docs/USERSCRIPT_API.md); everything else is feature-detected.
  * Bridge: injected <script> element into the page (CustomEvent protocol); DOM fallback if that fails.
  */
 import { startApp } from '../../app';
 import { READY_ATTR } from '../../core/bridge/protocol';
-import { copyViaDom } from '../clipboard';
-import { bindPageShortcuts, type Platform, type PlatformStorage } from '../types';
 import { noteError } from '../../core/log/note';
+import { copyViaDom } from '../clipboard';
+import { bindPageShortcuts, type Platform } from '../types';
+import { makeStorage, type StorageEnv } from './storage';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare const __BRIDGE_CODE__: string;
-declare const GM: any;
-declare const GM_getValue: any;
-declare const GM_setValue: any;
-declare const GM_setClipboard: any;
-declare const GM_addValueChangeListener: any;
+declare const GM:
+  (NonNullable<StorageEnv['gm']> & { setClipboard?: (data: string, type?: string) => Promise<unknown> }) | undefined;
 
-function makeStorage(): PlatformStorage {
-  // Last resort is memory only: never write into the game's own localStorage (save integrity).
-  const mem = new Map<string, string>();
-  return {
-    async get<T>(key: string): Promise<T | undefined> {
-      try {
-        if (typeof GM !== 'undefined' && GM?.getValue) {
-          const v = await GM.getValue(key);
-          return (typeof v === 'string' ? JSON.parse(v) : v) as T | undefined;
-        }
-        if (typeof GM_getValue === 'function') {
-          const v = GM_getValue(key);
-          return (typeof v === 'string' ? JSON.parse(v) : v) as T | undefined;
-        }
-      } catch (e) {
-        noteError('userscript:storage', e);
-      }
-      const v = mem.get(key);
-      return v == null ? undefined : (JSON.parse(v) as T);
-    },
-    async set(key, value) {
-      const s = JSON.stringify(value);
-      try {
-        if (typeof GM !== 'undefined' && GM?.setValue) return void (await GM.setValue(key, s));
-        if (typeof GM_setValue === 'function') return void GM_setValue(key, s);
-      } catch (e) {
-        noteError('userscript:storage', e);
-      }
-      mem.set(key, s);
-    },
-    onChange(key, cb) {
-      if (typeof GM_addValueChangeListener === 'function') {
-        try {
-          GM_addValueChangeListener(key, (_k: string, _o: unknown, n: unknown, remote: boolean) => {
-            if (remote) cb(typeof n === 'string' ? JSON.parse(n) : n);
-          });
-        } catch (e) {
-          noteError('userscript:onChange', e);
-        }
-      }
-    },
-  };
+const gm = typeof GM !== 'undefined' ? GM : undefined;
+
+function safeLocalStorage(): StorageEnv['local'] {
+  try {
+    return window.localStorage ?? null;
+  } catch (e) {
+    noteError('userscript:localStorage', e); // blocked (private mode, sandbox) → memory only
+    return null;
+  }
 }
 
 function injectBridge(): boolean {
@@ -76,19 +41,15 @@ function injectBridge(): boolean {
 
 const platform: Platform = {
   name: 'userscript',
-  storage: makeStorage(),
+  storage: makeStorage({ gm: gm ?? null, local: safeLocalStorage() }),
   async copyText(text) {
-    try {
-      if (typeof GM !== 'undefined' && GM?.setClipboard) {
-        await GM.setClipboard(text);
-        return true;
+    if (gm?.setClipboard) {
+      try {
+        const ok = await gm.setClipboard(text, 'text/plain');
+        if (ok !== false) return true; // Userscripts resolves a boolean, TM/VM resolve undefined
+      } catch (e) {
+        noteError('userscript:clipboard', e);
       }
-      if (typeof GM_setClipboard === 'function') {
-        GM_setClipboard(text);
-        return true;
-      }
-    } catch (e) {
-      noteError('userscript:clipboard', e);
     }
     return copyViaDom(text);
   },
