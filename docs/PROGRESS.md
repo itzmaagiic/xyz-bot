@@ -1,21 +1,20 @@
 # Fortschritt
 
 **Stand:** 2026-11-25
-**Aktuelle Phase:** P1
-_(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: Bestandsaufnahme und Aufklärung, siehe `docs/PLAN.md`.)_
+**Aktuelle Phase:** P2
+_(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Phase 1** nach Plan `docs/superpowers/plans/2026-11-25-phase1-bestandsaufnahme.md` (Design: `docs/superpowers/specs/2026-11-25-phase1-design.md`, D-025). Tasks 1 bis 6 erledigt. Task 7: Zielwert (D-027) und R-020 (D-028) erledigt, **das Review-Tor P1 läuft**. Alle P1-Punkte sind ✅, die Restlücken der Aufklärung liegen in P3 (D-029).
+- Nichts. Phase 2 beginnt mit einem Superpowers-Plan (brainstorming → writing-plans).
 
 ## Nächster Schritt
-1. **Review-Tor P1 abschließen:** Die Funde aus Runde 1 sind eingearbeitet, es folgt eine kurze zweite Prüfung durch den requirements-reviewer. Danach `**Aktuelle Phase:** P2`.
-2. **Phase 2 (Gerüst und Build):** Superpowers-Plan anlegen. Schwerpunkte laut Bestandsaufnahme:
+1. **Phase 2 (Gerüst und Build):** Superpowers-Plan anlegen. Schwerpunkte laut Bestandsaufnahme:
    - `@updateURL`/`@downloadURL`, keine minifizierte Bridge, nur die GM-Schnittmenge, localStorage-Fallback (R-102 bis R-107)
    - Checks für API-Schnittmenge und Metadaten (R-192, R-193), Import-Grenzen (R-032)
    - keine leeren oder stillen catch-Blöcke (R-199)
    - `check:docs` (R-246), Branch-Warnung im Hook (R-247), CHANGELOG (R-208)
    - Setup-Skript in einer frischen Session bestätigen (R-015, R-016)
-3. **Phase 3 beginnt mit** der Aufklärung der Restbildschirme (D-029) und dem **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8).
+2. **Phase 3 beginnt mit** der Aufklärung der Restbildschirme (D-029) und dem **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8).
 
 ## Entscheidungen (Nutzer hat delegiert, D-023)
 - **Pokédollar:** Die strenge Regel bleibt, Ausgaben nur mit Freigabe, Budget-Standard 0. **Erledigt.**
@@ -67,6 +66,7 @@ _(Phase 0 ist abgeschlossen, das Review-Tor ist bestanden. Jetzt kommt Phase 1: 
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-25 · Session 1: **Phase 1 abgeschlossen, Review-Tor bestanden** (requirements-reviewer Runde 3: bestanden; ui- und strategy-reviewer: nicht anwendbar, Vorbefunde siehe oben). Ergebnis: Sim-Seeds aus dem sichtbaren Zustand (R-248), Actor-Guard (R-147), WebKit in der Cloud (R-065), Aufklärung im Spielcode und in den Wikis (GAME_RECON §11 bis §13), Bestandsaufnahme aller 251 R-IDs (Prüfprotokolle in `docs/superpowers/audits/`), Zielwert (D-027). Aktuelle Phase ist jetzt **P2**.
 - 2026-11-25 · Session 1: Review-Tor P1, Runde 1. ui-reviewer und strategy-reviewer: „nicht anwendbar“, ihre Vorbefunde stehen oben. requirements-reviewer: nicht bestanden wegen Doku-Nacharbeit, alles eingearbeitet: R-016, R-244 und R-248 mit durchgestrichener alter Fassung, R-036 und R-064 nachgebessert (pokelike-guide.fr gerendert), PLAN.md P1/P3 konsistent, GAME_RECON §7 und §10.5 markiert. **Korrektur der Hänger-Diagnose:** Der Kampf lief noch, SKIP war gesperrt. E2E auf HEAD `4d35525`: 17 bestanden, 1 gewollt übersprungen. Neu sind R-250 (kalibrierte Prognosen) und R-251 (Notbremse).
 - 2026-11-25 · Session 1, P1 Tasks 4–7: Bestandsaufnahme vollständig (4 Prüfprotokolle in `docs/superpowers/audits/`, alle 249 R-Zeilen mit Status und Fundstelle). GAME_RECON bereinigt, mit gebündelten offenen Fragen (§13) und Wiki-Unterseiten (§11). Zielwert in D-027, R-020 nach P7 (D-028), Restlücken nach P3 (D-029). Live-Lauf 2 zeigt einen reproduzierbaren Hänger am Kampfende (§12.8), Ursache wahrscheinlich ein ausgegrauter Knopf, der als klickbar gilt.
 - 2026-11-25 · Session 1, P1 Task 6 (Teil): Bestandsaufnahme durch 3 requirements-reviewer für E/F/H/N, G/J und I/K/L/M/O/P/Z. 151 R-Zeilen haben jetzt Status, Fundstelle und Lücke, die Prüfprotokolle liegen in `docs/superpowers/audits/`. Neu ist **R-249**: kein `await` unter dem Simulations-Seed. Der Guard sperrt zusätzlich Teilen, Shop/Vitamine und App-Installation (Tests 111/111).
