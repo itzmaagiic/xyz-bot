@@ -314,6 +314,15 @@ export class BotController {
         }
         st.sim = this.simCache;
       }
+      if (st.screen.kind === 'passive') {
+        const all = Array.from(this.doc.querySelectorAll('#passive-choices .item-card.passive-card'));
+        const icons = all.map((c) => c.querySelector('img')?.getAttribute('src') ?? '');
+        const replace = !!this.doc.querySelector('#passive-choices.is-replace-grid');
+        if (icons.length) {
+          st.relicSim = await this.bridge.request('simulateRelics', { icons, replace, n: 24 }, 30000);
+          this.log.debug('relic simulation', st.relicSim);
+        }
+      }
       if (st.screen.kind === 'catch' && run.catchOffer?.length) {
         const key = `catch|${run.currentMap}|${run.currentNodeId}|${teamSig}|${run.catchOffer.map((m) => m.speciesId).join(',')}`;
         if (key !== this.catchKey) {

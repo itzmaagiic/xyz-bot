@@ -22,7 +22,7 @@ import { effectiveness } from '../data/typechart';
 import { chooseRoute, xpNeed } from './map';
 import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
 import { chooseBagUse, chooseEquipHolder, chooseUsableTarget } from './items';
-import { choosePcStarter, chooseRelic, chooseRelicReplace, readPcCards, readRelicCards } from './challenge';
+import { choosePcStarter, chooseRelic, chooseRelicReplace, readPcCards, readRelicCards, relicScore } from './challenge';
 import { normalizeItemId } from './choices';
 import { FLAGS } from '../flags';
 
@@ -164,7 +164,7 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
     case 'starter': {
       if (doc.querySelector('#starter-choices .dex-card')) {
         const cards = readPcCards(doc);
-        const c = choosePcStarter(cards, state.pcStats ?? {}, s.preferredStarter);
+        const c = choosePcStarter(cards, state.pcStats ?? {}, s.chalStarter ?? s.preferredStarter);
         if (c.index < 0) return { kind: 'pause', why: c.why };
         return { kind: 'click', selector: '#starter-choices .dex-card', index: c.index, why: c.why };
       }
@@ -262,6 +262,25 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         const owned = parsed.filter((_, i) => !isNew(all[i]!));
         const incoming = parsed.find((_, i) => isNew(all[i]!));
         if (!incoming) return { kind: 'pause', why: 'relic replace dialog without the new relic' };
+        const rs = state.relicSim;
+        if (rs?.replace.length && rs.replace.length === owned.length) {
+          const bestI = rs.replace.reduce((b, v, i) => (v > rs.replace[b]! ? i : b), 0);
+          if (rs.replace[bestI]! > rs.baseline + 0.02) {
+            const ownedIdx = all.map((e, i) => (isNew(e) ? -1 : i)).filter((i) => i >= 0)[bestI]!;
+            return {
+              kind: 'click',
+              selector: '#passive-choices .item-card.passive-card',
+              index: ownedIdx,
+              why: `sim: swap relic ${bestI + 1} for the new one (${rs.baseline.toFixed(2)} → ${rs.replace[bestI]!.toFixed(2)})`,
+            };
+          }
+          if (rs.replace.some((v) => Math.abs(v - rs.baseline) > 1e-9))
+            return {
+              kind: 'click',
+              selector: '#btn-skip-passive',
+              why: `sim: no swap improves the boss odds (${rs.baseline.toFixed(2)})`,
+            };
+        }
         const c = chooseRelicReplace(owned, incoming, run?.team ?? []);
         if (c.index < 0) return { kind: 'click', selector: '#btn-skip-passive', why: c.why };
         const ownedIdx = all.map((e, i) => (isNew(e) ? -1 : i)).filter((i) => i >= 0)[c.index]!;
@@ -269,6 +288,19 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       }
       const cards = readRelicCards(doc);
       if (!cards.length) return { kind: 'wait', ms: 500, why: 'relics loading' };
+      const rs = state.relicSim;
+      if (rs && rs.offers.length === cards.length && rs.offers.some((o) => o.combat)) {
+        // simulated value first; team-type synergy only breaks near-ties (relics without combat effect)
+        const team = run?.team ?? [];
+        const score = (i: number) => rs.offers[i]!.value + 0.004 * relicScore(cards[i]!, team);
+        const best = cards.map((_, i) => i).reduce((b, i) => (score(i) > score(b) ? i : b), 0);
+        return {
+          kind: 'click',
+          selector: '#passive-choices .item-card.passive-card',
+          index: best,
+          why: `sim: relic ${rs.offers[best]!.id ?? '?'} → boss odds ${rs.baseline.toFixed(2)} → ${rs.offers[best]!.value.toFixed(2)}`,
+        };
+      }
       const c = chooseRelic(cards, run?.team ?? []);
       return { kind: 'click', selector: '#passive-choices .item-card.passive-card', index: c.index, why: c.why };
     }

@@ -1,5 +1,6 @@
 /** Settings form shared by the in-game overlay and the Chrome options page. */
 import type { BotSettings } from '../core/settings';
+import { readPcRoster } from '../core/strategy/challenge';
 
 export const REGIONS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos'];
 
@@ -92,6 +93,37 @@ export function buildSettingsForm(
     ],
     (v) => ({ chalLevel: v === 'auto' ? null : Number(v) }),
   );
+  // Challenge starter: the PC list is read (never written) from the game's save when the form lives on the game
+  // page; the Chrome options page has no access to it and falls back to a dex number.
+  let roster: ReturnType<typeof readPcRoster> = [];
+  try {
+    const ls = doc.defaultView?.localStorage;
+    if (ls) roster = readPcRoster((k) => ls.getItem(k));
+  } catch {
+    roster = [];
+  }
+  if (roster.length) {
+    const opts: [string, string][] = [['auto', 'Auto (stärkster)']];
+    if (s.chalStarter != null && !roster.some((r) => r.id === s.chalStarter))
+      opts.push([String(s.chalStarter), `#${s.chalStarter}`]);
+    for (const r of roster)
+      opts.push([String(r.id), `${r.name}${r.shiny ? ' ★' : ''}${r.aurora ? ' ✦' : ''} (BST ${r.bst || '?'})`]);
+    sel('pk-chalstarter', 'Challenge-Starter', s.chalStarter == null ? 'auto' : String(s.chalStarter), opts, (v) => ({
+      chalStarter: v === 'auto' ? null : Number(v),
+    }));
+  } else {
+    const e = el('input', {
+      id: 'pk-chalstarter',
+      type: 'number',
+      min: '0',
+      max: '1100',
+      step: '1',
+      placeholder: 'Dex-Nr., leer = auto',
+      value: s.chalStarter == null ? '' : String(s.chalStarter),
+    });
+    e.onchange = () => onChange({ chalStarter: Number(e.value) > 0 ? Number(e.value) : null });
+    g.append(el('label', { for: 'pk-chalstarter' }, 'Challenge-Starter'), e);
+  }
   sel(
     'pk-variant',
     'Variante',

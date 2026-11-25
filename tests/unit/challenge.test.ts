@@ -6,6 +6,7 @@ import {
   chooseRelic,
   chooseRelicReplace,
   readPcCards,
+  readPcRoster,
   readRelicCards,
 } from '../../src/core/strategy/challenge';
 import { decide, newMemory } from '../../src/core/strategy/engine';
@@ -103,5 +104,50 @@ describe('relic replace', () => {
       { types: ['Flying'], starter: false },
     ];
     expect(chooseRelicReplace(owned, { types: ['Water'], starter: false }, team).index).toBe(-1);
+  });
+});
+
+describe('challenge starter pre-selection', () => {
+  const save: Record<string, string> = {
+    poke_hof_index: JSON.stringify({ evoLineRoots: [4, 150, 129], shinySpecies: [4], auroraSpecies: [] }),
+    pkrl_species_list: JSON.stringify([{ name: 'magikarp', id: 129 }]),
+    pkrl_poke_4: JSON.stringify({ id: 4, name: 'Charmander', bst: 309 }),
+    pkrl_poke_150: JSON.stringify({ id: 150, name: 'Mewtwo', bst: 680 }),
+    pkrl_poke_129: 'not json',
+  };
+  it('reads the PC roster read-only from the save, strongest first', () => {
+    const r = readPcRoster((k) => save[k] ?? null);
+    expect(r.map((e) => e.id)).toEqual([150, 4, 129]);
+    expect(r[1]).toMatchObject({ name: 'Charmander', shiny: true });
+    expect(r[2]!.name).toBe('Magikarp');
+    expect(readPcRoster(() => null)).toEqual([]);
+  });
+  it('picks the strongest copy of the chosen species, falls back to auto when missing', () => {
+    const cards = [
+      { speciesId: 4, shiny: false, aurora: false, buff: 0, mega: false },
+      { speciesId: 150, shiny: false, aurora: false, buff: 0, mega: false },
+      { speciesId: 4, shiny: true, aurora: false, buff: 50, mega: true },
+    ];
+    const stats = { 4: { bst: 309, types: ['Fire'] }, 150: { bst: 680, types: ['Psychic'] } };
+    expect(choosePcStarter(cards, stats, 4).index).toBe(2);
+    expect(choosePcStarter(cards, stats, 999).index).toBe(1);
+    const doc = loadFixture('chal-starter-pc');
+    const d = decide(gs(doc, { pcStats: stats }), doc, { ...s, chalStarter: 4 }, newMemory());
+    expect(d).toMatchObject({ kind: 'click', index: 0 });
+  });
+});
+
+describe('relic choice by simulation', () => {
+  it('takes the relic with the best simulated boss odds, heuristic when sims are flat', () => {
+    const doc = loadFixture('chal-relic-1');
+    const n = readRelicCards(doc).length;
+    const offers = Array.from({ length: n }, (_, i) => ({ id: `r${i}`, value: 0.5, combat: false }));
+    offers[n - 1] = { id: 'best', value: 0.8, combat: true };
+    const d = decide(gs(doc, { relicSim: { baseline: 0.5, offers, replace: [] } }), doc, s, newMemory());
+    expect(d).toMatchObject({ kind: 'click', index: n - 1 });
+    const flat = offers.map((o) => ({ ...o, value: 0.5, combat: false }));
+    const h = decide(gs(doc, { relicSim: { baseline: 0.5, offers: flat, replace: [] } }), doc, s, newMemory());
+    expect(h.kind).toBe('click');
+    expect(h.why).not.toMatch(/^sim/);
   });
 });

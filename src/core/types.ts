@@ -167,6 +167,12 @@ export interface GameState {
   sim?: import('./strategy/sim-route').SimData | null;
   /** evaluated battle orders for the upcoming boss (elite-prep screen) */
   orderSim?: { order: number[]; winRate: number; avgAlive: number }[] | null;
+  /** simulated relic offers (challenge relic screen) */
+  relicSim?: {
+    baseline: number;
+    offers: { id: string | null; value: number; combat: boolean }[];
+    replace: number[];
+  } | null;
   /** species stats for the PC starter grid (challenge starter screen) */
   pcStats?: Record<number, { bst: number; types: string[] }> | null;
   /** simulated value of each catch option (index -1 = skip) */
