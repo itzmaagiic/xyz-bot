@@ -304,8 +304,19 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       const c = chooseRelic(cards, run?.team ?? []);
       return { kind: 'click', selector: '#passive-choices .item-card.passive-card', index: c.index, why: c.why };
     }
+    case 'stage-complete': {
+      // challenge level cleared (badge earned) or tower stage cleared
+      if (s.mode === 'tower' && shown(doc, '#btn-stage-continue'))
+        return { kind: 'click', selector: '#btn-stage-continue', why: 'tower stage cleared – next stage' };
+      if (mem.endReported !== 'win') {
+        mem.endReported = 'win';
+        return { kind: 'stop', why: 'challenge level cleared!', result: 'win' };
+      }
+      for (const sel of ['#btn-stage-home', '#btn-stage-again'])
+        if (shown(doc, sel)) return { kind: 'click', selector: sel, why: 'back to the challenges for the next run' };
+      return { kind: 'pause', why: 'stage complete without a known button' };
+    }
     case 'stat-buff':
-    case 'stage-complete':
       return { kind: 'pause', why: `screen "${screen.screenId}" is not automated yet – please choose manually` };
     default:
       return { kind: 'pause', why: `unknown screen "${screen.screenId ?? 'none'}"` };
