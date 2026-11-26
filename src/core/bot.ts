@@ -1,10 +1,11 @@
 /** BotController: read → detect → decide → act → verify, with backoff and pause-on-unknown. */
 import { ForbiddenActionError } from './actions/guard';
 import { Actor, humanDelay, resolve, sleep } from './actions/actor';
+import { clickPrecheck, waitForEffect } from './actions/effect';
 import type { BridgeClient } from './bridge/client';
 import type { WritableSetting } from './bridge/protocol';
 import { Logger } from './log/logger';
-import { detectScreen, isShown } from './screens/detector';
+import { detectScreen } from './screens/detector';
 import { DEFAULT_SETTINGS, normalizeSettings, SETTINGS_KEY, type BotSettings } from './settings';
 import { StateReader } from './state/reader';
 import { decide, newMemory, type EngineMemory } from './strategy/engine';
@@ -483,30 +484,25 @@ export class BotController {
   private async doClick(d: Extract<Decision, { kind: 'click' }>, st: GameState): Promise<void> {
     const key = `${st.screen.signature}::${d.selector}#${d.index ?? 0}`;
     const el = resolve(this.doc, d.selector, d.index ?? 0);
-    if (!el || !isShown(el)) {
-      return this.failed(key, `target not found/visible: ${d.selector}[${d.index ?? 0}]`);
+    const pre = clickPrecheck(el);
+    if (pre === 'missing') return this.failed(key, `target not found/visible: ${d.selector}[${d.index ?? 0}]`);
+    if (pre === 'not-actionable' || !el) {
+      // visible but disabled (e.g. SKIP after the click, §12.8): wait, never click it, never count a failure;
+      // a target that stays disabled is caught by the watchdog (D-037)
+      this.log.debug(`target not actionable yet: ${d.selector}[${d.index ?? 0}]`);
+      return;
     }
     this.log.log('decision', d.why, { click: d.selector, index: d.index ?? 0, screen: st.screen.kind });
     const before = st.screen.signature;
     await this.actor.click(el);
     this.view.stats.actions++;
-    const changed = await this.waitForChange(before, el);
+    const changed = await waitForEffect(this.doc, el, before, () => detectScreen(this.doc).signature, VERIFY_TIMEOUT);
     if (changed) {
       this.failCount = 0;
       this.failKey = null;
     } else {
       await this.failed(key, `no effect after clicking ${d.selector}[${d.index ?? 0}]`);
     }
-  }
-
-  private async waitForChange(before: string, el: Element): Promise<boolean> {
-    const until = Date.now() + VERIFY_TIMEOUT;
-    while (Date.now() < until) {
-      await sleep(150);
-      if (!el.isConnected || !isShown(el)) return true;
-      if (detectScreen(this.doc).signature !== before) return true;
-    }
-    return false;
   }
 
   private async failed(key: string, why: string): Promise<void> {
