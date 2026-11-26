@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { clearNotedErrors, recentErrors } from '../../src/core/log/note';
-import { LOCAL_PREFIX, makeStorage } from '../../src/platform/userscript/storage';
+import { LOCAL_PREFIX, gmOrNote, makeStorage } from '../../src/platform/userscript/storage';
 
 /** in-memory stand-in for window.localStorage that records every write */
 function fakeLocal() {
@@ -129,6 +129,23 @@ describe('userscript storage (R-099, R-100, R-102)', () => {
     const spy = { ...local, removeItem: (k: string) => (removed.push(k), local.removeItem(k)) };
     await makeStorage({ gm: fakeGm(), local: spy }).set('s', 1);
     expect(removed).toEqual([]);
+  });
+
+  it('does not double the prefix for keys that already carry it (pkbot.settings)', async () => {
+    const local = fakeLocal();
+    await makeStorage({ gm: null, local }).set('pkbot.settings', { a: 1 });
+    expect(local.writes).toEqual(['pkbot.settings']);
+    expect(await makeStorage({ gm: null, local }).get('pkbot.settings')).toEqual({ a: 1 });
+  });
+
+  it('gmOrNote returns the GM storage when detected, else null and notes that GM is missing (once)', () => {
+    const gm = fakeGm();
+    expect(gmOrNote(true, () => gm)).toBe(gm);
+    expect(gmOrNote(false, () => gm)).toBeNull();
+    expect(gmOrNote(false, () => gm)).toBeNull();
+    const noted = recentErrors().filter((e) => e.where === 'userscript/storage:gm-missing');
+    expect(noted).toHaveLength(1);
+    expect(noted[0]!.msg).toMatch(/pkbot\./);
   });
 
   it('offers no onChange (one context per tab; no listener API in the GM intersection)', () => {

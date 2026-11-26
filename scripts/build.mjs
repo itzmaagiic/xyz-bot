@@ -10,6 +10,7 @@ import {
   NO_GRANT_NEEDED,
   buildMeta,
   checkUserscript,
+  compatWarnings,
   es2020SyntaxError,
   toTemplateLiteral,
   usedGmApis,
@@ -219,13 +220,15 @@ async function buildUserscript() {
     .map((a) => 'GM.' + a);
   const meta = buildMeta({ version: pkg.version, description: pkg.description, grants });
   const userJs = meta + '\n' + code;
-  writeFileSync(join(dist, 'pokelike-bot.meta.js'), meta);
-  writeFileSync(join(dist, 'pokelike-bot.user.js'), userJs);
+  // check first, write after: a bundle that violates the rules never lands in dist/ (committed in P7, R-203)
   const errs = checkUserscript({ userJs, metaJs: meta, version: pkg.version });
   if (errs.length) {
     console.error('userscript check FAILED (R-192/R-193):\n  - ' + errs.join('\n  - '));
     process.exit(1);
   }
+  for (const w of compatWarnings(userJs)) console.warn(`userscript compat warning (Safari 15.0, R-107): ${w}`);
+  writeFileSync(join(dist, 'pokelike-bot.meta.js'), meta);
+  writeFileSync(join(dist, 'pokelike-bot.user.js'), userJs);
   console.log(
     `userscript → ${relative(root, dist) || '.'}/pokelike-bot.user.js + .meta.js (check OK, grants: ${grants.join(', ') || 'none'})`,
   );

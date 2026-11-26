@@ -69,4 +69,27 @@ test.describe('Userscript (GM shim)', () => {
     expect(box.left).toBeGreaterThanOrEqual(0);
     expect(box.right).toBeLessThanOrEqual(box.vw);
   });
+
+  // R-100/R-102: the real wiring in main.ts – without GM, or with failing GM writes, settings survive a reload
+  for (const gm of ['none', 'throwing'] as const) {
+    test(`settings survive a reload via localStorage pkbot.* (GM: ${gm})`, async ({ page, browserName }) => {
+      await serveFixture(page, 'title');
+      await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
+      await injectUserscript(page, browserName, gm);
+      await expect(page.locator('#pk-bridge')).toBeVisible({ timeout: 10_000 });
+      await page.locator('summary', { hasText: 'Einstellungen' }).click();
+      await page.locator('#pk-delay').fill('777');
+      await page.locator('#pk-delay').dispatchEvent('change');
+      await expect
+        .poll(() => page.evaluate(() => localStorage.getItem('pkbot.settings') ?? ''))
+        .toContain('"actionDelayMs":777');
+      expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => /^(poke_|pkrl_)/.test(k)))).toEqual([]);
+
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await injectUserscript(page, browserName, gm);
+      await expect(page.locator('#pk-bridge')).toBeVisible({ timeout: 10_000 });
+      await page.locator('summary', { hasText: 'Einstellungen' }).click();
+      await expect(page.locator('#pk-delay')).toHaveValue('777');
+    });
+  }
 });

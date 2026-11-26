@@ -21,6 +21,22 @@ export interface StorageEnv {
 
 const WHERE = 'userscript/storage';
 
+/** our own localStorage key; keys that already carry the prefix (e.g. `pkbot.settings`) are not prefixed twice */
+const localKey = (key: string) => (key.startsWith(LOCAL_PREFIX) ? key : LOCAL_PREFIX + key);
+
+/**
+ * The GM storage if the caller detected GM.getValue/GM.setValue (detection stays in main.ts, where GM is used
+ * literally so @grant can be derived), otherwise null – and the fallback is noted once (R-100, D-031).
+ */
+export function gmOrNote(detected: boolean, make: () => NonNullable<StorageEnv['gm']>): StorageEnv['gm'] {
+  if (detected) return make();
+  noteError(
+    `${WHERE}:gm-missing`,
+    'GM.getValue/GM.setValue not available – settings are kept in localStorage (pkbot.*)',
+  );
+  return null;
+}
+
 function parse<T>(raw: unknown, key: string): T | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw !== 'string') return raw as T; // a manager that stored the value structurally
@@ -41,7 +57,7 @@ export function makeStorage(env: StorageEnv): PlatformStorage {
   async function readRaw(key: string): Promise<unknown> {
     if (local) {
       try {
-        const v = local.getItem(LOCAL_PREFIX + key);
+        const v = local.getItem(localKey(key));
         if (v !== null) return v;
       } catch (e) {
         noteError(`${WHERE}:local-get`, e);
@@ -70,7 +86,7 @@ export function makeStorage(env: StorageEnv): PlatformStorage {
           if (local) {
             try {
               // drop the fallback copy of an earlier failed GM write – only if there is one
-              if (local.getItem(LOCAL_PREFIX + key) !== null) local.removeItem(LOCAL_PREFIX + key);
+              if (local.getItem(localKey(key)) !== null) local.removeItem(localKey(key));
             } catch (e) {
               noteError(`${WHERE}:local-remove`, e);
             }
@@ -82,7 +98,7 @@ export function makeStorage(env: StorageEnv): PlatformStorage {
       }
       if (local) {
         try {
-          local.setItem(LOCAL_PREFIX + key, s);
+          local.setItem(localKey(key), s);
           return;
         } catch (e) {
           noteError(`${WHERE}:local-set`, e);

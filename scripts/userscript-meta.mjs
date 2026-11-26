@@ -12,8 +12,11 @@ export const ALLOWED_GM = Object.freeze([
   'setClipboard',
   'info',
 ]);
-/** Available without @grant in all three managers (quoid README: "GM.info … without needing to add it to @grant"). */
-export const NO_GRANT_NEEDED = Object.freeze(['info']);
+/**
+ * GM APIs that need no @grant. Empty on purpose: GM.info works without a grant in Userscripts (quoid README), but that is
+ * not verified for Tampermonkey/Violentmonkey, and an extra grant is harmless – so every used API is granted (R-104).
+ */
+export const NO_GRANT_NEEDED = Object.freeze([]);
 export const NAMESPACE = 'https://github.com/itzmaagiic/xyz-bot';
 export const RAW_BASE = 'https://raw.githubusercontent.com/itzmaagiic/xyz-bot/main/dist/';
 export const MATCHES = Object.freeze(['https://pokelike.xyz/*', 'https://www.pokelike.xyz/*']);
@@ -46,29 +49,62 @@ export function usedGmApis(code) {
  * including the embedded bridge text. Source: MDN browser-compat data (Safari versions in the messages).
  */
 const POST_SAFARI15 = [
-  // [pattern, what, global name that may be feature-detected with `typeof <name>` on the same line (R-100)]
+  // [pattern, what, global that may be feature-detected before the use on the same line (R-100)]
   [/\.at\(/, 'Array/String.prototype.at (Safari 15.4)'],
   [/\bstructuredClone\(/, 'structuredClone (Safari 15.4)', 'structuredClone'],
   [/\bObject\.hasOwn\(/, 'Object.hasOwn (Safari 15.4)', 'Object.hasOwn'],
   [/\.findLast(?:Index)?\(/, 'Array.prototype.findLast (Safari 15.4)'],
   [/\bcrypto\.randomUUID\(/, 'crypto.randomUUID (Safari 15.4)', 'crypto.randomUUID'],
-  [/:has\(/, 'CSS :has() (Safari 15.4)'],
-  [/\.(?:toSorted|toReversed|toSpliced)\(/, 'Array change-by-copy (Safari 16)'],
+  [/\bBroadcastChannel\b/, 'BroadcastChannel (Safari 15.4)', 'BroadcastChannel'],
+  [/\bnavigator\.locks\b/, 'navigator.locks (Safari 15.4)', 'navigator.locks'],
+  [/\.showModal\(/, 'HTMLDialogElement.showModal (Safari 15.4)'],
+  [/:has\(/, 'CSS :has() (Safari 15.4, querySelector throws before)'],
+  [/\.(?:toSorted|toReversed|toSpliced|with)\(/, 'Array change-by-copy (Safari 16)'],
   [/\bAbortSignal\.timeout\(/, 'AbortSignal.timeout (Safari 16)', 'AbortSignal.timeout'],
+  [/\bnavigator\.wakeLock\b/, 'navigator.wakeLock (Safari 16.4)', 'navigator.wakeLock'],
   [/\bArray\.fromAsync\(/, 'Array.fromAsync (Safari 16.4)', 'Array.fromAsync'],
+  [
+    /\.(?:union|intersection|difference|symmetricDifference|isSubsetOf|isSupersetOf|isDisjointFrom)\(/,
+    'Set methods (Safari 17)',
+  ],
   [/\b(?:Object|Map)\.groupBy\(/, 'Object/Map.groupBy (Safari 17.4)'],
   [/\bPromise\.withResolvers\(/, 'Promise.withResolvers (Safari 17.4)', 'Promise.withResolvers'],
+  [/\brequestIdleCallback\b/, 'requestIdleCallback (not in Safari)', 'requestIdleCallback'],
   // lookbehind is a parse-time SyntaxError before Safari 16.4 – the whole userscript would fail to load
   [/\(\?<[=!]/, 'RegExp lookbehind (Safari 16.4)'],
 ];
 
-/** lines of `text` that use a post-Safari-15.0 feature without a same-line `typeof <global>` guard */
+/** CSS that Safari 15.0 ignores: the page still works, only styling degrades → warning, not a build failure (P5) */
+const POST_SAFARI15_CSS = [
+  [/:focus-visible\b/, 'CSS :focus-visible (Safari 15.4) – the whole rule is dropped before'],
+  [/\d(?:dvh|svh|lvh|dvw|svw|lvw)\b/, 'CSS dynamic viewport units dvh/svh/lvh (Safari 15.4)'],
+  [/\bcolor-mix\(/, 'CSS color-mix() (Safari 16.2)'],
+  [/@container\b/, 'CSS container queries (Safari 16)'],
+];
+
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Lines of `text` that use a post-Safari-15.0 feature without feature detection. A use is guarded only by
+ * `typeof <global> ===/!== "function"|"undefined"|"object"` earlier on the same line (a bare `typeof x` is not enough).
+ */
 function unguardedNewApis(text) {
   const found = new Set();
   for (const line of text.split('\n'))
-    for (const [re, what, global] of POST_SAFARI15)
-      if (re.test(line) && !(global && line.includes(`typeof ${global}`))) found.add(what);
+    for (const [re, what, global] of POST_SAFARI15) {
+      const m = re.exec(line);
+      if (!m) continue;
+      const guard = global
+        ? new RegExp(`typeof\\s+${escapeRe(global)}\\s*[!=]==?\\s*["'](?:function|undefined|object)["']`).exec(line)
+        : null;
+      if (!guard || guard.index > m.index) found.add(what);
+    }
   return [...found];
+}
+
+/** Degrading CSS (see POST_SAFARI15_CSS) found in the bundle – printed by the build, listed in R-107 */
+export function compatWarnings(text) {
+  return POST_SAFARI15_CSS.filter(([re]) => re.test(text)).map(([, what]) => what);
 }
 
 /** null if `code` parses as ES2020 script, else the parser message (R-107). */

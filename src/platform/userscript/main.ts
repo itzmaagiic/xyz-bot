@@ -10,7 +10,7 @@ import { noteError } from '../../core/log/note';
 import { copyViaDom } from '../clipboard';
 import { bindPageShortcuts, type Platform } from '../types';
 import { copyWithFallback } from './copy';
-import { makeStorage, type StorageEnv } from './storage';
+import { gmOrNote, makeStorage, type StorageEnv } from './storage';
 
 declare const __BRIDGE_CODE__: string;
 declare const GM: {
@@ -22,8 +22,8 @@ declare const GM: {
 const hasGM = typeof GM !== 'undefined';
 
 function gmStorage(): StorageEnv['gm'] {
-  if (!hasGM || typeof GM.getValue !== 'function' || typeof GM.setValue !== 'function') return null;
-  return { getValue: (k) => GM.getValue!(k), setValue: (k, v) => GM.setValue!(k, v) };
+  const detected = hasGM && typeof GM.getValue === 'function' && typeof GM.setValue === 'function';
+  return gmOrNote(detected, () => ({ getValue: (k) => GM.getValue!(k), setValue: (k, v) => GM.setValue!(k, v) }));
 }
 
 function safeLocalStorage(): StorageEnv['local'] {

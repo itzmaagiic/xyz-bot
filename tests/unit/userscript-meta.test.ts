@@ -5,6 +5,7 @@ import {
   RAW_BASE,
   buildMeta,
   checkUserscript,
+  compatWarnings,
   es2020SyntaxError,
   toTemplateLiteral,
   usedGmApis,
@@ -14,17 +15,18 @@ const V = '1.2.3';
 const CODE =
   "(() => {\n  if (typeof GM !== 'undefined') GM.setValue('a', '1');\n  void GM.getValue('a');\n  void GM.info;\n})();\n";
 
-function bundle(code = CODE, grants = ['GM.getValue', 'GM.setValue'], version = V) {
+function bundle(code = CODE, grants = ['GM.getValue', 'GM.info', 'GM.setValue'], version = V) {
   const metaJs = buildMeta({ version, description: 'd', grants });
   return { metaJs, userJs: metaJs + '\n' + code, version: V };
 }
 
 describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193)', () => {
-  it('ALLOWED_GM is exactly the R-099 intersection; GM.info needs no grant', () => {
+  it('ALLOWED_GM is exactly the R-099 intersection; every used GM API is granted', () => {
     expect([...ALLOWED_GM].sort()).toEqual(
       ['addStyle', 'deleteValue', 'getValue', 'info', 'listValues', 'setClipboard', 'setValue'].sort(),
     );
-    expect(NO_GRANT_NEEDED).toEqual(['info']);
+    // GM.info without @grant is only documented for Userscripts (quoid), not verified for TM/VM → always grant it
+    expect(NO_GRANT_NEEDED).toEqual([]);
   });
 
   it('usedGmApis finds GM.x and GM_x, sorted and unique', () => {
@@ -116,6 +118,18 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
       () => bundle(CODE + 'const r = /(?<=a)b/;\n'),
       /lookbehind/,
     ],
+    [
+      'BroadcastChannel without feature detection',
+      () => bundle(CODE + 'const c = new BroadcastChannel("x");\n'),
+      /BroadcastChannel/,
+    ],
+    ['Set methods (Safari 17)', () => bundle(CODE + 'const u = a.union(b);\n'), /Set methods/],
+    ['requestIdleCallback (not in Safari)', () => bundle(CODE + 'requestIdleCallback(f);\n'), /requestIdleCallback/],
+    [
+      'a typeof that does not guard the call',
+      () => bundle(CODE + 'if (typeof structuredClone) {} structuredClone(x);\n'),
+      /structuredClone/,
+    ],
     ['negative RegExp lookbehind', () => bundle(CODE + 'const r = /(?<!a)b/;\n'), /lookbehind/],
     [
       'API newer than Safari 15.0 inside the embedded bridge text',
@@ -140,5 +154,43 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
     expect(es2020SyntaxError('const a = b?.c ?? 1; async function f() { await g(); }')).toBeNull();
     expect(es2020SyntaxError('let a; a ||= 1;')).toMatch(/./);
     expect(es2020SyntaxError('class A { #x = 1 }')).toMatch(/./);
+  });
+
+  it('accepts feature detection with typeof … !== "undefined" before the use', () => {
+    const g = 'const ch = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("x") : null;\n';
+    expect(checkUserscript(bundle(CODE + g))).toEqual([]);
+  });
+
+  it('reports CSS that only degrades on Safari 15.0 as a warning, not an error', () => {
+    const css = 'const s = "button:focus-visible{outline:2px solid} .p{max-height:100dvh}";\n';
+    expect(checkUserscript(bundle(CODE + css))).toEqual([]);
+    const w = compatWarnings(CODE + css).join(' | ');
+    expect(w).toMatch(/focus-visible/);
+    expect(w).toMatch(/dvh/);
+  });
+
+  it.each([
+    'name',
+    'namespace',
+    'version',
+    'description',
+    'match',
+    'run-at',
+    'inject-into',
+    'noframes',
+    'updateURL',
+    'downloadURL',
+  ])('checkUserscript reports a missing @%s (R-193)', (key) => {
+    const b = bundle();
+    const metaJs = b.metaJs
+      .split('\n')
+      .filter((l) => !new RegExp(`^// @${key}(\\s|$)`).test(l))
+      .join('\n');
+    expect(metaJs).not.toEqual(b.metaJs);
+    const errs = checkUserscript({ ...b, metaJs, userJs: metaJs + '\n' + CODE });
+    expect(
+      errs.some((e: string) => e.includes(`@${key}`)),
+      errs.join(' | '),
+    ).toBe(true);
   });
 });

@@ -21,8 +21,27 @@ const GM_SHIM = `
 })();
 `;
 
-export async function injectUserscript(page: Page, browserName: string): Promise<'isolated' | 'main'> {
-  const code = GM_SHIM + '\n' + readFileSync(USER_JS, 'utf8');
+/** a manager whose GM.setValue fails (e.g. quota) and that has nothing stored */
+const GM_THROWING = `
+(() => {
+  globalThis.GM = {
+    getValue: async (k, d) => d,
+    setValue: async () => { throw new Error('quota exceeded'); },
+    setClipboard: async (t) => { globalThis.__gmClipboard = t; },
+  };
+})();
+`;
+
+/** which GM the emulated manager offers: the normal shim, none at all, or one whose writes fail (R-100, R-102) */
+export type GmMode = 'shim' | 'none' | 'throwing';
+
+export async function injectUserscript(
+  page: Page,
+  browserName: string,
+  gm: GmMode = 'shim',
+): Promise<'isolated' | 'main'> {
+  const prelude = gm === 'shim' ? GM_SHIM : gm === 'throwing' ? GM_THROWING : '';
+  const code = prelude + '\n' + readFileSync(USER_JS, 'utf8');
   if (browserName === 'chromium') {
     const cdp = await page.context().newCDPSession(page);
     const { frameTree } = await cdp.send('Page.getFrameTree');
