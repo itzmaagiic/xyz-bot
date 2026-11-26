@@ -49,7 +49,7 @@ function refs(text) {
 }
 
 /**
- * @param {{ requirements: string, plan: string, decisions: string, others?: { name: string, text: string }[], previousRequirements?: string }} docs
+ * @param {{ requirements: string, plan: string, decisions: string, others?: { name: string, text: string }[], previousRequirements?: string | string[] }} docs
  * @returns {string[]}
  */
 export function checkDocs({ requirements, plan, decisions, others = [], previousRequirements }) {
@@ -69,6 +69,10 @@ export function checkDocs({ requirements, plan, decisions, others = [], previous
 
   for (const it of items) {
     if (it.phase > 7) errs.push(`REQUIREMENTS: ${pad(it.id)} has tag [P${it.phase}], allowed are P0–P7`);
+    if (it.line.includes('~~') && !/\bD-\d{3}\b/.test(it.line))
+      errs.push(
+        `REQUIREMENTS: ${pad(it.id)} has a durchgestrichen part without a D-entry (CLAUDE.md: Begründung und D-Verweis)`,
+      );
     if (it.st === '✅') {
       if (it.line.includes('**Lücke:**')) errs.push(`REQUIREMENTS: ${pad(it.id)} is ✅ but still names a **Lücke:**`);
       const ev = (it.line.split('Nachweis:')[1] ?? '').trim();
@@ -105,11 +109,13 @@ export function checkDocs({ requirements, plan, decisions, others = [], previous
       if (!decIds.has(id)) errs.push(`${name}: unknown D-${String(id).padStart(3, '0')}`);
   }
 
-  if (previousRequirements) {
-    for (const it of parseRequirements(previousRequirements))
-      if (!ids.has(it.id))
-        errs.push(`REQUIREMENTS: ${pad(it.id)} was removed compared to git HEAD – requirements are never deleted`);
-  }
+  const removed = new Set();
+  for (const prev of [previousRequirements ?? []].flat())
+    for (const it of parseRequirements(prev)) if (!ids.has(it.id)) removed.add(it.id);
+  for (const id of [...removed].sort((a, b) => a - b))
+    errs.push(
+      `REQUIREMENTS: ${pad(id)} was removed compared to a committed version (git HEAD/origin/main) – never delete`,
+    );
   return errs;
 }
 
@@ -144,15 +150,15 @@ function main() {
       if (e.code !== 'ENOENT') throw e; // optional files (e.g. CHANGELOG.md before it exists)
     }
   }
-  let previousRequirements;
-  try {
-    previousRequirements = execFileSync('git', ['show', 'HEAD:docs/REQUIREMENTS.md'], {
-      cwd: root,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-  } catch (e) {
-    console.warn(`check:docs: no git HEAD version to compare against (${e.message.split('\n')[0]})`);
+  // compare with every committed version we can see, so a committed deletion is still caught later
+  const previousRequirements = [];
+  for (const rev of ['HEAD', 'origin/main']) {
+    try {
+      const opts = { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] };
+      previousRequirements.push(execFileSync('git', ['show', `${rev}:docs/REQUIREMENTS.md`], opts));
+    } catch (e) {
+      console.warn(`check:docs: no ${rev} version to compare against (${e.message.split('\n')[0]})`);
+    }
   }
   const errs = checkDocs({
     requirements: read('docs/REQUIREMENTS.md'),

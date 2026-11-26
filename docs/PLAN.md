@@ -33,18 +33,18 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - [x] Die offenen Fragen stehen gebündelt in GAME_RECON §13 und sind P3 und P4 zugeordnet (D-029).
 
 ## Phase 2 – Projektgerüst und Build-Pipeline
-**Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Der übernommene Stand (D-016) baut beide Ziele bereits. Hier werden Gerüst und Pipeline mit Nachweis abgenommen und die Lücken geschlossen, z. B. WebKit im SessionStart-Hook, Doku-Checks und iPhone-Viewport in `playwright.config.ts`.
+**Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Der übernommene Stand (D-016) baut beide Ziele bereits. Hier werden Gerüst und Pipeline mit Nachweis abgenommen und die Lücken geschlossen, z. B. ~~WebKit im SessionStart-Hook~~ → WebKit über das Setup-Skript der Umgebung (D-026), Doku-Checks und iPhone-Viewport in `playwright.config.ts`.
 **R-IDs:** R-032 bis R-034, R-078 bis R-082, R-098 bis R-100, R-102 bis R-105, R-107, R-192, R-193, R-199, R-201, R-208, R-232, R-246, R-247
 **Abnahmekriterien**
 - TypeScript strict, Bundler (Entscheidung in DECISIONS), ESLint, Prettier, Vitest und Playwright sind eingerichtet. `npm run build`, `build:chrome`, `build:userscript`, `test`, `lint` und `e2e` laufen grün.
 - Die MV3-Erweiterung lässt sich in Chromium entpackt laden (E2E). Das Userscript hat einen vollständigen Metadaten-Block, und ein GM-Shim lädt es in Chromium und WebKit (E2E).
 - Automatische Checks laufen: Import-Grenzen `core/`/`ui/` gegen `platform/` (R-032), erlaubte GM-API-Schnittmenge und `@grant`-Abgleich (R-192, R-104), Metadaten (R-193), keine leeren catch-Blöcke (R-199).
 - Der API-Abgleich mit der README von quoid/userscripts ist dokumentiert (R-098).
-- Das Setup-Skript der Cloud-Umgebung installiert die Abhängigkeiten idempotent, inklusive WebKit und seiner Bibliotheken (R-016, D-026). In einer frischen Session ist das bestätigt. Die Befehle stehen in CLAUDE.md. Das CHANGELOG ist angelegt.
+- Das Setup-Skript der Cloud-Umgebung installiert die Abhängigkeiten idempotent, inklusive WebKit und seiner Bibliotheken (R-016, D-026). ~~In einer frischen Session ist das bestätigt.~~ *Verschoben nach P3 (D-034): Die Bestätigung braucht eine frisch gebaute Session.* Die Befehle stehen in CLAUDE.md. Das CHANGELOG ist angelegt.
 
 ## Phase 3 – Kern: Zustand, Bildschirme, Aktionen, Daten, Logs und Baseline-Run
 **Ziel:** Der Bot erkennt jeden Bildschirm, handelt verlässlich und spielt mit einer einfachen, sicheren Baseline-Strategie einen kompletten Story-Run ohne Hänger.
-**R-IDs:** R-006, R-007, R-009 bis R-013, R-015, R-016, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245, R-249, R-253, R-066, R-070, R-073, R-075, R-077, R-224
+**R-IDs:** R-006, R-007, R-009 bis R-013, R-015, R-016, R-038, R-042 bis R-057, R-083, R-084, R-086 bis R-089, R-091, R-093 bis R-095, R-101, R-106, R-108, R-109, R-115, R-145 bis R-148, R-186, R-190, R-200, R-212 bis R-215, R-219, R-222, R-226, R-227, R-229, R-231, R-237, R-238, R-241, R-242, R-245, R-249, R-253, R-254, R-066, R-070, R-073, R-075, R-077, R-224
 **Abnahmekriterien**
 - **Aufklärung der Restbildschirme zuerst (aus P1, D-029, R-224):** Fixtures und GAME_RECON-Einträge für `transition`, `win`, `stat-buff`, `endless-stage-complete`, laufende und beendete Bosskämpfe (§12.8), Shop/Mart und echte Modals. DE/EN-Paare über catch und starter hinaus. Die Wirkung jeder Spieleinstellung ist geklärt (R-073), die Version steht in Logs und Fixtures (R-077). Alle offenen Punkte aus GAME_RECON §13, die P3 zugeordnet sind, sind beantwortet.
 - Der ScreenDetector besteht alle Fixture-Tests (R-186). Ein unbekannter Bildschirm führt zu Pause, Meldung und Snapshot.
@@ -53,6 +53,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - Fair Play und Datenschutz sind per Test belegt (R-145 bis R-148).
 - **Meilenstein:** ein echter Story-Run bis Champ oder Game Over ohne Hänger, mit Log und Zusammenfassung unter `runs/` (R-190, R-007, R-009). Das ist die Baseline für Phase 4.
 - Bis zu Phase 5 genügt eine minimale Steuerung (Start, Pause, Stopp, Status), die Gestaltung folgt dort.
+- **Aus P2 (D-034):** In der ersten frisch gebauten Session ist bestätigt, dass das Setup-Skript Abhängigkeiten und WebKit einrichtet und Tests, Screenshots und Runs ohne Handarbeit laufen (R-015, R-016).
 
 ## Phase 4 – Strategie (das Herzstück)
 **Ziel:** Der Bot entscheidet wie ein erfahrener Spieler und gewinnt messbar öfter als die Baseline.

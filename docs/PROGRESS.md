@@ -5,9 +5,10 @@
 _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Review-Tor P2, Runde 1:**
-  - ui- und strategy-reviewer: „nicht anwendbar“, nichts blockiert P2, ihre Vorbefunde stehen unten.
-  - requirements-reviewer: „nicht bestanden“. Seine Funde werden behoben: R-032, R-199 und R-107 im Code geschlossen, dazu die Kurzform im Hook (R-232) sowie PLAN und Doku-Widersprüche. Danach Runde 2.
+- **Review-Tor P2, Runde 2:**
+  - Alle Funde des requirements-reviewer aus Runde 1 sind behoben (`b0dafd4`, `b0bda2c`, `3a6798e` und die folgenden Doku-Commits). Die Lücken in R-032, R-199 und R-107 sind im Code geschlossen, dazu kommen die Kurzform im Hook samt Test (R-232), PLAN, Doku-Widersprüche, R-252 erweitert und die neuen R-253/R-254.
+  - Verifikation: `vitest` 248/248, E2E 35 bestanden und 3 übersprungen, alle Checks grün.
+  - Erneute Prüfung durch den requirements-reviewer läuft.
 
 ## Nächster Schritt
 1. **Abschluss Phase 2:**
@@ -57,15 +58,12 @@ _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kom
 12. Die Einstellungen sind standardmäßig aufgeklappt und belegen ≈48 % des Panels.
 13. Sprachen gemischt (Deutsch und Englisch), interne Optionsnamen im Hinweis. Der Live-Viewport ist 1280 statt 1440 breit.
 
-## Vorbefunde aus dem Gesamt-Review P2 (2026-11-26, zurückgestellte Minor-Funde)
-Diese Funde sind bewusst nicht in P2 behoben. Sie gehören in die genannte Phase:
-- **P3:** Die ESLint-Regel `no-silent-catch` übersieht `p.then(ok, () => null)` und `p.catch(bezeichner)` (R-199).
-- **P3:** R-032 lässt sich umgehen über `globalThis.chrome`, `window.GM` und dynamisches `import('../platform/…')`. Abhilfe: `no-restricted-properties` und eine Regel gegen `ImportExpression` ergänzen.
-- **P3:** Die Ausnahme „`typeof` auf derselben Zeile“ in der Safari-Sperrliste ist großzügig (`if (typeof x) {}; x()` geht durch).
-- **P3:** Für den Hook fehlen Tests für den Timeout-Pfad (hängender `GIT_SSH_COMMAND`). Die perl-Variante hinterlässt Kindprozesse. Flache und partielle Klone sind Randfälle (`GIT_NO_LAZY_FETCH=1`).
-- **P3:** `scripts/check-hook-budget.sh` misst außerhalb eines Git-Repos und zählt die Branch-Zeilen des Hooks deshalb nicht mit (R-232).
-- **P7:** `build.mjs` schreibt `dist/` vor `checkUserscript`. Sobald `dist/` eingecheckt wird (R-203), erst prüfen, dann schreiben.
-- **P7 (kosmetisch):** Der Fallback-Schlüssel heißt `pkbot.pkbot.settings` (Präfix doppelt). Vor dem ersten Release vereinheitlichen, gespeicherte Werte dabei migrieren.
+## Vorbefunde aus Gesamt-Review und Review-Tor P2 (2026-11-26)
+- Gesamt-Review: Die zurückgestellten Minor-Funde (no-silent-catch-Lücken, R-032-Umgehungen, `typeof`-Ausnahme, Hook-Timeout-Test, perl-Kindprozesse, flacher/partieller Klon, Budget-Check ohne Git, Schreiben vor Prüfen, Doppelpräfix) sind **im Review-Tor P2 behoben**.
+- ui-reviewer und strategy-reviewer: „nicht anwendbar“ für P2. Ihre Funde stehen vollständig in `docs/superpowers/audits/2026-11-26-p2-gate-ui-strategy.md` (mit Fix- und Test-Vorschlag sowie R-ID):
+  - **P3:** SKIP-Hänger (R-087, R-094, R-190), Run-Logs (R-006, R-009), Live-Urteil (neu R-254), Heilung beim Kartenwechsel klären.
+  - **P4:** Lead-Tausch auf der Karte, Boss-Reihenfolge bei 100 %, Fangwahl bei Sättigung, R-250, R-251.
+  - **P5:** Kontrast von `<select>` und Checkbox auf WebKit hell, Verdeckung, Touch-Ziele, Safe Area, Screenshot-Befehl, `:focus-visible`-Fallback.
 
 ## Bekannte Probleme
 - **Live-Lauf 1 (P1, 2026-11-25, Story Classic Kanto, frisches Profil):** Nach 2,3 Minuten 3 Orden, 31 Fortschrittsschritte, Team Venusaur 36, Weepinbell 31, Beedrill 31, Butterfree 31, Magnemite 29. Dann **Pause**: „action keeps failing: no effect after clicking #btn-auto-battle[0]“ im Bosskampf auf Karte 3 (Knoten `n8_0`). Der Test zählt das als „bestanden“, weil er nur Fortschritt prüft. Er muss Hänger künftig als Fehler werten (R-190). Möglicherweise hat parallele CPU-Last durch E2E-Läufe eines Reviewers mitgewirkt. Wiederholung ohne Parallelität und mit `PKBOT_OUT=artifacts/live` steht aus. Gespeichert wurde in fast jedem Bildschirm (Karte 17×, Kampf 17×, Item 3×, Fang 2×, Elite-Prep 2×), gut für Resume (R-194).

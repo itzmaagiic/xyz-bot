@@ -20,7 +20,7 @@ Stand 2026-11-25 (Phase 2). Diese Datei ist die Grundlage für `ALLOWED_GM` und 
 | `GM.listValues()` | ✓ | ✓ | ✓ | ja | nein |
 | `GM.addStyle(css)` | ✓ (Promise) | ✓ (Promise) | ✓ (synchron, gibt das Element zurück) | ja | nein (Overlay-CSS steckt im Shadow DOM) |
 | `GM.setClipboard(data, type?)` | ✓ (Promise mit Boolean) | ✓ (Promise ohne Wert) | ✓ (synchron) | ja | **ja** (Log kopieren). Erfolg gilt, solange das Ergebnis nicht `false` ist |
-| `GM.info` | ✓ | ✓ | ✓ | **nein** (quoid: „available without needing to add it to `@grant`“) | nein |
+| `GM.info` | ✓ | ✓ | ✓ | laut quoid **nein** („available without needing to add it to `@grant`“), für TM/VM unbelegt. Der Build vergibt ihn deshalb, sobald `GM.info` genutzt wird (`NO_GRANT_NEEDED` ist leer) | nein |
 | `GM.addValueChangeListener` | **—** | ✓ | ✓ | – | **nein**. Fehlt in quoid, deshalb hat das Userscript kein `onChange` (D-031) |
 | `GM_getValue`/`GM_setValue` (synchron) | **—** | ✓ | ✓ | – | **nein**. In P2 entfernt, weil quoid sie nicht kennt |
 | `GM.xmlHttpRequest`, `GM.openInTab`, `GM.getTab` … | teils | ✓ | ✓ | – | **nein**. Außerhalb der Schnittmenge, und der Bot braucht kein Netzwerk (R-145) |
@@ -48,4 +48,4 @@ Stand 2026-11-25 (Phase 2). Diese Datei ist die Grundlage für `ALLOWED_GM` und 
 
 ## Offene Punkte
 - Abnahme auf einem echten iPhone mit Userscripts (R-252, P7). Die Playwright-Tests mit WebKit emulieren die GM-API nur über einen Shim (`tests/e2e/userscript-host.ts`).
-- Ob `GM.info` in Tampermonkey und Violentmonkey ohne `@grant` verfügbar ist, belegen die Typdefinitionen nicht. Der Bot nutzt `GM.info` derzeit nicht. Sollte er es künftig nutzen, ist das in den offiziellen Docs zu prüfen (sie sind aus der Cloud-Umgebung nicht erreichbar).
+- Ob `GM.info` in Tampermonkey und Violentmonkey ohne `@grant` verfügbar ist, belegen die Typdefinitionen nicht. Deshalb ist `NO_GRANT_NEEDED` leer: Jede genutzte GM-Funktion bekommt ein `@grant`. Das ist in allen drei Managern unschädlich.

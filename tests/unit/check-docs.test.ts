@@ -73,6 +73,17 @@ describe('check:docs (R-246)', () => {
     expect(has(run({ requirements: REQ.replace('Nachweis: Test', 'Nachweis: —') }), /R-001.*Nachweis/)).toBe(true);
   });
 
+  it('a strikethrough in REQUIREMENTS must name its D-entry', () => {
+    const req = REQ.replace('c — Quelle', '~~c~~ → d — Quelle');
+    expect(has(run({ requirements: req }), /R-003.*durchgestrichen.*D-/)).toBe(true);
+    expect(run({ requirements: REQ.replace('c — Quelle', '~~c~~ → d (D-001) — Quelle') })).toEqual([]);
+  });
+
+  it('id removed vs any previous version (HEAD or origin/main)', () => {
+    const prev = REQ.replace('R-004**', 'R-005**') + '\n- ❌ **R-004** [P1] d — Quelle: x — Nachweis: —';
+    expect(has(run({ previousRequirements: [REQ, prev] }), /R-004.*removed/)).toBe(true);
+  });
+
   it('id removed vs previous version (memory protection)', () => {
     const prev = REQ.replace('R-004**', 'R-005**') + '\n- ❌ **R-004** [P1] d — Quelle: x — Nachweis: —';
     expect(has(run({ previousRequirements: prev }), /R-004.*removed/)).toBe(true);

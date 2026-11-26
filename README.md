@@ -83,7 +83,7 @@ src/
   ui/              Overlay (Shadow DOM), Einstellungsformular, Toasts – für beide Ziele identisch
   platform/
     chrome/        Content-Script, MAIN-World-Bridge, Service Worker, Popup, Optionen
-    userscript/    GM-Adapter (GM.* / GM_* / Speicher-Fallback), Bridge per <script>-Element
+    userscript/    GM-Adapter (nur GM.*-Schnittmenge, Fallback localStorage pkbot.*), Bridge per <script>-Element
 ```
 
 Details zum Spiel (Bildschirme, Selektoren, Datenquellen) stehen in [docs/GAME_RECON.md](docs/GAME_RECON.md).
@@ -104,7 +104,7 @@ Solche Dateien gehören nie ins Repo (`.gitignore`). WebKit für die E2E-Tests: 
 
 ## Bekannte Grenzen
 
-- Live getestet ist Story **Classic** (Kanto). Nuzlocke nutzt denselben Ablauf, ist live aber noch ungetestet. Automatisiert ist der Großteil der Kartenereignisse. Relic/Passive, Shop, Tower-Buffs und
-  Pokésort pausieren bewusst, bis sie live erfasst und umgesetzt sind.
+- Live getestet ist Story **Classic** (Kanto). Nuzlocke nutzt denselben Ablauf, ist live aber noch ungetestet. Automatisiert ist der Großteil der Kartenereignisse. Shop, Tower-Buffs und Pokésort pausieren
+  bewusst, bis sie live erfasst und umgesetzt sind.
 - Der Battle Tower ist experimentell (Region wählen, danach pausiert der Bot bei neuen Screens).
 - Im DOM-Fallback (ohne Bridge) sind die Entscheidungen schwächer (keine Kartendaten, keine Spiel-Attacken).

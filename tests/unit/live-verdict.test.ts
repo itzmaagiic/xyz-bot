@@ -27,7 +27,7 @@ describe('live test verdict', () => {
   });
 
   it('fails when the bot keeps running but makes no progress for longer than the stall limit', () => {
-    expect(STALL_MS).toBe(4 * 60_000);
+    expect(STALL_MS).toBe(Number(process.env.LIVE_STALL_MIN ?? 4) * 60_000); // default 4 min, LIVE_STALL_MIN overrides
     expect(liveVerdict({ ...ok, msSinceProgress: STALL_MS + 1 }).join()).toMatch(/stalled/);
     expect(liveVerdict({ ...ok, msSinceProgress: STALL_MS - 1 })).toEqual([]);
   });
