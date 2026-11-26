@@ -258,3 +258,19 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - **Subtyp-Reduktion abseits der direkten Zuweisung:** `const h = on ? s : work; b.onclick = h`, `(…)!`, `(…) satisfies`, Array-Index, IIFE.
   - **Nackte globale Zuweisung** `onmessage = async …`, ohne Member links.
   - **Theoretischer Fehlalarm** bei `b.onclick = work && s` bzw. `s || work`. Er schlägt in die sichere Richtung aus.
+
+**D-037 – P3a „Kämpfe ohne Hänger“: bedienbar statt sichtbar, Fortschritt in der Signatur, Watchdog** (2026-11-26)
+- Entscheidung: Das Design steht in `docs/superpowers/specs/2026-11-26-p3a-kaempfe-ohne-haenger-design.md`, gewählt ist Ansatz 2:
+  - `isActionable` im Detector.
+  - Gesperrte Ziele werden nicht geklickt und zählen nicht als Fehlschlag.
+  - „Nach dem Klick gesperrt“ gilt als Wirkung.
+  - Die Wirkungsprüfung arbeitet per MutationObserver.
+  - Die Kampfsignatur enthält den SKIP-Zustand und den KP-Fortschritt.
+  - Ein globaler Watchdog (`watchdogSec`, Standard 60 s) liest erst neu ein und pausiert dann mit `stalled`.
+- Begründung:
+  - Die Live-Aufklärung (GAME_RECON §12.8) zeigt: Das Spiel sperrt SKIP nach dem Klick, Bosskämpfe laufen danach bis zu 16,7 s weiter. Der Bot verwechselt „sichtbar“ mit „bedienbar“.
+  - Ansatz 1 (nur SKIP) ließe denselben Fehler bei anderen Knöpfen bestehen.
+  - Ansatz 3 (Auto-Skip des Spiels) braucht eine Zustimmung des Nutzers und löst das Grundproblem nicht.
+  - Die KP-Texte wechseln spätestens alle 2 s. Damit löst der Watchdog bei fortschreitenden Kämpfen nie aus, wohl aber bei echtem Stillstand.
+- Freigabe nach D-006: eigenes Review. Keine Widersprüche zu R-010, R-087, R-094, R-095, R-147 und R-241: Der Watchdog lädt nie neu, er liest nur.
+- Ausführung: inline mit TDD (wie D-031). Am Ende ein frischer Gesamt-Review und ein Live-Lauf als Nachweis.
