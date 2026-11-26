@@ -3,7 +3,18 @@ import tseslint from 'typescript-eslint';
 import noSilentCatch from './eslint-rules/no-silent-catch.mjs';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'test-results/**', 'playwright-report/**'] },
+  // generated or local-only output (all gitignored) is never linted
+  {
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'test-results/**',
+      'playwright-report/**',
+      'artifacts/**',
+      'coverage/**',
+      '.superpowers/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
