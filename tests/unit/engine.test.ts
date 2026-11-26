@@ -172,6 +172,23 @@ describe('DecisionEngine on real snapshots', () => {
       });
     }
   });
+  // P3a (GAME_RECON §12.8): the game disables SKIP after the click while the fight goes on
+  it('battle with SKIP pressed (disabled) and no CONTINUE yet → wait, never click the disabled button', () => {
+    const doc = loadFixture('battle-gym');
+    doc.getElementById('btn-auto-battle')!.setAttribute('disabled', '');
+    const d = decide(gs(doc), doc, { ...s, reorderTeam: false }, newMemory());
+    expect(d).toMatchObject({ kind: 'wait' });
+    expect((d as { why: string }).why).toMatch(/battle running/);
+  });
+  it('battle end: a usable CONTINUE is clicked even while the disabled SKIP is still in the DOM', () => {
+    const doc = loadFixture('battle-gym');
+    doc.getElementById('btn-auto-battle')!.setAttribute('disabled', '');
+    doc.getElementById('btn-continue-battle')!.setAttribute('style', 'display:block');
+    expect(decide(gs(doc), doc, { ...s, reorderTeam: false }, newMemory())).toMatchObject({
+      kind: 'click',
+      selector: '#btn-continue-battle',
+    });
+  });
   it('game over → report once, then back to menu', () => {
     const doc = loadFixture('gameover');
     const mem = newMemory();

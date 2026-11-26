@@ -4,7 +4,7 @@
  */
 import { bossTypesFor } from '../data/bosses';
 import type { BotSettings } from '../settings';
-import { isShown } from '../screens/detector';
+import { isActionable, isShown } from '../screens/detector';
 import { itemIdFromCard, parsePokeCard, readCards, readClickableMapNodes, typeFromClasses } from '../state/dom-reader';
 import type { Decision, GameState, Mon, RunState } from '../types';
 import {
@@ -178,10 +178,12 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
     case 'map':
       return decideMap(state, doc, s, mem);
     case 'battle': {
-      if (shown(doc, '#btn-continue-battle'))
+      // usable, not just visible: the game disables SKIP after the click while the fight goes on (§12.8, D-037)
+      if (isActionable(doc.querySelector('#btn-continue-battle')))
         return { kind: 'click', selector: '#btn-continue-battle', why: 'battle finished – continue' };
-      if (shown(doc, '#btn-auto-battle'))
+      if (isActionable(doc.querySelector('#btn-auto-battle')))
         return { kind: 'click', selector: '#btn-auto-battle', why: 'skip battle animation' };
+      if (shown(doc, '#btn-auto-battle')) return { kind: 'wait', ms: 700, why: 'battle running (skip pressed)' };
       return { kind: 'wait', ms: 700, why: 'battle running' };
     }
     case 'catch':
