@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import noSilentCatch from './eslint-rules/no-silent-catch.mjs';
 
+const PLATFORM_NAME_RE = '/^(chrome|browser|GM|GM_\\w+|unsafeWindow)$/';
 const PLATFORM_GLOBALS = [
   'chrome',
   'browser',
@@ -36,10 +37,24 @@ export default tseslint.config(
     },
   },
   {
+    // R-199: no floating promises – a rejected promise without handler is a silent error (type-aware rules)
+    files: ['src/**/*.ts'],
+    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    rules: {
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+      '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
+  {
     // R-199: no silent errors – every catch rethrows, logs, or calls noteError
     files: ['src/**/*.ts'],
     plugins: { local: { rules: { 'no-silent-catch': noSilentCatch } } },
-    rules: { 'local/no-silent-catch': ['error', { reporters: ['noteError', 'reportStartFailure'] }] },
+    rules: {
+      'local/no-silent-catch': [
+        'error',
+        { reporters: ['noteError', 'noteRejection', 'reportStartFailure', 'crashed'] },
+      ],
+    },
   },
   {
     // R-032: one codebase – core/ and ui/ stay platform-neutral; only platform/types (the adapter contract) is shared
@@ -79,6 +94,19 @@ export default tseslint.config(
         {
           selector: 'ImportExpression[source.value=/(^|\\/)platform\\/(chrome|userscript|clipboard)/]',
           message: 'core/ and ui/ must not load platform-specific code, not even with import() (R-032).',
+        },
+        {
+          selector: "ImportExpression[source.type!='Literal']",
+          message: 'No computed import() in core/ and ui/ – it could hide a platform path (R-032).',
+        },
+        // platform API names on ANY object: casts, aliases, document.defaultView, window.window … (R-032)
+        {
+          selector: `MemberExpression[computed=false][property.name=${PLATFORM_NAME_RE}]`,
+          message: 'Platform API – only allowed in src/platform/* (R-032).',
+        },
+        {
+          selector: `MemberExpression[computed=true][property.value=${PLATFORM_NAME_RE}]`,
+          message: 'Platform API – only allowed in src/platform/* (R-032).',
         },
       ],
     },

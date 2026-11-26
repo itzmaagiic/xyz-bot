@@ -22,6 +22,10 @@ describe('local/no-silent-catch (R-199)', () => {
       "p.catch(function (e) { noteError('x', e); });",
       'p.then(() => 1);',
       {
+        code: "class B { m() { try { f(); } catch (e) { this.crashed(e, 'x'); } } }",
+        options: [{ reporters: ['crashed'] }],
+      },
+      {
         code: 'start().catch((e) => reportStartFailure(e));',
         options: [{ reporters: ['noteError', 'reportStartFailure'] }],
       },
@@ -40,6 +44,7 @@ describe('local/no-silent-catch (R-199)', () => {
       { code: 'p.then(ok, () => null);', errors: [{ messageId: 'silent' }] },
       { code: 'p.then(undefined, function () { return 1; });', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch(noop);', errors: [{ messageId: 'silent' }] },
+      { code: 'class B { m() { try { f(); } catch (e) { this.crashed(e); } } }', errors: [{ messageId: 'silent' }] },
       { code: 'start().catch((e) => reportStartFailure(e));', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch(String);', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch(this.ignore);', errors: [{ messageId: 'silent' }] },

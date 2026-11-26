@@ -7,6 +7,7 @@ import type { Platform } from '../platform/types';
 import { PAGE_SHORTCUTS } from '../platform/types';
 import { buildSettingsForm } from './settings-form';
 import { toast } from './toast';
+import { noteRejection } from '../core/log/note';
 
 const CSS = `
 :host { all: initial; }
@@ -111,7 +112,8 @@ export class Overlay {
       { id: 'pk-collapse', 'aria-label': 'Ein-/ausklappen' },
       v.settings.overlayCollapsed ? '▢' : '–',
     );
-    collapse.onclick = () => void this.bot.updateSettings({ overlayCollapsed: !v.settings.overlayCollapsed });
+    collapse.onclick = () =>
+      noteRejection('overlay:collapse', this.bot.updateSettings({ overlayCollapsed: !v.settings.overlayCollapsed }));
     header.append(dot, title, collapse);
     this.makeDraggable(header);
     p.appendChild(header);
@@ -123,7 +125,7 @@ export class Overlay {
     const start = this.h('button', { id: 'pk-toggle', class: 'primary' }, v.status === 'running' ? 'Pause' : 'Start');
     start.onclick = () => this.bot.toggle();
     const step = this.h('button', { id: 'pk-step' }, 'Schritt');
-    step.onclick = () => void this.bot.step();
+    step.onclick = () => noteRejection('overlay:step', this.bot.step());
     const copy = this.h('button', { id: 'pk-copy' }, 'Log kopieren');
     copy.onclick = async () =>
       toast(
@@ -139,7 +141,7 @@ export class Overlay {
     if (v.versionWarning) {
       const w = this.h('div', { class: 'warn bad', id: 'pk-version' }, v.versionWarning + ' ');
       const ack = this.h('button', { id: 'pk-ack-version' }, 'Version bestätigen');
-      ack.onclick = () => void this.bot.acknowledgeVersion();
+      ack.onclick = () => noteRejection('overlay:ack-version', this.bot.acknowledgeVersion());
       w.appendChild(ack);
       body.appendChild(w);
     }
@@ -195,7 +197,7 @@ export class Overlay {
       const no = this.h('button', { id: 'pk-speed-no' }, 'Abbrechen');
       no.onclick = () => {
         this.confirmKeys = null;
-        void this.bot.refresh();
+        noteRejection('overlay:refresh', this.bot.refresh());
       };
       row.append(yes, no);
       box.appendChild(row);
@@ -210,7 +212,7 @@ export class Overlay {
       const b = this.h('button', { id: 'pk-speed-ask' }, 'Einschalten …');
       b.onclick = () => {
         this.confirmKeys = keys;
-        void this.bot.refresh();
+        noteRejection('overlay:refresh', this.bot.refresh());
       };
       box.appendChild(b);
     }
@@ -221,7 +223,9 @@ export class Overlay {
     const d = this.h('details', { class: 'setbox' });
     d.open = open;
     d.appendChild(this.h('summary', {}, 'Einstellungen'));
-    d.appendChild(buildSettingsForm(this.doc, s, (patch) => void this.bot.updateSettings(patch)));
+    d.appendChild(
+      buildSettingsForm(this.doc, s, (patch) => noteRejection('overlay:settings', this.bot.updateSettings(patch))),
+    );
     return d;
   }
 

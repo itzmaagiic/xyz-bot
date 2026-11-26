@@ -27,7 +27,7 @@ import {
   type BridgeRequest,
   type BridgeResponse,
 } from './protocol';
-import { noteError } from '../log/note';
+import { noteError, noteRejection } from '../log/note';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare const state: any;
@@ -249,7 +249,10 @@ export function installBridge(): void {
       noteError('page-bridge:parse', e);
       return;
     }
-    void handle(req).then((res) => document.dispatchEvent(new CustomEvent(RES_EVENT, { detail: JSON.stringify(res) })));
+    noteRejection(
+      'page-bridge:respond',
+      handle(req).then((res) => document.dispatchEvent(new CustomEvent(RES_EVENT, { detail: JSON.stringify(res) }))),
+    );
   });
   root.setAttribute(READY_ATTR, BRIDGE_VERSION);
 }

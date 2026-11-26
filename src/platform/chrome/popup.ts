@@ -1,6 +1,6 @@
 /** Chrome popup: quick access (start/pause/step/status). Settings live in the overlay and options page. */
 import type { ContentRequest, StatusReply } from './messages';
-import { noteError } from '../../core/log/note';
+import { noteError, noteRejection } from '../../core/log/note';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -31,11 +31,15 @@ function show(s: StatusReply | null): void {
   $('runs').textContent = `${s.runs} (${s.wins} S / ${s.losses} N)`;
 }
 
-$('toggle').addEventListener('click', async () => show(await send('pkbot:toggle')));
-$('step').addEventListener('click', async () => show(await send('pkbot:step')));
-$('overlay').addEventListener('click', async () => show(await send('pkbot:overlay')));
-$('options').addEventListener('click', () => chrome.runtime.openOptionsPage());
-$('open').addEventListener('click', () => chrome.tabs.create({ url: 'https://pokelike.xyz/' }));
+// every promise is handled: a rejection is noted instead of vanishing (R-199)
+const sendAndShow = (type: Parameters<typeof send>[0]) => noteRejection(`popup:${type}`, send(type).then(show));
+$('toggle').addEventListener('click', () => sendAndShow('pkbot:toggle'));
+$('step').addEventListener('click', () => sendAndShow('pkbot:step'));
+$('overlay').addEventListener('click', () => sendAndShow('pkbot:overlay'));
+$('options').addEventListener('click', () => noteRejection('popup:options', chrome.runtime.openOptionsPage()));
+$('open').addEventListener('click', () =>
+  noteRejection('popup:open', chrome.tabs.create({ url: 'https://pokelike.xyz/' })),
+);
 
-void send('pkbot:status').then(show);
-setInterval(() => void send('pkbot:status').then(show), 1000);
+sendAndShow('pkbot:status');
+setInterval(() => sendAndShow('pkbot:status'), 1000);

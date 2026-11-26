@@ -1,6 +1,6 @@
 /** Chrome service worker: keyboard commands and system notifications (both feature-detected). */
 import { COMMAND_TO_MESSAGE, type BackgroundRequest } from './messages';
-import { noteError } from '../../core/log/note';
+import { noteRejection } from '../../core/log/note';
 
 const GAME_URLS = ['https://pokelike.xyz/*', 'https://www.pokelike.xyz/*'];
 
@@ -12,11 +12,13 @@ async function gameTab(): Promise<chrome.tabs.Tab | undefined> {
 }
 
 if (chrome.commands?.onCommand) {
-  chrome.commands.onCommand.addListener(async (command) => {
+  chrome.commands.onCommand.addListener((command) => {
     const type = COMMAND_TO_MESSAGE[command];
-    const tab = await gameTab();
-    if (type && tab?.id != null)
-      chrome.tabs.sendMessage(tab.id, { type }).catch((e: unknown) => noteError('background:command', e)); // no content script in that tab yet
+    if (!type) return;
+    noteRejection(
+      'background:command',
+      gameTab().then((tab) => (tab?.id != null ? chrome.tabs.sendMessage(tab.id, { type }) : undefined)),
+    ); // e.g. no content script in that tab yet
   });
 }
 

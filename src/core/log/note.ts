@@ -2,8 +2,8 @@
  * Central sink for errors that are handled by a fallback (R-199: no silent errors).
  * Every catch block either rethrows, logs through a Logger, or calls noteError, so nothing is swallowed unseen.
  * Ring buffer of the last 50 distinct errors (same where+msg is counted, not repeated) plus one console.debug
- * line per distinct error. Subscribers (onNotedError) – the bot logs each distinct error as a warning, so it shows
- * in the overlay log and the log export.
+ * line per distinct error. Subscribers (onNotedError) – the bot logs each distinct error (muted, level debug), so it
+ * shows in the overlay log and the log export.
  */
 export interface NotedError {
   where: string;
@@ -47,6 +47,11 @@ export function noteError(where: string, err: unknown): void {
       noteError('note:subscriber', e);
     }
   }
+}
+
+/** For fire-and-forget promises (event handlers, timers): a rejection is noted instead of vanishing (R-199). */
+export function noteRejection(where: string, p: PromiseLike<unknown>): void {
+  Promise.resolve(p).catch((e: unknown) => noteError(where, e));
 }
 
 /** Called once per distinct error (first occurrence), e.g. to show it in the bot log. Returns the unsubscribe. */

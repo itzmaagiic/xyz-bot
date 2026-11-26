@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearNotedErrors, noteError, onNotedError, recentErrors } from '../../src/core/log/note';
+import { clearNotedErrors, noteError, noteRejection, onNotedError, recentErrors } from '../../src/core/log/note';
 
 describe('noteError (R-199)', () => {
   beforeEach(() => clearNotedErrors());
@@ -43,5 +43,12 @@ describe('noteError (R-199)', () => {
     expect(() => noteError('a', new Error('x'))).not.toThrow();
     off();
     expect(recentErrors().map((e) => e.where)).toContain('a');
+  });
+
+  it('noteRejection notes a rejected fire-and-forget promise and ignores a fulfilled one', async () => {
+    noteRejection('ui:step', Promise.reject(new Error('boom')));
+    noteRejection('ui:ok', Promise.resolve(1));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(recentErrors().map((e) => `${e.where}:${e.msg}`)).toEqual(['ui:step:boom']);
   });
 });

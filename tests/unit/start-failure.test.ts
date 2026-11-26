@@ -22,17 +22,33 @@ describe('no silent failures outside catch blocks (R-199)', () => {
     }
   });
 
-  it('only allow-listed files may disable local/no-silent-catch', () => {
-    const allowed = ['src/core/log/note.ts'];
-    const found: string[] = [];
+  it('eslint-disable in src/ only per rule and only from the allowlist – never blanket', () => {
+    // file → rules that may be disabled there (each with a reason in the comment)
+    const allowed: Record<string, string[]> = {
+      'src/core/log/note.ts': ['local/no-silent-catch'],
+      'src/core/strategy/challenge.ts': ['@typescript-eslint/no-explicit-any'],
+      'src/core/bridge/page-bridge.ts': ['@typescript-eslint/no-explicit-any'],
+      'src/core/bridge/simulator.ts': ['@typescript-eslint/no-explicit-any'],
+    };
+    const bad: string[] = [];
     const walk = (d: string) => {
       for (const f of readdirSync(d)) {
         const p = join(d, f);
         if (statSync(p).isDirectory()) walk(p);
-        else if (/eslint-disable[^\n]*no-silent-catch/.test(readFileSync(p, 'utf8'))) found.push(relative(root, p));
+        else
+          for (const m of readFileSync(p, 'utf8').matchAll(/eslint-disable(?:-next-line|-line)?([^\n*]*)/g)) {
+            const rules = (m[1] ?? '')
+              .split('--')[0]!
+              .split(',')
+              .map((r) => r.trim())
+              .filter(Boolean);
+            const file = relative(root, p);
+            if (!rules.length) bad.push(`${file}: blanket eslint-disable`);
+            for (const r of rules) if (!(allowed[file] ?? []).includes(r)) bad.push(`${file}: ${r}`);
+          }
       }
     };
     walk(join(root, 'src'));
-    expect(found.sort()).toEqual(allowed);
+    expect(bad).toEqual([]);
   });
 });

@@ -3,7 +3,18 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // R-032: core/ and ui/ must not reach into platform-specific code or platform globals.
-const eslint = new ESLint({ cwd: join(__dirname, '..', '..') });
+// The repo config, minus type information: lintText() checks virtual files that are not part of the TS project.
+// The import-boundary rules under test come unchanged from eslint.config.js.
+const eslint = new ESLint({
+  cwd: join(__dirname, '..', '..'),
+  overrideConfig: [
+    {
+      files: ['src/**/*.ts'],
+      languageOptions: { parserOptions: { projectService: false } },
+      rules: { '@typescript-eslint/no-floating-promises': 'off', '@typescript-eslint/no-misused-promises': 'off' },
+    },
+  ],
+});
 
 async function ruleIds(code: string, filePath: string): Promise<string[]> {
   const [res] = await eslint.lintText(code, { filePath });
@@ -71,5 +82,28 @@ describe('import boundaries (R-032)', () => {
     );
     expect(ids).toContain('no-restricted-imports');
     expect(ids).toContain('no-restricted-globals');
+  });
+
+  it.each([
+    ['a cast', 'export const p = (globalThis as unknown as { GM: unknown }).GM;\n'],
+    ['document.defaultView', 'export const p = document.defaultView?.chrome;\n'],
+    ['an alias', 'const g = globalThis;\nexport const p = g.chrome;\n'],
+    ['window.window', 'export const p = window.window.chrome;\n'],
+    ['a computed key', "export const p = window['GM_setValue'];\n"],
+  ])('core may not reach platform APIs through %s', async (_n, code) => {
+    const ids = await ruleIds(code, 'src/core/x.ts');
+    expect(ids.some((i) => i === 'no-restricted-syntax' || i === 'no-restricted-properties')).toBe(true);
+  });
+
+  it('core may not use a computed import() (could hide a platform path)', async () => {
+    const ids = await ruleIds("export const m = () => import('../platform/' + 'chrome/content');\n", 'src/core/x.ts');
+    expect(ids).toContain('no-restricted-syntax');
+  });
+
+  it('the type-aware promise rules are active for src/ (R-199: no floating promises)', async () => {
+    const real = new ESLint({ cwd: join(__dirname, '..', '..') });
+    const cfg = await real.calculateConfigForFile('src/core/bot.ts');
+    expect(cfg.rules['@typescript-eslint/no-floating-promises']).toEqual([2, { ignoreVoid: false }]);
+    expect(cfg.rules['@typescript-eslint/no-misused-promises']?.[0]).toBe(2);
   });
 });

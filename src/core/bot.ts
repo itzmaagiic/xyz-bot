@@ -13,7 +13,7 @@ import { FLAGS } from './flags';
 import { readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
-import { noteError, onNotedError, recentErrors, type NotedError } from './log/note';
+import { type NotedError, noteError, noteRejection, onNotedError, recentErrors } from './log/note';
 import { errorPause } from './pause-reason';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
@@ -161,7 +161,7 @@ export class BotController {
     this.pendingPause = null;
     this.log.info('bot started');
     this.emit();
-    void this.loop();
+    noteRejection('bot:loop', this.loop());
   }
 
   pause(reason: string | null = null, notify = false): void {
@@ -170,7 +170,7 @@ export class BotController {
     this.view.pauseReason = reason;
     if (reason) this.log.warn(`paused: ${reason}`);
     this.emit();
-    if (notify && wasRunning && reason) void this.notify('Pokelike bot paused', reason);
+    if (notify && wasRunning && reason) noteRejection('bot:notify', this.notify('Pokelike bot paused', reason));
   }
 
   toggle(): void {
@@ -181,8 +181,12 @@ export class BotController {
   /** One single tick (manual stepping). */
   async step(): Promise<void> {
     if (this.view.status === 'running') return;
-    await this.tick();
-    await this.refresh();
+    try {
+      await this.tick();
+      await this.refresh();
+    } catch (e) {
+      this.crashed(e, 'step crashed'); // same handling as the loop – never a silent rejection (R-147, R-199)
+    }
   }
 
   private async loop(): Promise<void> {
@@ -196,17 +200,22 @@ export class BotController {
         await sleep(humanDelay(base));
       }
     } catch (e) {
-      if (e instanceof ForbiddenActionError) {
-        // R-147: a forbidden action (Reset Run, account, key R …) was blocked – never retry, pause and tell the user
-        this.log.error('forbidden action blocked', e.message);
-        this.pause(errorPause('blocked', e.message), true);
-        return;
-      }
-      this.log.error('bot loop crashed', String(e));
-      this.pause(errorPause('internal', String(e)), true);
+      this.crashed(e, 'bot loop crashed');
     } finally {
       this.loopRunning = false;
     }
+  }
+
+  /** An error that escaped a tick: log it, pause with an error reason and notify – never retry (R-147, R-199). */
+  private crashed(e: unknown, what: string): void {
+    if (e instanceof ForbiddenActionError) {
+      // R-147: a forbidden action (Reset Run, account, key R …) was blocked – never retry, pause and tell the user
+      this.log.error('forbidden action blocked', e.message);
+      this.pause(errorPause('blocked', e.message), true);
+      return;
+    }
+    this.log.error(what, String(e));
+    this.pause(errorPause('internal', String(e)), true);
   }
 
   private async notify(title: string, body: string): Promise<void> {
@@ -405,7 +414,7 @@ export class BotController {
         if (d.result === 'loss') s.losses++;
         await this.platform.storage.set(STATS_KEY, s);
         this.log.info(`run finished: ${d.why}`, s);
-        void this.notify('Pokelike run finished', `${d.why} (W ${s.wins} / L ${s.losses})`);
+        noteRejection('bot:notify', this.notify('Pokelike run finished', `${d.why} (W ${s.wins} / L ${s.losses})`));
         const cfg = this.view.settings;
         if (!cfg.autoRestart || (cfg.maxRuns > 0 && s.runs >= cfg.maxRuns)) this.pause(`run finished: ${d.why}`);
         return d;

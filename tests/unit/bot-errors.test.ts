@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ForbiddenActionError } from '../../src/core/actions/guard';
 import { BotController } from '../../src/core/bot';
 import { clearNotedErrors, noteError } from '../../src/core/log/note';
 import type { Platform } from '../../src/platform/types';
@@ -26,5 +27,23 @@ describe('noted errors reach the bot log (R-199)', () => {
     expect(lines).toMatch(/\[debug\] handled: userscript:localStorage – blocked/);
     expect(lines).not.toMatch(/\[warn\] .*handled/);
     expect(lines.match(/reader:snapshot/g)).toHaveLength(1);
+  });
+
+  it('a single step that hits a forbidden action pauses with "blocked:" and logs it, like the loop (R-147, R-199)', async () => {
+    const bot = new BotController(platform, null, document);
+    vi.spyOn(bot as unknown as { tick: () => Promise<void> }, 'tick').mockRejectedValue(
+      new ForbiddenActionError('reset-run', 'click on [data-menu="reset"]'),
+    );
+    await expect(bot.step()).resolves.toBeUndefined();
+    expect(bot.view.status).toBe('paused');
+    expect(bot.view.pauseReason).toMatch(/^blocked: /);
+    expect(bot.log.toText()).toMatch(/\[error\] forbidden action blocked/);
+  });
+
+  it('a single step that crashes pauses with "internal error:" instead of rejecting silently (R-199)', async () => {
+    const bot = new BotController(platform, null, document);
+    vi.spyOn(bot as unknown as { tick: () => Promise<void> }, 'tick').mockRejectedValue(new Error('kaputt'));
+    await expect(bot.step()).resolves.toBeUndefined();
+    expect(bot.view.pauseReason).toMatch(/^internal error: .*kaputt/);
   });
 });

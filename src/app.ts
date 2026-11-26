@@ -1,7 +1,7 @@
 /** Shared bootstrap used by both targets. */
 import { BotController } from './core/bot';
 import { BridgeClient } from './core/bridge/client';
-import { noteError } from './core/log/note';
+import { noteError, noteRejection } from './core/log/note';
 import type { Platform } from './platform/types';
 import { Overlay } from './ui/overlay';
 import { toast } from './ui/toast';
@@ -59,7 +59,7 @@ export async function startApp(platform: Platform, doc: Document = document): Pr
     if (!ready) bot.log.warn('page bridge unavailable – running on DOM data only (weaker decisions)');
     platform.registerShortcuts({
       toggle: once(() => bot.toggle()),
-      step: once(() => void bot.step()),
+      step: once(() => noteRejection('app:step', bot.step())),
       toggleOverlay: once(() => overlay.toggleVisible()),
     });
     return { bot, overlay };
