@@ -5,10 +5,14 @@
 _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Review-Tor P2, Runde 4 (gezielt):**
-  - Runde 3 war „nicht bestanden“ wegen weiterer natürlicher Umgehungen: `declare const GM`, Destructuring, Template-Key, Inline-Konfiguration, `el.onclick = async`.
-  - Alles geschlossen. Das Bedrohungsmodell D-036 legt fest, was die Leitplanken erkennen müssen. Neu ist R-260.
-  - Runde 4 prüft gezielt diese Punkte.
+- **Review-Tor P2, Runde 5 (gezielt):**
+  - Runde 4 war „nicht bestanden“ wegen weiterer Varianten derselben Klassen: Key-Varianten beim Destructuring, `as`/`satisfies` (B1) und `on*`-Handler mit Promise-Rückgabe ohne `async` (B2).
+  - Jetzt sind die Klassen geschlossen statt einzelner Muster:
+    - Plattform-Namen auch als String- und Template-Text gesperrt.
+    - Typbewusste Regel `local/no-promise-handler`.
+    - Geltungsbereich umgedreht.
+    - Artefakt-Check `platformLeaks`.
+    - Verhaltenstests mit Typinformation (D-036, Nachtrag Runde 4).
 
 ## Nächster Schritt
 1. **Abschluss Phase 2:**
@@ -65,7 +69,8 @@ _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kom
   - **P4:** Lead-Tausch auf der Karte, Boss-Reihenfolge bei 100 %, Fangwahl bei Sättigung, R-250, R-251.
   - **P5:** Kontrast von `<select>` und Checkbox auf WebKit hell, Verdeckung, Touch-Ziele, Safe Area, Screenshot-Befehl, `:focus-visible`-Fallback.
 - Review-Tor P2, Runde 3 (requirements-reviewer), Vorbefunde für P3:
-  - Verhaltenstest mit Typinformation für die Lint-Regeln: ein Fixture-Verzeichnis im tsconfig mit Dateien, die rot sein **müssen**.
+  - ~~Verhaltenstest mit Typinformation für die Lint-Regeln~~ → erledigt in Runde 4 (`tests/unit/lint-behaviour.test.ts`, D-036).
+  - `Promise.allSettled([...])` mit ignorierten Ergebnissen schluckt Rejections. Gehört zum Laufzeit-Handler (R-200, D-036).
   - Globaler `unhandledrejection`-Handler (R-200, D-036).
   - Speicherfehler auch auf der Optionsseite zeigen (R-259).
   - In der echten Hook-Ausgabe (≈ 8,9 KB) kommt von „Erledigt“ nur der erste Unterpunkt an. Beobachten und den Eintrag knapp halten.

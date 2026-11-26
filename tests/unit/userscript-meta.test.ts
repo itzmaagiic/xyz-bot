@@ -6,6 +6,7 @@ import {
   buildMeta,
   checkUserscript,
   compatWarnings,
+  platformLeaks,
   es2020SyntaxError,
   toTemplateLiteral,
   usedGmApis,
@@ -130,6 +131,11 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
       () => bundle(CODE + 'if (typeof structuredClone) {} structuredClone(x);\n'),
       /structuredClone/,
     ],
+    [
+      'a chrome.* API in the userscript bundle',
+      () => bundle(CODE + 'chrome.storage.local.get("x");\n'),
+      /chrome\.\* \/ browser\.\*/,
+    ],
     ['negative RegExp lookbehind', () => bundle(CODE + 'const r = /(?<!a)b/;\n'), /lookbehind/],
     [
       'API newer than Safari 15.0 inside the embedded bridge text',
@@ -220,5 +226,18 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
       errs.some((e: string) => /SemVer/.test(e)),
       errs.join(' | '),
     ).toBe(true);
+  });
+
+  it("platformLeaks finds the other platform's API in a built bundle (artifact level, D-036)", () => {
+    expect(platformLeaks('const x = chrome.runtime.id; browser.tabs;', 'userscript')).toEqual([
+      'chrome.runtime',
+      'browser.tabs',
+    ]);
+    expect(platformLeaks('GM.getValue("a"); GM_setValue("a", 1); GM.info', 'chrome')).toEqual([
+      'GM.getValue',
+      'GM_setValue',
+      'GM.info',
+    ]);
+    expect(platformLeaks('const chromeVersion = 1; navigator.userAgent', 'userscript')).toEqual([]);
   });
 });

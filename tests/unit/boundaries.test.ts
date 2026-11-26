@@ -11,7 +11,11 @@ const eslint = new ESLint({
     {
       files: ['src/**/*.ts'],
       languageOptions: { parserOptions: { projectService: false } },
-      rules: { '@typescript-eslint/no-floating-promises': 'off', '@typescript-eslint/no-misused-promises': 'off' },
+      rules: {
+        '@typescript-eslint/no-floating-promises': 'off',
+        '@typescript-eslint/no-misused-promises': 'off',
+        'local/no-promise-handler': 'off',
+      },
     },
   ],
 });
@@ -119,14 +123,7 @@ describe('import boundaries (R-032)', () => {
     expect(await ruleIds(code, 'src/core/x.ts')).toContain('no-restricted-syntax');
   });
 
-  it.each(['src/ui/x.ts', 'src/core/x.ts', 'src/platform/chrome/x.ts'])(
-    'an async function assigned as a handler (el.onclick = async …) is flagged in %s (R-199)',
-    async (file) => {
-      const code =
-        "const b = document.createElement('button');\nb.onclick = async () => {\n  await Promise.resolve();\n};\n";
-      expect(await ruleIds(code, file)).toContain('no-restricted-syntax');
-    },
-  );
+  // el.onclick = async … / () => promise / asyncRef: type-aware rule, tested in tests/unit/lint-behaviour.test.ts
 
   it('a sync handler that hands its promise to noteRejection is fine', async () => {
     const code =

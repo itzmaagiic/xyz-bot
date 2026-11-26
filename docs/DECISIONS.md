@@ -231,3 +231,10 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - eine geänderte ESLint-Konfiguration selbst
 - **Absicherung zur Laufzeit statt Lint:** Ein globaler Handler für `unhandledrejection`/`error`, der über `noteError` meldet, fängt, was Lint nicht sieht. Er kommt mit R-200 in P3.
 - Folge: Eine neue Umgehung aus der ersten Liste ist ein Fehler, der Test und Fix braucht. Eine aus der zweiten Liste ist kein Fund für das Review-Tor.
+- **Nachtrag Runde 4 (2026-11-26): Klassen statt Einzelmuster.** Runde 4 fand weitere Varianten derselben Klassen. Seitdem gilt:
+  - **R-032, Geltungsbereich:** umgedreht auf ganz `src/` außer `platform/chrome/**`, `platform/userscript/**` und `platform/clipboard.ts`. Damit sind `platform/types.ts` und jeder neue Ordner erfasst.
+  - **R-032, Plattform-Namen:** In diesen Dateien dürfen sie weder als Bezeichner noch als String- oder Template-Text vorkommen. Ausgenommen sind TS-Literal-Typen ohne Laufzeitzugriff. Damit ist jede Key-Variante gesperrt: Destructuring, `as`, `satisfies`, berechnete Keys.
+  - **R-199:** Die typbewusste Regel `local/no-promise-handler` meldet jede `on*`-Zuweisung, deren Handler einen Promise zurückgibt: `async`, Pfeil oder Referenz. Sie ersetzt den Syntax-Selektor für `async`.
+  - **Artefakt-Ebene:** Der Build prüft, dass im Userscript-Bundle kein `chrome.*`/`browser.*` und in den Chrome-Bundles kein `GM.*`/`GM_*` steht (`platformLeaks`). Das fängt auch das „Umbenennen über Module“ ab, das Lint bewusst nicht prüft.
+  - **Verhaltenstests mit Typinformation:** `tests/unit/lint-behaviour.test.ts`, `lintText` mit vorhandenem Pfad.
+  - **Bekannte Lücke:** `Promise.allSettled` mit ignorierten Ergebnissen. Das deckt der Laufzeit-Handler aus R-200 ab (P3).

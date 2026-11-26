@@ -11,6 +11,7 @@ import {
   buildMeta,
   checkUserscript,
   compatWarnings,
+  platformLeaks,
   es2020SyntaxError,
   toTemplateLiteral,
   usedGmApis,
@@ -192,6 +193,11 @@ async function buildChrome() {
     },
   };
   writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  // artifact check (R-032, D-036): no userscript GM API in the Chrome bundles
+  for (const f of Object.keys(entries)) {
+    const leaks = platformLeaks(readFileSync(join(out, `${f}.js`), 'utf8'), 'chrome');
+    if (leaks.length) throw new Error(`GM API in Chrome bundle ${f}.js: ${leaks.join(', ')} (R-032)`);
+  }
   zip(out, join(dist, `pokelike-bot-chrome-${pkg.version}.zip`));
   console.log(`chrome → dist/chrome (+ zip)`);
 }

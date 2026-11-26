@@ -63,8 +63,10 @@ Das Userscript nutzt nur die GM-Funktionen, die alle drei Manager gemeinsam habe
 - **Tastenkürzel auf der Spielseite:** `Alt+Shift+P` Start/Pause · `Alt+Shift+S` Schritt · `Alt+Shift+O` Overlay ein/aus.
 - **Spieleinstellungen** (z. B. Kämpfe automatisch überspringen) ändert der Bot **nur nach deiner zweistufigen Bestätigung**
   im Overlay („Einschalten …“ → „Ja, ändern“).
-- **Sicherheit:** Der Bot liest den Spielzustand nur, schreibt nie selbst in die Schlüssel des Spiels (`poke_*`, `pkrl_*`; der Userscript-Fallback nutzt eigene `pkbot.*`-Schlüssel). Einzige Ausnahme ist D-018: Spieleinstellungen ändert er nur nach zweistufiger Bestätigung über die eigene Funktion `saveSettings` des Spiels und patcht keine
-  Spielfunktionen. Unbekannte Bildschirme oder Dialoge pausieren ihn mit Hinweis. Ändert sich die Spielversion
+- **Sicherheit:** Der Bot liest den Spielzustand und patcht keine Spielfunktionen. Er schreibt nie selbst in die Schlüssel
+  des Spiels (`poke_*`, `pkrl_*`); der Userscript-Fallback nutzt eigene `pkbot.*`-Schlüssel. Die Ausnahmen regelt D-018:
+  Spieleinstellungen ändert er nur nach zweistufiger Bestätigung über die Funktion `saveSettings` des Spiels, und für
+  Simulationen setzt er Zufalls-Seed und ID-Zähler vorübergehend und stellt beide exakt wieder her (D-019). Unbekannte Bildschirme oder Dialoge pausieren ihn mit Hinweis. Ändert sich die Spielversion
   (bekannt: v3.8), zeigt er eine Warnung und pausiert schon beim ersten Fehlschlag.
 
 ## Architektur

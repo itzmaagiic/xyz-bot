@@ -1,16 +1,10 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import noPromiseHandler from './eslint-rules/no-promise-handler.mjs';
 import noSilentCatch from './eslint-rules/no-silent-catch.mjs';
 
 const PLATFORM_NAME_RE = '/^(chrome|browser|GM|GM_\\w+|unsafeWindow)$/';
 const R032 = 'Platform API – only allowed in src/platform/* (R-032).';
-// R-199: `el.onclick = async () => …` returns a promise nobody handles (onclick is typed `any`, so
-// no-misused-promises cannot see it) – use a sync handler that passes the promise to noteRejection
-const ASYNC_HANDLER = {
-  selector: "AssignmentExpression[left.type='MemberExpression'] > :function[async=true].right",
-  message:
-    'Async function assigned as a handler is a floating promise – use a sync handler with noteRejection (R-199).',
-};
 const PLATFORM_GLOBALS = [
   'chrome',
   'browser',
@@ -56,19 +50,21 @@ export default tseslint.config(
   {
     // R-199: no silent errors – every catch rethrows, logs, or calls noteError
     files: ['src/**/*.ts'],
-    plugins: { local: { rules: { 'no-silent-catch': noSilentCatch } } },
+    plugins: { local: { rules: { 'no-silent-catch': noSilentCatch, 'no-promise-handler': noPromiseHandler } } },
     rules: {
       'local/no-silent-catch': [
         'error',
         { reporters: ['noteError', 'noteRejection', 'reportStartFailure', 'crashed'] },
       ],
-      // flat config replaces (not merges) no-restricted-syntax options – the core/ui block repeats ASYNC_HANDLER
-      'no-restricted-syntax': ['error', ASYNC_HANDLER],
+      // el.onclick = () => promise (type-aware; on* handlers are typed `any`, no-misused-promises cannot see it)
+      'local/no-promise-handler': 'error',
     },
   },
   {
     // R-032: one codebase – core/ and ui/ stay platform-neutral; only platform/types (the adapter contract) is shared
-    files: ['src/core/**/*.ts', 'src/ui/**/*.ts', 'src/app.ts'],
+    // scope inverted (D-036): everything under src/ except the platform adapters – platform/types.ts and new folders too
+    files: ['src/**/*.ts'],
+    ignores: ['src/platform/chrome/**', 'src/platform/userscript/**', 'src/platform/clipboard.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -117,7 +113,10 @@ export default tseslint.config(
           selector: 'MemberExpression[computed=true] > TemplateLiteral.property',
           message: 'No template-literal property keys in core/ and ui/ – they could hide a platform API (R-032).',
         },
-        ASYNC_HANDLER,
+        // platform API names as string or template text: every key variant (destructuring, `as`, `satisfies` …)
+        // (a TS literal type such as `name: 'chrome' | 'userscript'` in the adapter contract is no runtime access)
+        { selector: `:not(TSLiteralType) > Literal[value=${PLATFORM_NAME_RE}]`, message: R032 },
+        { selector: `TemplateElement[value.cooked=${PLATFORM_NAME_RE}]`, message: R032 },
       ],
     },
   },

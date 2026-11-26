@@ -141,6 +141,15 @@ export function es2020SyntaxError(code) {
   }
 }
 
+/**
+ * The other platform's API in a built bundle (artifact level, D-036): `chrome.x`/`browser.x` in the userscript,
+ * `GM.x`/`GM_x` in the Chrome bundles. Catches what lint deliberately leaves out (re-export through modules …).
+ */
+export function platformLeaks(code, platform) {
+  const re = platform === 'userscript' ? /\b(?:chrome|browser)\.\w+/g : /\bGM(?:\.\w+|_\w+)/g;
+  return [...new Set(code.match(re) ?? [])];
+}
+
 /** Backtick literal that evaluates to exactly `s` and keeps its line breaks (readable embedding, R-107). */
 export function toTemplateLiteral(s) {
   const body = s.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\r/g, '\\r'); // a raw CR would be normalised to LF inside a template literal
@@ -217,6 +226,8 @@ export function checkUserscript({ userJs, metaJs, version }) {
   if (!userJs.startsWith(metaJs)) errs.push('pokelike-bot.user.js must start with the .meta.js block');
   const code = userJs.startsWith(metaJs) ? userJs.slice(metaJs.length) : userJs;
 
+  for (const leak of platformLeaks(code, 'userscript'))
+    errs.push(`${leak}: chrome.* / browser.* API in the userscript bundle (R-032, R-192)`);
   const used = usedGmApis(code);
   for (const l of used.legacy) errs.push(`legacy API GM_${l} used – only the GM.* intersection is allowed (R-099)`);
   for (const a of used.gm)
