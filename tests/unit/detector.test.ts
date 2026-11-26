@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectScreen } from '../../src/core/screens/detector';
+import { detectScreen, isActionable } from '../../src/core/screens/detector';
 import { loadFixture } from './helpers';
 
 const cases: [string, string, string | null][] = [
@@ -59,5 +59,36 @@ describe('ScreenDetector on real DOM snapshots', () => {
   it('map signature lists clickable nodes', () => {
     const s = detectScreen(loadFixture('map'));
     expect(s.signature).toMatch(/^map-screen\|-\|n1_0,n1_1$/);
+  });
+
+  // P3a (GAME_RECON §12.8): visible is not the same as usable
+  it('isActionable is false for disabled, aria-disabled, pointer-events:none and hidden buttons; true for a normal one', () => {
+    const doc = loadFixture('battle-gym');
+    const mk = (attrs: Record<string, string>) => {
+      const b = doc.createElement('button');
+      for (const [k, v] of Object.entries(attrs)) b.setAttribute(k, v);
+      doc.body.appendChild(b);
+      return b;
+    };
+    expect(isActionable(mk({}))).toBe(true);
+    expect(isActionable(mk({ disabled: '' }))).toBe(false);
+    expect(isActionable(mk({ 'aria-disabled': 'true' }))).toBe(false);
+    expect(isActionable(mk({ style: 'pointer-events:none' }))).toBe(false);
+    expect(isActionable(mk({ style: 'display:none' }))).toBe(false);
+    expect(isActionable(null)).toBe(false);
+  });
+
+  it('battle signature: skip when SKIP is usable, skip-off when it is disabled', () => {
+    const doc = loadFixture('battle-gym');
+    expect(detectScreen(doc).signature).toMatch(/\|skip(?!-off)/);
+    doc.getElementById('btn-auto-battle')!.setAttribute('disabled', '');
+    expect(detectScreen(doc).signature).toMatch(/\|skip-off/);
+  });
+
+  it('battle signature changes when an HP text changes (battle progress)', () => {
+    const doc = loadFixture('battle-gym');
+    const before = detectScreen(doc).signature;
+    doc.querySelector('#battle-screen .hp-text')!.textContent = '1/71';
+    expect(detectScreen(doc).signature).not.toBe(before);
   });
 });

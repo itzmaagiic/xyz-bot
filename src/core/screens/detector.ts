@@ -75,6 +75,28 @@ export function isShown(el: Element | null | undefined): el is HTMLElement {
   return true;
 }
 
+/**
+ * Visible AND usable (P3a, GAME_RECON §12.8): the game disables SKIP after the click while the fight goes on – a
+ * shown but disabled control is not a click target.
+ */
+export function isActionable(el: Element | null | undefined): el is HTMLElement {
+  if (!isShown(el)) return false;
+  if (el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true') return false;
+  const view = el.ownerDocument?.defaultView;
+  const pe = view?.getComputedStyle ? view.getComputedStyle(el).pointerEvents : el.style?.pointerEvents;
+  return pe !== 'none';
+}
+
+/** short FNV-1a hash (base 36) – keeps signatures compact */
+function shortHash(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
 function overlayName(el: Element): string {
   return el.id || String(el.className || el.tagName).split(' ')[0] || el.tagName;
 }
@@ -124,11 +146,18 @@ function extraSignature(doc: Document, kind: ScreenKind, scr: HTMLElement | null
       return Array.from(scr.querySelectorAll('.map-node--clickable'))
         .map((e) => (e as HTMLElement).dataset.nodeId ?? (e.getAttribute('data-node-id') || ''))
         .join(',');
-    case 'battle':
+    case 'battle': {
+      // SKIP state (usable / pressed-and-disabled) + battle progress: HP texts change at least every ~2 s (§12.8)
+      const skip = doc.getElementById('btn-auto-battle');
+      const hp = Array.from(scr.querySelectorAll('.hp-text'))
+        .map((e) => (e.textContent ?? '').trim())
+        .join('|');
       return [
-        isShown(doc.getElementById('btn-auto-battle')) ? 'skip' : '',
-        isShown(doc.getElementById('btn-continue-battle')) ? 'cont' : '',
+        isActionable(skip) ? 'skip' : isShown(skip) ? 'skip-off' : '',
+        isActionable(doc.getElementById('btn-continue-battle')) ? 'cont' : '',
+        `hp:${shortHash(hp)}`,
       ].join('');
+    }
     default:
       return String(scr.querySelectorAll('.poke-card,.item-card,button').length);
   }
