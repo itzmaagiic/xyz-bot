@@ -20,6 +20,8 @@ export interface BotSettings {
   maxRuns: number;
   /** base delay between actions in ms (randomised ±40 %) */
   actionDelayMs: number;
+  /** R-095: seconds without any screen change (incl. battle progress) before the watchdog re-reads, then pauses */
+  watchdogSec: number;
   takeShiny: boolean;
   /** reorder the team so the best matchup leads */
   reorderTeam: boolean;
@@ -42,6 +44,7 @@ export const DEFAULT_SETTINGS: BotSettings = {
   autoRestart: false,
   maxRuns: 0,
   actionDelayMs: 700,
+  watchdogSec: 60,
   takeShiny: true,
   reorderTeam: true,
   notifications: true,
@@ -70,6 +73,7 @@ export function normalizeSettings(raw: unknown): BotSettings {
   if (out.chalStarter !== null) out.chalStarter = Math.round(Number(out.chalStarter)) || null;
   out.region = Math.min(6, Math.max(1, Math.round(out.region)));
   out.actionDelayMs = Math.min(5000, Math.max(150, Math.round(out.actionDelayMs)));
+  out.watchdogSec = Math.min(600, Math.max(15, Math.round(out.watchdogSec)));
   out.maxRuns = Math.max(0, Math.round(out.maxRuns));
   return out;
 }

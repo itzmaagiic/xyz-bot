@@ -16,6 +16,7 @@ import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
 import { type NotedError, noteError, noteRejection, onNotedError, recentErrors } from './log/note';
 import { errorPause } from './pause-reason';
+import { Watchdog } from './watchdog';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
 
@@ -47,6 +48,7 @@ const MAX_ATTEMPTS = 3;
 
 export class BotController {
   readonly log = new Logger();
+  private readonly watchdog = new Watchdog();
   private reader: StateReader;
   private actor: Actor;
   private mem: EngineMemory = newMemory();
@@ -157,6 +159,7 @@ export class BotController {
     if (this.view.status === 'running') return;
     this.view.status = 'running';
     this.view.pauseReason = null;
+    this.watchdog.reset();
     this.failCount = 0;
     this.failKey = null;
     this.pendingPause = null;
@@ -168,6 +171,7 @@ export class BotController {
   pause(reason: string | null = null, notify = false): void {
     const wasRunning = this.view.status === 'running';
     this.view.status = 'paused';
+    this.watchdog.reset();
     this.view.pauseReason = reason;
     if (reason) this.log.warn(`paused: ${reason}`);
     this.emit();
@@ -388,7 +392,20 @@ export class BotController {
   }
 
   async tick(): Promise<Decision | null> {
-    const st = await this.refresh();
+    let st = await this.refresh();
+    // R-095 watchdog (D-037): the signature includes battle progress, so only a real standstill trips it
+    if (this.view.status === 'running') {
+      const sec = this.view.settings.watchdogSec;
+      const wd = this.watchdog.observe(st.screen.signature, sec * 1000);
+      if (wd === 'reread') {
+        this.log.warn(`watchdog: no change for ${sec} s on ${st.screen.kind} – re-reading the game state`);
+        st = await this.refresh();
+      } else if (wd === 'stall') {
+        const why = errorPause('stalled', `no change for ${Math.round(sec * 1.5)} s on ${st.screen.kind}`);
+        this.pause(why, true);
+        return { kind: 'pause', why };
+      }
+    }
     await this.attachSim(st);
     const d = decide(st, this.doc, this.view.settings, this.mem);
     this.view.lastDecision = `${d.kind}: ${d.why}`;

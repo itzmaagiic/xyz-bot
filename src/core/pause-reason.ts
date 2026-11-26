@@ -7,6 +7,7 @@ const PREFIX = {
   failing: 'action keeps failing',
   internal: 'internal error',
   blocked: 'blocked',
+  stalled: 'stalled',
 } as const;
 
 export type ErrorPauseKind = keyof typeof PREFIX;

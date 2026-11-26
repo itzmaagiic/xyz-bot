@@ -156,6 +156,7 @@ export function buildSettingsForm(
     (v) => ({ trainer: v as BotSettings['trainer'] }),
   );
   num('pk-delay', 'Tempo (ms)', s.actionDelayMs, 'actionDelayMs', 150, 5000, 50);
+  num('pk-watchdog', 'Watchdog (s)', s.watchdogSec, 'watchdogSec', 15, 600, 5);
   num('pk-maxruns', 'Max. Runs (0=∞)', s.maxRuns, 'maxRuns', 0, 999, 1);
   chk('pk-resume', 'Runs fortsetzen', s.resumeRuns, 'resumeRuns');
   chk('pk-restart', 'Auto-Neustart', s.autoRestart, 'autoRestart');
