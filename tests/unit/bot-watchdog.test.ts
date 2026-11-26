@@ -43,6 +43,7 @@ describe('bot watchdog wiring (R-095)', () => {
     await bot.tick();
     expect(bot.view.status).toBe('paused');
     expect(bot.view.pauseReason).toMatch(/^stalled: no change for 31 s on battle/); // the real idle time
+    expect(bot.view.pauseKind).toBe('stalled'); // typed pause (R-254)
   });
 
   it('iPhone auto-lock in the middle of a fight: after 5 min the bot resumes instead of an error pause', async () => {
@@ -110,5 +111,17 @@ describe('bot watchdog wiring (R-095)', () => {
     vi.setSystemTime(141_000); // 61 s after start(): at most a re-read; measured from the pause it would be a stall
     await bot.tick();
     expect(bot.view.status).toBe('running');
+  });
+
+  it('pause kinds in the view: user on toggle, none while running (R-254)', () => {
+    const bot = new BotController(platform, null, loadFixture('title'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (bot as any).loopRunning = true;
+    bot.start();
+    expect(bot.view.pauseKind).toBeNull();
+    bot.toggle();
+    expect(bot.view.pauseKind).toBe('user');
+    bot.start();
+    expect(bot.view.pauseKind).toBeNull();
   });
 });

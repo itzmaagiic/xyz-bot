@@ -81,7 +81,11 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       case 'evolution':
         return decideEvolution(doc, run);
       default:
-        return { kind: 'pause', why: `unrecognised dialog "${screen.overlayId}" – please handle it manually` };
+        return {
+          kind: 'pause',
+          why: `unrecognised dialog "${screen.overlayId}" – please handle it manually`,
+          cause: 'unsupported',
+        };
     }
   }
 
@@ -108,9 +112,9 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         return { kind: 'click', selector: variantBtn, why: `select ${s.storyVariant}` };
       const regions = Array.from(doc.querySelectorAll('#history-region-select .history-region-btn'));
       const r = regions[s.region - 1];
-      if (!r) return { kind: 'pause', why: `region ${s.region} not found` };
+      if (!r) return { kind: 'pause', why: `region ${s.region} not found`, cause: 'config' };
       if (r.classList.contains('history-region-btn--locked'))
-        return { kind: 'pause', why: `region ${s.region} is locked in your save` };
+        return { kind: 'pause', why: `region ${s.region} is locked in your save`, cause: 'config' };
       return {
         kind: 'click',
         selector: '#history-region-select .history-region-btn',
@@ -122,7 +126,7 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       const regions = Array.from(doc.querySelectorAll('#endless-stage-select .history-region-btn'));
       const r = regions[s.region - 1];
       if (!r || r.classList.contains('history-region-btn--locked'))
-        return { kind: 'pause', why: `tower region ${s.region} unavailable` };
+        return { kind: 'pause', why: `tower region ${s.region} unavailable`, cause: 'config' };
       return {
         kind: 'click',
         selector: '#endless-stage-select .history-region-btn',
@@ -140,16 +144,17 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       };
     case 'challenge-select': {
       const sel = s.chalKind === 'daily' ? '#chal-daily' : s.chalKind === 'weekly' ? '#chal-weekly' : '#chal-intro';
-      if (!doc.querySelector(sel)) return { kind: 'pause', why: `challenge "${s.chalKind}" not offered` };
+      if (!doc.querySelector(sel))
+        return { kind: 'pause', why: `challenge "${s.chalKind}" not offered`, cause: 'config' };
       return { kind: 'click', selector: sel, why: `start ${s.chalKind} challenge` };
     }
     case 'challenge-level': {
       const picks = Array.from(doc.querySelectorAll('#weekly-select .gym-pick'));
       if (s.chalLevel != null && picks.length) {
         const p = picks.find((e) => e.getAttribute('data-level') === String(s.chalLevel));
-        if (!p) return { kind: 'pause', why: `badge level ${s.chalLevel} not found` };
+        if (!p) return { kind: 'pause', why: `badge level ${s.chalLevel} not found`, cause: 'config' };
         if (p.classList.contains('is-locked'))
-          return { kind: 'pause', why: `badge level ${s.chalLevel + 1} is locked in your save` };
+          return { kind: 'pause', why: `badge level ${s.chalLevel + 1} is locked in your save`, cause: 'config' };
         if (!p.classList.contains('is-sel'))
           return {
             kind: 'click',
@@ -159,13 +164,17 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       }
       if (shown(doc, '#weekly-select .gym-play'))
         return { kind: 'click', selector: '#weekly-select .gym-play', why: 'play' };
-      return { kind: 'pause', why: 'challenge setup screen without a play button (not automated yet)' };
+      return {
+        kind: 'pause',
+        why: 'challenge setup screen without a play button (not automated yet)',
+        cause: 'unsupported',
+      };
     }
     case 'starter': {
       if (doc.querySelector('#starter-choices .dex-card')) {
         const cards = readPcCards(doc);
         const c = choosePcStarter(cards, state.pcStats ?? {}, s.chalStarter ?? s.preferredStarter);
-        if (c.index < 0) return { kind: 'pause', why: c.why };
+        if (c.index < 0) return { kind: 'pause', why: c.why, cause: 'config' };
         return { kind: 'click', selector: '#starter-choices .dex-card', index: c.index, why: c.why };
       }
       const cards = readCards(doc, '#starter-choices .poke-card');
@@ -276,7 +285,8 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         const parsed = readRelicCards(doc);
         const owned = parsed.filter((_, i) => !isNew(all[i]!));
         const incoming = parsed.find((_, i) => isNew(all[i]!));
-        if (!incoming) return { kind: 'pause', why: 'relic replace dialog without the new relic' };
+        if (!incoming)
+          return { kind: 'pause', why: 'relic replace dialog without the new relic', cause: 'inconsistent' };
         const rs = state.relicSim;
         if (rs?.replace.length && rs.replace.length === owned.length) {
           const bestI = rs.replace.reduce((b, v, i) => (v > rs.replace[b]! ? i : b), 0);
@@ -329,12 +339,16 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       }
       for (const sel of ['#btn-stage-home', '#btn-stage-again'])
         if (shown(doc, sel)) return { kind: 'click', selector: sel, why: 'back to the challenges for the next run' };
-      return { kind: 'pause', why: 'stage complete without a known button' };
+      return { kind: 'pause', why: 'stage complete without a known button', cause: 'inconsistent' };
     }
     case 'stat-buff':
-      return { kind: 'pause', why: `screen "${screen.screenId}" is not automated yet – please choose manually` };
+      return {
+        kind: 'pause',
+        why: `screen "${screen.screenId}" is not automated yet – please choose manually`,
+        cause: 'unsupported',
+      };
     default:
-      return { kind: 'pause', why: `unknown screen "${screen.screenId ?? 'none'}"` };
+      return { kind: 'pause', why: `unknown screen "${screen.screenId ?? 'none'}"`, cause: 'unsupported' };
   }
 }
 
@@ -424,7 +438,7 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
     clickable.filter((id) => run.map!.nodes[id]),
     ctx,
   );
-  if (!pick) return { kind: 'pause', why: 'map nodes do not match game data' };
+  if (!pick) return { kind: 'pause', why: 'map nodes do not match game data', cause: 'inconsistent' };
   const types =
     pick.path.map((id) => run.map!.nodes[id]?.type).join('→') + ` [xp need ${(ctx.xpNeed ?? 0).toFixed(1)}]`;
   const options = (pick.alternatives ?? []).map((a) => ({
@@ -484,7 +498,7 @@ function decideSwap(state: GameState, doc: Document): Decision {
   const c = chooseRelease(incoming, team);
   if (c.index < 0) {
     if (shown(doc, '#btn-cancel-swap')) return { kind: 'click', selector: '#btn-cancel-swap', why: c.why };
-    return { kind: 'pause', why: `${c.why}, but no keep button` };
+    return { kind: 'pause', why: `${c.why}, but no keep button`, cause: 'inconsistent' };
   }
   return { kind: 'click', selector: '#swap-choices .poke-card', index: c.index, why: c.why };
 }
@@ -498,7 +512,7 @@ function decideEquip(doc: Document, run: RunState | null, kind: 'move-tutor' | '
   if (!eligible.length) {
     return shown(doc, skip)
       ? { kind: 'click', selector: skip, why: `${kind}: nobody can use it` }
-      : { kind: 'pause', why: `${kind}: no usable button` };
+      : { kind: 'pause', why: `${kind}: no usable button`, cause: 'inconsistent' };
   }
   const team = run?.team ?? [];
   let pick = eligible[0]!;

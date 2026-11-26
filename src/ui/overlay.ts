@@ -138,7 +138,13 @@ export class Overlay {
     body.appendChild(ctr);
 
     if (v.pauseReason && v.status !== 'running')
-      body.appendChild(this.h('div', { class: 'warn', id: 'pk-pause' }, `⏸ ${v.pauseReason}`));
+      body.appendChild(
+        this.h(
+          'div',
+          { class: 'warn', id: 'pk-pause', ...(v.pauseKind ? { 'data-kind': v.pauseKind } : {}) },
+          `⏸ ${v.pauseReason}`,
+        ),
+      );
     if (v.versionWarning) {
       const w = this.h('div', { class: 'warn bad', id: 'pk-version' }, v.versionWarning + ' ');
       const ack = this.h('button', { id: 'pk-ack-version' }, 'Version bestätigen');

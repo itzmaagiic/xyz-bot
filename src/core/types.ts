@@ -1,4 +1,5 @@
 /** Shared, platform-independent types. */
+import type { PauseKind } from './pause-reason';
 
 export type PokeType =
   | 'Normal'
@@ -203,5 +204,5 @@ export type Decision =
   /** open a bag item (use/equip dialog) – the game only opens it via a pointer-capture gesture */
   | { kind: 'openBag'; index: number; itemId: string; why: string; trace?: DecisionTrace }
   | { kind: 'wait'; ms: number; why: string }
-  | { kind: 'pause'; why: string; trace?: DecisionTrace }
+  | { kind: 'pause'; why: string; cause: PauseKind; trace?: DecisionTrace }
   | { kind: 'stop'; why: string; result?: 'win' | 'loss'; trace?: DecisionTrace };

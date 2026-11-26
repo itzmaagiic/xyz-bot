@@ -75,7 +75,7 @@ describe('DecisionEngine on real snapshots', () => {
   });
   it('locked region → pause instead of guessing', () => {
     const doc = loadFixture('region-select');
-    expect(decide(gs(doc), doc, { ...s, region: 2 }, newMemory()).kind).toBe('pause');
+    expect(decide(gs(doc), doc, { ...s, region: 2 }, newMemory())).toMatchObject({ kind: 'pause', cause: 'config' });
   });
   it('tutorial overlay is dismissed', () => {
     const doc = loadFixture('map-tutorial');
@@ -134,7 +134,22 @@ describe('DecisionEngine on real snapshots', () => {
   });
   it('unknown modal → pause', () => {
     const doc = loadFixture('settings-modal');
-    expect(decide(gs(doc), doc, s, newMemory()).kind).toBe('pause');
+    expect(decide(gs(doc), doc, s, newMemory())).toMatchObject({ kind: 'pause', cause: 'unsupported' });
+  });
+  it('map nodes that do not match the game data → pause with cause inconsistent (R-254)', () => {
+    const doc = loadFixture('map');
+    const st = gs(doc, baseRun({ map: { mapIndex: 0, nodes: {}, edges: [] } }));
+    expect(decide(st, doc, { ...s, reorderTeam: false }, newMemory())).toMatchObject({
+      kind: 'pause',
+      cause: 'inconsistent',
+    });
+  });
+  it('a screen without automation → pause with cause unsupported and the screen id', () => {
+    const doc = loadFixture('title');
+    doc.querySelector('div.screen.active')!.id = 'mystery-screen';
+    const d = decide(gs(doc), doc, s, newMemory());
+    expect(d).toMatchObject({ kind: 'pause', cause: 'unsupported' });
+    expect((d as { why: string }).why).toContain('mystery-screen');
   });
   it('map without bridge → first clickable node', () => {
     const doc = loadFixture('map');

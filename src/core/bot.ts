@@ -15,7 +15,7 @@ import { readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
 import { type NotedError, noteError, noteRejection, onNotedError, recentErrors } from './log/note';
-import { errorPause } from './pause-reason';
+import { errorPause, type PauseKind } from './pause-reason';
 import { Watchdog } from './watchdog';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
@@ -30,6 +30,8 @@ export interface BotStats {
 export interface BotView {
   status: BotStatus;
   pauseReason: string | null;
+  /** typed pause (R-254): the live verdict reads this, never the translatable text */
+  pauseKind: PauseKind | null;
   screen: string;
   lastDecision: string;
   bridge: boolean;
@@ -62,6 +64,7 @@ export class BotController {
   view: BotView = {
     status: 'idle',
     pauseReason: null,
+    pauseKind: null,
     screen: '-',
     lastDecision: '-',
     bridge: false,
@@ -159,6 +162,7 @@ export class BotController {
     if (this.view.status === 'running') return;
     this.view.status = 'running';
     this.view.pauseReason = null;
+    this.view.pauseKind = null;
     this.watchdog.reset();
     this.failCount = 0;
     this.failKey = null;
@@ -168,11 +172,12 @@ export class BotController {
     noteRejection('bot:loop', this.loop());
   }
 
-  pause(reason: string | null = null, notify = false): void {
+  pause(reason: string | null = null, notify = false, kind: PauseKind = 'user'): void {
     const wasRunning = this.view.status === 'running';
     this.view.status = 'paused';
     this.watchdog.reset();
     this.view.pauseReason = reason;
+    this.view.pauseKind = reason ? kind : null;
     if (reason) this.log.warn(`paused: ${reason}`);
     this.emit();
     if (notify && wasRunning && reason) noteRejection('bot:notify', this.notify('Pokelike bot paused', reason));
@@ -216,11 +221,11 @@ export class BotController {
     if (e instanceof ForbiddenActionError) {
       // R-147: a forbidden action (Reset Run, account, key R …) was blocked – never retry, pause and tell the user
       this.log.error('forbidden action blocked', e.message);
-      this.pause(errorPause('blocked', e.message), true);
+      this.pause(errorPause('blocked', e.message), true, 'blocked');
       return;
     }
     this.log.error(what, String(e));
-    this.pause(errorPause('internal', String(e)), true);
+    this.pause(errorPause('internal', String(e)), true, 'internal');
   }
 
   private async notify(title: string, body: string): Promise<void> {
@@ -406,8 +411,8 @@ export class BotController {
       } else if (wd === 'stall') {
         const idle = Math.round(this.watchdog.idleMs() / 1000);
         const why = errorPause('stalled', `no change for ${idle} s on ${st.screen.kind}`);
-        this.pause(why, true);
-        return { kind: 'pause', why };
+        this.pause(why, true, 'stalled');
+        return { kind: 'pause', why, cause: 'stalled' };
       }
     }
     await this.attachSim(st);
@@ -426,7 +431,7 @@ export class BotController {
           this.log.debug(`possible pause: ${d.why}`);
           return { kind: 'wait', ms: 900, why: 'confirming unknown state' };
         }
-        this.pause(d.why, true);
+        this.pause(d.why, true, d.cause);
         return d;
       }
       case 'stop': {
@@ -438,7 +443,8 @@ export class BotController {
         this.log.info(`run finished: ${d.why}`, s);
         noteRejection('bot:notify', this.notify('Pokelike run finished', `${d.why} (W ${s.wins} / L ${s.losses})`));
         const cfg = this.view.settings;
-        if (!cfg.autoRestart || (cfg.maxRuns > 0 && s.runs >= cfg.maxRuns)) this.pause(`run finished: ${d.why}`);
+        if (!cfg.autoRestart || (cfg.maxRuns > 0 && s.runs >= cfg.maxRuns))
+          this.pause(`run finished: ${d.why}`, false, 'finished');
         return d;
       }
       case 'click':
@@ -536,7 +542,7 @@ export class BotController {
     const limit = careful ? 1 : MAX_ATTEMPTS;
     this.log.warn(`${why} (attempt ${this.failCount}/${limit})`);
     if (this.failCount >= limit) {
-      this.pause(errorPause('failing', why), true);
+      this.pause(errorPause('failing', why), true, 'failing');
       return;
     }
     await sleep(600 * 2 ** (this.failCount - 1)); // backoff
