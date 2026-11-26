@@ -25,6 +25,7 @@ const dist = process.env.PKBOT_DIST ? resolve(process.env.PKBOT_DIST) : join(roo
 
 const FLAGS_DEFINE = {
   __PKBOT_FLAGS__: process.env.PKBOT_FLAGS ? JSON.stringify(JSON.parse(process.env.PKBOT_FLAGS)) : 'undefined',
+  __PKBOT_VERSION__: JSON.stringify(pkg.version), // run logs carry the bot version (D-038)
 };
 const common = {
   define: FLAGS_DEFINE,

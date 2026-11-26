@@ -31,6 +31,10 @@ describe('userscript build output', () => {
     expect(checkUserscript({ userJs, metaJs, version: pkg.version })).toEqual([]);
   });
 
+  it('embeds the bot version for the run logs (D-038)', () => {
+    expect(userJs).toMatch(new RegExp(`BOT_VERSION = [^;]*"${pkg.version.replace(/\./g, '\\.')}"`));
+  });
+
   it('carries the update URL', () => {
     expect(metaJs).toMatch(/@updateURL\s+https:\/\/raw\.githubusercontent\.com\//);
   });
