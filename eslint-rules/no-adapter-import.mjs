@@ -5,9 +5,13 @@
  * `import x = require()`.
  */
 import { dirname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ADAPTER = /^src\/platform\/(?:chrome|userscript)(?:\/|$)|^src\/platform\/clipboard(?:\.ts)?$/;
-const ALIAS = /(^|\/)platform\/(?:chrome|userscript)(?:\/|$)|(^|\/)platform\/clipboard$/;
+// repo root from the rule's own location – not context.cwd, so an IDE or `cd src` gives the same result
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+const ADAPTER = /^src\/platform\/(?:chrome|userscript)(?:\/|$)|^src\/platform\/clipboard(?:\.[cm]?[jt]s)?$/;
+const ALIAS = /(^|\/)platform\/(?:chrome|userscript)(?:\/|$)|(^|\/)platform\/clipboard(?:\.[cm]?[jt]s)?$/;
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
@@ -18,10 +22,9 @@ export default {
     messages: { adapter: '"{{spec}}" is platform adapter code – go through the Platform contract (R-032).' },
   },
   create(context) {
-    const root = context.cwd;
     const here = dirname(context.filename);
     const isAdapter = (spec) => {
-      if (spec.startsWith('.')) return ADAPTER.test(relative(root, resolve(here, spec)).split('\\').join('/'));
+      if (spec.startsWith('.')) return ADAPTER.test(relative(ROOT, resolve(here, spec)).split('\\').join('/'));
       return ALIAS.test(spec); // path aliases such as '@/platform/chrome/…' or 'src/platform/userscript/…'
     };
     const check = (node, source) => {

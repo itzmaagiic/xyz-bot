@@ -5,11 +5,10 @@
 _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Review-Tor P2, Runde 6 (gezielt):**
-  - Runde 5 bestätigte B1, B2 und R-032. Offen blieben B5 (Handler mit Union-Typ) und B6 (Import-Grenze aus `src/platform/types.ts`).
-  - Beide sind geschlossen (Union-Glieder werden geprüft, Import-Regel `local/no-adapter-import` löst Pfade auf).
-  - Überholte Nachweise sind durchgestrichen, D-036 hat den Nachtrag Runde 5.
-  - Billige Vorbefunde gleich mit erledigt: Test „nur .ts unter src/“, `platformLeaks` auf Token-Ebene.
+- **Review-Tor P2, Runde 7 (nur B7):**
+  - Runde 6 bestätigte 23 von 25 P2-Zeilen. Der einzige Blocker war B7: Subtyp-Reduktion bei Ternär, `??` und `||`.
+  - B7 ist behoben, die Zweige werden einzeln typisiert, die Mutationsprobe ist rot. V1 (`.js`-Endung) und V2 (unabhängig vom Arbeitsverzeichnis) sind mit erledigt.
+  - V3 (typescript-eslint-Lücke bei `addEventListener`) und V4 (`bridge-main.ts` neutral ablegen) sind Vorbefunde für P3 (D-036).
 
 ## Nächster Schritt
 1. **Abschluss Phase 2:**

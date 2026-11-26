@@ -26,12 +26,22 @@ export default {
       const parts = type.isUnion() ? type.types : [type];
       return parts.some((t) => t.getCallSignatures().some((sig) => thenable(sig.getReturnType())));
     };
+    // TypeScript reduces `cond ? () => void : () => Promise<void>` to `() => void` (subtype reduction), so every
+    // branch of ?:, ??, ||, && (and the last expression of a sequence) is typed on its own
+    const branches = (n) =>
+      n.type === 'ConditionalExpression'
+        ? [...branches(n.consequent), ...branches(n.alternate)]
+        : n.type === 'LogicalExpression'
+          ? [...branches(n.left), ...branches(n.right)]
+          : n.type === 'SequenceExpression'
+            ? branches(n.expressions[n.expressions.length - 1])
+            : [n];
     return {
       AssignmentExpression(node) {
         const l = node.left;
         if (l.type !== 'MemberExpression' || l.computed || l.property.type !== 'Identifier') return;
         if (!/^on[a-z]+$/.test(l.property.name)) return;
-        if (returnsThenable(node.right))
+        if (branches(node.right).some(returnsThenable))
           context.report({ node: node.right, messageId: 'promise', data: { name: l.property.name } });
       },
     };

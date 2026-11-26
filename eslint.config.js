@@ -82,7 +82,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              regex: '(^|/)platform/(chrome|userscript)(/|$)|(^|/)platform/clipboard$',
+              regex: '(^|/)platform/(chrome|userscript)(/|$)|(^|/)platform/clipboard(\\.[cm]?[jt]s)?$',
               message: 'core/ and ui/ must not import platform-specific code; go through the Platform adapter (R-032).',
             },
           ],

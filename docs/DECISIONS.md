@@ -249,3 +249,8 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 
     Beides deckt der Laufzeit-Handler aus R-200 ab (P3).
   - **Folge des Literal-Verbots:** `core/` und `ui/` vergleichen nie `platform.name === 'chrome'`. Plattform-Unterschiede kommen als Fähigkeiten oder Label aus dem Adapter.
+- **Nachtrag Runde 6 (2026-11-26):**
+  - **Subtyp-Reduktion:** TypeScript kürzt `cond ? () => void : () => Promise<void>` (ebenso `??`, `||`) zu `() => void`. `local/no-promise-handler` typisiert deshalb jeden Zweig von `?:`, `??`, `||` und `&&` (und den letzten Ausdruck einer Sequenz) einzeln.
+  - `local/no-adapter-import` bestimmt das Repo-Root aus dem eigenen Dateiort statt aus `cwd`. Damit wirkt die Regel gleich, egal ob vom Root, aus `src/` oder in einer IDE. Endungen wie `clipboard.js` sind eingeschlossen.
+  - **Bekannte Lücke (P3, R-200):** Dieselbe Subtyp-Reduktion trifft `@typescript-eslint/no-misused-promises` bei `addEventListener('click', cond ? sync : async)`. Das ist eine Lücke in typescript-eslint selbst. Abgedeckt wird sie vom Laufzeit-Handler aus R-200.
+  - **Vorbefund P3:** Der gemeinsame MAIN-Welt-Einstieg `bridge-main.ts` liegt in `platform/chrome/`, wird aber auch ins Userscript gebündelt. Er gehört an einen neutralen Ort. Dazu kommt eine Lint-Grenze zwischen den Adaptern (`chrome` ↔ `userscript`).

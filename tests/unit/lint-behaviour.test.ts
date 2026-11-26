@@ -99,6 +99,49 @@ describe('lint guard rails with type information (R-199, R-032, D-036)', () => {
     expect(await ids(code, 'src/ui/toast.ts')).toContain('local/no-promise-handler');
   });
 
+  // B7 (Runde 6): TypeScript's subtype reduction drops `() => Promise<void>` next to a `() => void` branch –
+  // the rule checks every branch of ?:, ??, || and && on its own
+  it.each([
+    [
+      'sync ? sync : async',
+      `${WORK}declare const on: boolean;\ndeclare const s: () => void;\nconst b = document.createElement('button');\nb.onclick = on ? s : work;\n`,
+    ],
+    [
+      'async ? … : sync',
+      `${WORK}declare const on: boolean;\ndeclare const s: () => void;\nconst b = document.createElement('button');\nb.onclick = on ? work : s;\n`,
+    ],
+    [
+      'optional ?? sync',
+      `${WORK}declare const o: { onClick?: () => Promise<void> };\ndeclare const s: () => void;\nconst b = document.createElement('button');\nb.onclick = o.onClick ?? s;\n`,
+    ],
+    [
+      'optional || sync',
+      `${WORK}declare const o: { onClick?: () => Promise<void> };\ndeclare const s: () => void;\nconst b = document.createElement('button');\nb.onclick = o.onClick || s;\n`,
+    ],
+    [
+      'a start/stop toggle',
+      `${WORK}declare const running: boolean;\nfunction toggle(): void {}\nconst b = document.createElement('button');\nb.onclick = running ? () => toggle() : () => work();\n`,
+    ],
+  ])('flags a handler whose %s branch returns a promise', async (_n, code) => {
+    expect(await ids(code, 'src/ui/toast.ts')).toContain('local/no-promise-handler');
+  });
+
+  it('allows ?: and ?? when every branch is sync', async () => {
+    const code =
+      'declare const on: boolean;\ndeclare const s: () => void;\ndeclare const o: { onClick?: () => void };\nexport function f(b: HTMLButtonElement): void {\n  b.onclick = on ? s : () => undefined;\n  b.onchange = o.onClick ?? s;\n}\n';
+    expect(await ids(code, 'src/ui/toast.ts')).toEqual([]);
+  });
+
+  // V1: a `.js` suffix on the clipboard helper must not slip through
+  it('core may not import the platform clipboard helper with a .js suffix', async () => {
+    expect(
+      await ids(
+        "import { copyViaDom } from '../platform/clipboard.js';\nexport const f = copyViaDom;\n",
+        'src/core/flags.ts',
+      ),
+    ).toContain('local/no-adapter-import');
+  });
+
   // B6 (Runde 5): the import boundary resolves paths – from inside src/platform/ too (types.ts, new files)
   it.each([
     ['an import', "import { copyWithFallback } from './userscript/copy';\nexport const f = copyWithFallback;\n"],
@@ -130,5 +173,16 @@ describe('src/ contains only TypeScript and static assets (lint scope = build sc
     };
     walk(join(__dirname, '..', '..', 'src'));
     expect(bad).toEqual([]);
+  });
+});
+
+// V2: the guard rails do not depend on the working directory (IDE, sub folder)
+describe('lint guard rails independent of the working directory', () => {
+  it('finds the same adapter import from cwd = src/', async () => {
+    const inSrc = new ESLint({ cwd: join(__dirname, '..', '..', 'src') }); // finds eslint.config.js upwards, like an IDE;
+    const [r] = await inSrc.lintText("export * from './chrome/messages';\n", {
+      filePath: join(__dirname, '..', '..', 'src', 'platform', 'types.ts'),
+    });
+    expect((r?.messages ?? []).map((m) => m.ruleId)).toContain('local/no-adapter-import');
   });
 });
