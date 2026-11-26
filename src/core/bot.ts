@@ -77,7 +77,8 @@ export class BotController {
     this.reader = new StateReader(bridge, doc);
     this.actor = new Actor();
     // R-199: handled errors are visible in the overlay log and the log export – also those noted before start-up
-    const show = (e: NotedError) => this.log.warn(`handled error at ${e.where}`, e.msg);
+    // muted level: a handled error is information, not an alarm (UI review P2); real problems stay warn/error
+    const show = (e: NotedError) => this.log.debug(`handled: ${e.where} – ${e.msg}`);
     for (const e of recentErrors()) show(e);
     onNotedError(show);
   }

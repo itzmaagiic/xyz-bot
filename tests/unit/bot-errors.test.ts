@@ -22,7 +22,9 @@ describe('noted errors reach the bot log (R-199)', () => {
     noteError('reader:snapshot', new Error('timeout'));
     noteError('reader:snapshot', new Error('timeout'));
     const lines = bot.log.toText();
-    expect(lines).toMatch(/\[warn\] .*userscript:localStorage.*blocked/);
+    // muted level, not the orange warning colour of real problems (UI review P2): visible in overlay log and export
+    expect(lines).toMatch(/\[debug\] handled: userscript:localStorage – blocked/);
+    expect(lines).not.toMatch(/\[warn\] .*handled/);
     expect(lines.match(/reader:snapshot/g)).toHaveLength(1);
   });
 });
