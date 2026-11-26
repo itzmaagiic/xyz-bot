@@ -194,6 +194,8 @@ export class RunRecorder {
 
   record(d: RecordableDecision, st: GameState): DecisionLine {
     const t = this.now();
+    // the bot attaches the map simulation after observe(): the boss name reaches the recorder here
+    if (st.sim?.bossName) this.lastBoss = st.sim.bossName;
     const r = this.open ?? this.openRun(t, st);
     this.track(r, st);
     const ctx = this.o.context();

@@ -202,6 +202,22 @@ describe('RunRecorder: D-005 lines (R-006)', () => {
     expect(r.summaries()[0]!.progress).toMatchObject({ badges: 1, map: 1, maxLevel: 14, teamSize: 1 });
   });
 
+  it('the boss name of the cause also comes from a recorded map decision (the bot attaches the sim after observe)', () => {
+    // live finding P3b: observe() runs before attachSim, so only record() sees st.sim – the cause said boss: null
+    const r = recorder(clock());
+    const map = {
+      mapIndex: 2,
+      nodes: { b: { id: 'b', type: 'boss', layer: 5, col: 0, visited: false, accessible: true } },
+      edges: [],
+    };
+    const sim = { nodeRates: {}, bossNoHeal: { 0: 0.4 }, bossHeal: { 0: 0.5 }, bossName: 'Misty' };
+    r.observe(st('map', run({ currentMap: 2, map }))); // no sim yet
+    r.record(click(), st('map', run({ currentMap: 2, map }), { sim }));
+    r.observe(st('battle', run({ currentMap: 2, map, currentNodeId: 'b' })));
+    r.record(stop('loss'), st('gameover', run({ currentMap: 2 })));
+    expect(r.summaries()[0]!.cause).toMatchObject({ kind: 'loss', node: 'boss', boss: 'Misty' });
+  });
+
   it('observe accumulates the dwell time per screen kind (n, totalMs, maxMs)', () => {
     const c = clock();
     const r = recorder(c);
