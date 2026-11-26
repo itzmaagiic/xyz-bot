@@ -7,7 +7,7 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 ## In Arbeit
 - **Phase 3, Inkrement P3a „Kämpfe ohne Hänger“:**
   - Aufklärung erledigt (GAME_RECON §12.8): SKIP wird nach dem Klick `disabled`, der Bosskampf läuft danach 16,7 s weiter, der Bot verwechselt sichtbar mit bedienbar.
-  - Design und D-037 stehen. Als Nächstes kommen Plan und TDD.
+  - Design, D-037 und der Plan stehen (`docs/superpowers/plans/2026-11-26-p3a-kaempfe-ohne-haenger.md`, Tasks 1–5). Umsetzung inline mit TDD.
 
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run):** Superpowers-Plan anlegen. Schwerpunkte, in dieser Reihenfolge:
