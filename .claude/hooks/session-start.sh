@@ -3,21 +3,27 @@
 # Punkte (❌/🟡) aus docs/REQUIREMENTS.md aus (D-002, D-015).
 # Die Ausgabe (stdout) landet als Kontext in der Session.
 # Der Hook ändert keine Dateien und bricht nie den Session-Start ab.
-# Reihenfolge: Pflichthinweis → Git → Zählung, Blocker und IDs ALLER offenen Punkte je Phase →
-# PROGRESS (ohne Vorbefunde-Details, alte „Erledigt“-Einträge und Vorgänger-Anhang) →
-# Kurzform der aktuellen Phase. Gekürzt wird zeilenweise auf MAX_BYTES (Hook-Limit: 10.000 Zeichen).
+# Reihenfolge (Wichtiges zuerst): Pflichthinweis → Git und Remote-Branches → Zählung, Blocker und IDs ALLER offenen
+# Punkte je Phase → PROGRESS-Kopf (Stand, Phase, In Arbeit, Nächster Schritt) → Kurzform der aktuellen Phase
+# (Zeilenlänge passt sich an DETAIL_BYTES an) → Rest von PROGRESS (ohne Vorbefunde-Details, alte „Erledigt“-Einträge
+# und Vorgänger-Anhang). Gekürzt wird zeilenweise auf MAX_BYTES (Hook-Limit: 10.000 Zeichen), also nur am Ende.
 set -u
 
 ROOT="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 PROGRESS="$ROOT/docs/PROGRESS.md"
 REQS="$ROOT/docs/REQUIREMENTS.md"
 MAX_BYTES="${HOOK_MAX_BYTES:-9000}"
+DETAIL_BYTES="${HOOK_DETAIL_BYTES:-2800}"   # Budget für die Kurzform der aktuellen Phase
 
 # Befehl mit Zeitlimit (Linux: timeout, macOS ohne coreutils: perl alarm)
 run_limited() {
   local secs="$1"; shift
   if command -v timeout >/dev/null 2>&1; then timeout "$secs" "$@"
-  elif command -v perl >/dev/null 2>&1; then perl -e 'alarm shift; exec @ARGV' "$secs" "$@"
+  elif command -v perl >/dev/null 2>&1; then
+    # eigene Prozessgruppe, beim Zeitlimit wird die ganze Gruppe beendet (auch ssh-Kindprozesse von git)
+    perl -e 'my $s = shift; my $pid = fork; exit 125 unless defined $pid;
+      if ($pid == 0) { setpgrp(0, 0); exec @ARGV or exit 127 }
+      $SIG{ALRM} = sub { kill "TERM", -$pid; exit 124 }; alarm $s; waitpid($pid, 0); exit($? >> 8)' "$secs" "$@"
   else "$@"; fi
 }
 
@@ -39,8 +45,9 @@ trap 'rm -f "$DETAIL"' EXIT
       unmerged=""; handled=""
       while read -r sha ref; do
         [ -z "$sha" ] && continue
-        if ! git -C "$ROOT" cat-file -e "$sha^{commit}" 2>/dev/null \
-          || ! git -C "$ROOT" merge-base --is-ancestor "$sha" HEAD 2>/dev/null; then
+        # GIT_NO_LAZY_FETCH: in partiellen Klonen nichts nachladen (kein Netz außerhalb des Zeitlimits)
+        if ! GIT_NO_LAZY_FETCH=1 git -C "$ROOT" cat-file -e "$sha^{commit}" 2>/dev/null \
+          || ! GIT_NO_LAZY_FETCH=1 git -C "$ROOT" merge-base --is-ancestor "$sha" HEAD 2>/dev/null; then
           name="${ref#refs/heads/}"
           entry="$( [ -f "$HANDLED" ] && awk -v n="$name" '$1 == n { $1 = ""; sub(/^ +/, ""); print; exit }' "$HANDLED" )"
           known="${entry%% *}"; why="${entry#* }"
@@ -53,7 +60,10 @@ trap 'rm -f "$DETAIL"' EXIT
           fi
         fi
       done <<< "$refs"
-      [ -n "$unmerged" ] && echo "⚠️ Remote-Branches mit Stand, der nicht in HEAD enthalten ist: $unmerged → prüfen und ggf. mergen (D-016, R-247)"
+      shallow=""
+      [ "$(git -C "$ROOT" rev-parse --is-shallow-repository 2>/dev/null)" = "true" ] \
+        && shallow=" (flacher Klon: ältere, schon gemergte Stände können hier fälschlich erscheinen)"
+      [ -n "$unmerged" ] && echo "⚠️ Remote-Branches mit Stand, der nicht in HEAD enthalten ist: $unmerged → prüfen und ggf. mergen (D-016, R-247)$shallow"
       [ -n "$handled" ] && echo "ℹ️ Bekannte Remote-Branches, nicht mergen: $handled"
     else
       echo "Hinweis: Remote-Branches nicht geprüft (kein Zugriff auf origin)."
@@ -79,35 +89,49 @@ trap 'rm -f "$DETAIL"' EXIT
         if (match($0, /\[P[0-9]+\]/)) tag = substr($0, RSTART + 1, RLENGTH - 2)
         ids[tag] = ids[tag] " " id st
         if (tag != phase) next
-        # Kurzform: Text vor „ — Quelle“, an Wortgrenze auf ca. 100 Bytes gekürzt
+        # Kurzform: Status, ID und Text vor „ — Quelle“ (gekürzt wird im END-Block passend zum Budget)
         line = $0; sub(/^[[:space:]]+/, "", line)
         cut = index(line, " — Quelle"); if (cut > 0) line = substr(line, 1, cut - 1)
-        n = split(line, w, " "); short = ""
-        for (i = 1; i <= n; i++) {
-          if (length(short) + length(w[i]) + 1 > 100) { short = short " …"; break }
-          short = (short == "" ? w[i] : short " " w[i])
-        }
-        if (section != last_section) { cur = cur section "\n"; last_section = section }
-        cur = cur short "\n"
+        sub(/\*\*R-/, "R-", line); sub(/\*\* \[P[0-9]+\]/, "", line)
+        n_items++; item[n_items] = line; item_sec[n_items] = section
       }
       END {
         print "Offene/teilweise Punkte nach Phase (IDs, 🟡 = teilweise):"
         for (i = 0; i <= 9; i++) { t = "P" i; if (t in ids) print "  " t ((t == phase) ? " (AKTUELL)" : "") ":" ids[t] }
         if ("P?" in ids) print "  ohne Phasen-Tag:" ids["P?"]
         print ""
-        if (detail_file != "") {
-          print "Aktuelle Phase " phase " im Detail (Kurzform, Volltext in docs/REQUIREMENTS.md):" > detail_file
-          printf "%s", cur > detail_file
+        if (detail_file != "" && n_items > 0) {
+          # Zeilenlänge so wählen, dass die Kurzform ins Budget passt (große Phasen: kürzer, mindestens 40 Bytes)
+          width = int(budget / n_items) - 4; if (width > 110) width = 110; if (width < 40) width = 40
+          print "Aktuelle Phase " phase " im Detail (" n_items " offene Punkte, Kurzform, Volltext in docs/REQUIREMENTS.md):" > detail_file
+          for (k = 1; k <= n_items; k++) {
+            n = split(item[k], w, " "); short = ""
+            for (i = 1; i <= n; i++) {
+              if (length(short) + length(w[i]) + 1 > width) { short = short " …"; break }
+              short = (short == "" ? w[i] : short " " w[i])
+            }
+            print short > detail_file
+          }
         }
       }
-    ' detail_file="$DETAIL" "$REQS"
+    ' detail_file="$DETAIL" budget="$DETAIL_BYTES" "$REQS"
   else
     echo "WARNUNG: docs/REQUIREMENTS.md fehlt."
   fi
   echo
   if [ -f "$PROGRESS" ]; then
-    echo "--- docs/PROGRESS.md (gekürzt: ohne Vorbefunde-Details, 3 neueste „Erledigt“-Einträge, ohne Vorgänger-Anhang) ---"
+    echo "--- docs/PROGRESS.md, Kopf (Stand, Phase, In Arbeit, Nächster Schritt) ---"
+    awk '/^## Entscheidungen/ || /^---[[:space:]]*$/ { exit } { print }' "$PROGRESS"
+  else
+    echo "WARNUNG: docs/PROGRESS.md fehlt."
+  fi
+  echo
+  [ -s "$DETAIL" ] && { cat "$DETAIL"; echo; }
+  if [ -f "$PROGRESS" ]; then
+    echo "--- docs/PROGRESS.md, Rest (ohne Vorbefunde-Details, 3 neueste „Erledigt“-Einträge, ohne Vorgänger-Anhang) ---"
     awk '
+      /^## Entscheidungen/ { on = 1 }
+      !on { next }
       /^---[[:space:]]*$/ { exit }                      # ab hier folgt der wörtliche Vorgänger-Anhang
       /^## Vorbefunde/ { skip = 1; print; print "(Abschnitt gekürzt: Volltext in docs/PROGRESS.md lesen)"; next }
       skip && /^## / { skip = 0 }
@@ -120,12 +144,7 @@ trap 'rm -f "$DETAIL"' EXIT
       }
       { print }
     ' "$PROGRESS"
-  else
-    echo "WARNUNG: docs/PROGRESS.md fehlt."
   fi
-  echo
-
-  [ -s "$DETAIL" ] && cat "$DETAIL"
 } | awk -v max="$MAX_BYTES" '
   # Zeilenweise kürzen, also nie mitten in einem UTF-8-Zeichen. length() zählt je nach awk
   # Bytes (mawk) oder Zeichen (gawk mit UTF-8); beides bleibt unter dem Zeichenlimit.

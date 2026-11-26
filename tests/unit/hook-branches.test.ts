@@ -61,6 +61,21 @@ describe('SessionStart hook: remote branch warning (R-247)', () => {
     expect(out).not.toMatch(/\bmain \(/);
   });
 
+  it('gives up after about 5 s when origin hangs, with a notice and exit 0', () => {
+    git(clone, 'remote', 'set-url', 'origin', 'ssh://hang.invalid/x.git');
+    const t0 = Date.now();
+    const r = spawnSync('bash', [HOOK], {
+      env: { ...process.env, CLAUDE_PROJECT_DIR: clone, GIT_SSH_COMMAND: 'sleep 30 #' }, // '#' swallows the args git appends, so it really hangs
+      encoding: 'utf8',
+      timeout: 20_000,
+    });
+    const ms = Date.now() - t0;
+    git(clone, 'remote', 'set-url', 'origin', join(tmp, 'remote.git'));
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/Remote-Branches nicht geprüft/);
+    expect(ms).toBeLessThan(9_000);
+  }, 20_000);
+
   it('prints a notice, not a failure, when origin is unreachable', () => {
     git(clone, 'remote', 'set-url', 'origin', join(tmp, 'does-not-exist.git'));
     const { code, out } = runHook(clone);
