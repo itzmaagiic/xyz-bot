@@ -306,6 +306,10 @@ Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockier
     - Kampffortschritt (KP-Texte) gehört in die Signatur.
     - Für echte Hänger sorgt ein Watchdog.
   - Die Rohdaten (`artifacts/live/battle-buttons.json`, gitignored) stammen aus dem Live-Test (`tests/e2e/live.spec.ts`, Beobachter nur lesend).
+  - **Behoben in P3a (D-037):**
+    - Der Bot klickt nur noch bedienbare Ziele, und ein nach dem Klick gesperrter Knopf gilt als Wirkung. Die Kampfsignatur enthält den KP-Fortschritt, dazu kommt ein Watchdog.
+    - Live-Lauf vom 2026-11-26: 10 min ohne Hänger, bis zu 7 Orden.
+    - Kampfdauern aus 78 Kämpfen: Median 3,0 s, 90 % unter 7,5 s, längster Kampf 33,4 s.
 
 ### 12.9 Manipulationsschutz `pk` (gelesen am 2026-11-25, Session 1, P2, nur lesend)
 - Das Spiel hat ein globales Objekt `pk` mit einem Speicher-Digest. `pk.keyClass` ordnet localStorage-Schlüssel ein: In den Digest gehen **nur Schlüssel mit Präfix `poke_`**, ausgenommen eine feste Ausnahmeliste und Schlüssel auf `_seen`. `pkrl_*` und fremde Präfixe zählen nicht.

@@ -5,13 +5,15 @@
 _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Phase 3, Inkrement P3a „Kämpfe ohne Hänger“:**
-  - Aufklärung erledigt (GAME_RECON §12.8): SKIP wird nach dem Klick `disabled`, der Bosskampf läuft danach 16,7 s weiter, der Bot verwechselt sichtbar mit bedienbar.
-  - Design, D-037 und der Plan stehen (`docs/superpowers/plans/2026-11-26-p3a-kaempfe-ohne-haenger.md`, Tasks 1–5). Umsetzung inline mit TDD.
+- **P3a „Kämpfe ohne Hänger“: umgesetzt und live belegt.**
+  - Ergebnis: Der Bot klickt nur noch bedienbare Ziele, die Kampfsignatur enthält den KP-Fortschritt, dazu kommt ein Watchdog.
+  - Live-Lauf vom 2026-11-26: 10 min ohne Hänger, bis zu 7 Orden, 6 Runs.
+  - Offen ist der Gesamt-Review (frischer Reviewer), danach P3b.
 
 ## Nächster Schritt
-1. **Phase 3 (Kern und Baseline-Run):** Superpowers-Plan anlegen. Schwerpunkte, in dieser Reihenfolge:
-   - **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8): gesperrtes SKIP nicht klicken, sondern warten, Kampffortschritt in der Signatur (R-087, R-094, R-190). Alle drei Live-Läufe scheiterten daran.
+1. **Phase 3 (Kern und Baseline-Run):** Weitere Inkremente, in dieser Reihenfolge:
+   - ~~Hänger bei langen Bosskämpfen~~ → erledigt in P3a (D-037).
+   - **P3b:** Run-Logs nach D-005 unter `runs/` mit Zusammenfassung (R-006, R-007, R-009), belastbares Live-Urteil (R-254), MAIN-Welt-Fehler ins Log (R-253).
    - Aufklärung der Restbildschirme (D-029, R-224), Run-Logs nach D-005 unter `runs/` (R-006, R-009), belastbares Live-Urteil (R-254).
    - Laufzeit-Handler für `unhandledrejection`/`error` (R-200, deckt die Lint-Lücken aus D-036), MAIN-Welt-Fehler ins Bot-Log (R-253), Speicherfehler sichtbar (R-259).
    - In der ersten **frisch gebauten** Session R-015 und R-016 bestätigen (D-034).
@@ -74,6 +76,7 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 ## Bekannte Probleme
 - **Live-Lauf 1 (P1, 2026-11-25, Story Classic Kanto, frisches Profil):** Nach 2,3 Minuten 3 Orden, 31 Fortschrittsschritte, Team Venusaur 36, Weepinbell 31, Beedrill 31, Butterfree 31, Magnemite 29. Dann **Pause**: „action keeps failing: no effect after clicking #btn-auto-battle[0]“ im Bosskampf auf Karte 3 (Knoten `n8_0`). Der Test zählt das als „bestanden“, weil er nur Fortschritt prüft. Er muss Hänger künftig als Fehler werten (R-190). Möglicherweise hat parallele CPU-Last durch E2E-Läufe eines Reviewers mitgewirkt. Wiederholung ohne Parallelität und mit `PKBOT_OUT=artifacts/live` steht aus. Gespeichert wurde in fast jedem Bildschirm (Karte 17×, Kampf 17×, Item 3×, Fang 2×, Elite-Prep 2×), gut für Resume (R-194).
 - **Live-Lauf 2 (P1, 2026-11-25, isoliert, `PKBOT_OUT=artifacts/live`):** 6,5 Minuten, 105 Fortschrittsschritte. Laut Overlay-Zähler 4 Runs, 0 Siege, 4 Niederlagen (Brock, 2× Normalkampf Karte 2, Misty). Dann **derselbe Hänger wie in Lauf 1** im Arenakampf gegen Erika. **Korrigierte Diagnose (Review-Tor P1):** Der Kampf lief noch, SKIP war gesperrt. Der Bot wertet „läuft noch“ als „Klick ohne Wirkung“ und pausiert nach ≈15 s Backoff. Das Kampfende nach Niederlagen funktioniert dagegen (GAME_RECON §12.8). **Erste Aufgabe in P3:** gesperrte Knöpfe nicht klicken, sondern warten, und Kampffortschritt erkennen (R-087, R-094, R-190). Außerdem gesehen: „Runs fortsetzen“ steht standardmäßig an (R-214).
+- **Live-Lauf 4 (P3a, 2026-11-26, `LIVE_MINUTES=10`):** **Kein Hänger mehr.** `liveVerdict` leer, 143 Fortschrittsschritte, 6 Runs (0 Siege, 6 Niederlagen), bis zu 7 Orden (Karte 7). 78 Kämpfe: Median 3,0 s, längster 33,4 s. Die Niederlagen sind Strategie (P4).
 - **Live-Lauf 3 (P2, 2026-11-25, `LIVE_MINUTES=8`, isoliert, `PKBOT_OUT=artifacts/live`):** Nach 2,5 Minuten 4 Orden, 36 Fortschrittsschritte, Team Venusaur 41 (besiegt), Golduck 42, Beedrill 30, Marowak 30, Omanyte 31. Dann **derselbe Hänger** auf Karte 3, Knoten `n8_0` („action keeps failing: no effect after clicking #btn-auto-battle[0]“). Der Live-Test wertet das jetzt korrekt als **Fehlschlag** (R-082). Behoben wird der Hänger in P3.
 - Playwright leert `test-results/` bei jedem Start. Live-Läufe deshalb mit `PKBOT_OUT=artifacts/live` starten und nie parallel zu anderen Playwright-Läufen.
 - ~~`playwright.config.ts` nutzt für `userscript-webkit-iphone` das unveränderte iPhone 13 (390×664, entspricht `iphone-safari`). Es fehlt `iphone` mit 390×844 (UI.md §1). Wird in P2/P5 korrigiert.~~ Behoben in P2 Task 5: Projekte `userscript-desktop`, `userscript-iphone` (390×844), `userscript-iphone-safari`, `userscript-iphone-se`.

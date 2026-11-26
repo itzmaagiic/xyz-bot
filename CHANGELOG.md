@@ -4,6 +4,18 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Behoben (Phase 3, P3a)
+
+- **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8):
+  - Der Bot klickt nur noch bedienbare Knöpfe. Ein Knopf, der nach dem Klick gesperrt wird, gilt als Wirkung.
+  - Laufende Kämpfe werden am KP-Fortschritt erkannt und abgewartet.
+  - Live: 10 min ohne Hänger, bis zu 7 Orden (R-087, R-010).
+- Die Wirkungsprüfung reagiert per MutationObserver auf Änderungen statt im festen Takt (R-094).
+
+### Hinzugefügt (Phase 3, P3a)
+
+- Watchdog mit Einstellung „Watchdog (s)“ (Standard 60): Er liest nach X s Stillstand neu ein und pausiert danach mit „stalled“ (R-095).
+
 ### Hinzugefügt
 
 - `@updateURL`/`@downloadURL` im Userscript zeigen auf GitHub raw (`main/dist/…`). Sie funktionieren, sobald `dist/` zum Release eingecheckt ist (R-105, R-203).
