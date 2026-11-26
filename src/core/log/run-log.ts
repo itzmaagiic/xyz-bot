@@ -364,6 +364,12 @@ function structuredCopy(o: Record<string, ScreenTime>): Record<string, ScreenTim
   return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { ...v }]));
 }
 
+/** File name of an export: `pkbot-runs-YYYYMMDD-HHMMSS.json` (UTC). */
+export function exportFileName(t: number): string {
+  const d = iso(t);
+  return `pkbot-runs-${d.slice(0, 10).replace(/-/g, '')}-${d.slice(11, 19).replace(/:/g, '')}.json`;
+}
+
 /** `YYYYMMDD-HHMMSS-xxxx` (UTC, 4 base-36 characters). */
 function runId(t: number, rand: number): string {
   const d = iso(t);

@@ -7,6 +7,8 @@ import type { Platform } from '../platform/types';
 import { PAGE_SHORTCUTS } from '../platform/types';
 import { buildSettingsForm } from './settings-form';
 import { toast } from './toast';
+import { downloadText } from './download';
+import { exportFileName } from '../core/log/run-log';
 import { noteRejection } from '../core/log/note';
 
 const CSS = `
@@ -134,7 +136,9 @@ export class Overlay {
           .copyText(this.bot.log.toText())
           .then((ok) => toast(ok ? 'Log kopiert' : 'Kopieren nicht möglich', 2500, this.doc)),
       );
-    ctr.append(start, step, copy);
+    const exp = this.h('button', { id: 'pk-export-runs' }, 'Runs exportieren');
+    exp.onclick = () => noteRejection('overlay:export-runs', this.exportRuns());
+    ctr.append(start, step, copy, exp);
     body.appendChild(ctr);
 
     if (v.pauseReason && v.status !== 'running')
@@ -184,6 +188,17 @@ export class Overlay {
       ),
     );
     if (focusedId) (this.root.getElementById(focusedId) as HTMLElement | null)?.focus();
+  }
+
+  /** R-006: run logs as a file (D-005 export); where downloads are blocked, copy the JSON instead */
+  private async exportRuns(): Promise<void> {
+    const text = JSON.stringify(this.bot.runs.exportBundle());
+    if (downloadText(this.doc, exportFileName(Date.now()), text)) {
+      toast('Runs exportiert', 2500, this.doc);
+      return;
+    }
+    const ok = await this.platform.copyText(text);
+    toast(ok ? 'Runs kopiert' : 'Export nicht möglich', 2500, this.doc);
   }
 
   private speedBox(keys: WritableSetting[]): HTMLElement {

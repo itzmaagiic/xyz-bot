@@ -1,4 +1,5 @@
 import { chromium, expect, test, type BrowserContext } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { serveFixture } from './game-stub';
 
@@ -39,6 +40,20 @@ test.describe('Chrome extension (MV3, unpacked)', () => {
       .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
       .toEqual(['btn-history-run']);
     await expect(page.locator('#pk-screen')).toHaveText('trainer', { timeout: 5000 });
+  });
+
+  test('Runs exportieren downloads a pkbot-runs/1 file from the content script (R-006)', async () => {
+    await serveFixture(ctx, 'title');
+    const page = await ctx.newPage();
+    await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
+    await page.locator('#pk-step').click();
+    await expect(page.locator('#pk-screen')).toHaveText('trainer', { timeout: 5000 });
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('#pk-export-runs').click()]);
+    const json = JSON.parse(readFileSync(await dl.path(), 'utf8'));
+    expect(json).toMatchObject({ format: 'pkbot-runs/1' });
+    expect(json.runs[0].decisions[0]).toMatchObject({ chosen: 'click #btn-history-run[0]', outcome: 'ok' });
+    expect(json.bot_version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
   test('map: route planner clicks the SVG node (catch beats battle with room in team)', async () => {

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { serveFixture } from './game-stub';
 import { injectUserscript } from './userscript-host';
 
@@ -45,6 +46,42 @@ test.describe('Userscript (GM shim)', () => {
       .toBe(1);
     await page.locator('#pk-copy').click();
     await expect(page.locator('#pkbot-toasts')).toContainText('Log kopiert');
+  });
+
+  test('Runs exportieren: a pkbot-runs/1 file with the recorded decision (R-006)', async ({
+    page,
+    browserName,
+    isMobile,
+  }) => {
+    await serveFixture(page, 'title');
+    await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
+    await injectUserscript(page, browserName);
+    await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
+    await page.locator('#pk-step').click();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
+      .toEqual(['btn-history-run']);
+    if (isMobile) {
+      await page.locator('#pk-export-runs').click(); // iOS: download sheet or the copy fallback
+    } else {
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('#pk-export-runs').click()]);
+      expect(dl.suggestedFilename()).toMatch(/^pkbot-runs-\d{8}-\d{6}\.json$/);
+      const json = JSON.parse(readFileSync(await dl.path(), 'utf8'));
+      expect(json.format).toBe('pkbot-runs/1');
+      expect(json.runs).toHaveLength(1);
+      expect(json.runs[0].decisions[0].chosen).toBe('click #btn-history-run[0]');
+    }
+    await expect(page.locator('#pkbot-toasts')).toContainText(/Runs (exportiert|kopiert)/);
+  });
+
+  test('a pause shows its kind on #pk-pause[data-kind] (R-254)', async ({ page, browserName }) => {
+    await serveFixture(page, 'settings-modal');
+    await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
+    await injectUserscript(page, browserName);
+    await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
+    await page.locator('#pk-step').click(); // unknown dialog: first read only notes it
+    await page.locator('#pk-step').click(); // second read confirms → pause
+    await expect(page.locator('#pk-pause')).toHaveAttribute('data-kind', 'unsupported');
   });
 
   test('keyboard shortcut Alt+Shift+O toggles the overlay', async ({ page, browserName, isMobile }) => {
