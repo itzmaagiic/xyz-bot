@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clickPrecheck, waitForEffect } from '../../src/core/actions/effect';
+import { clearNotedErrors, recentErrors } from '../../src/core/log/note';
 import { loadFixture } from './helpers';
 
 // P3a (R-087, R-094): click only usable targets; an effect is a disabled/removed target or a new signature
@@ -57,5 +58,18 @@ describe('waitForEffect (MutationObserver)', () => {
     setTimeout(() => btn.setAttribute('disabled', ''), 10);
     await waitForEffect(doc, btn, 'a', sigOf, 1000);
     expect(spy.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('a check that throws during the wait settles with false and is noted – never a promise that hangs forever', async () => {
+    clearNotedErrors();
+    const { doc, btn } = setup();
+    let calls = 0;
+    const sigOf = () => {
+      if (++calls > 1) throw new Error('detector broke');
+      return 'a';
+    };
+    setTimeout(() => btn.setAttribute('data-x', '1'), 20); // a mutation → the observer re-checks → throws
+    await expect(waitForEffect(doc, btn, 'a', sigOf, 300)).resolves.toBe(false);
+    expect(recentErrors().some((e) => e.where === 'effect:check' && /detector broke/.test(e.msg))).toBe(true);
   });
 });

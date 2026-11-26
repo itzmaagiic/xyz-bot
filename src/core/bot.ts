@@ -397,11 +397,15 @@ export class BotController {
     if (this.view.status === 'running') {
       const sec = this.view.settings.watchdogSec;
       const wd = this.watchdog.observe(st.screen.signature, sec * 1000);
-      if (wd === 'reread') {
+      if (wd === 'resumed') {
+        this.log.info(`watchdog: resumed after ${Math.round(this.watchdog.gapMs / 1000)} s – timer restarted`);
+      } else if (wd === 'reread') {
         this.log.warn(`watchdog: no change for ${sec} s on ${st.screen.kind} – re-reading the game state`);
         st = await this.refresh();
+        this.watchdog.observe(st.screen.signature, sec * 1000); // a changed state clears the alarm at once
       } else if (wd === 'stall') {
-        const why = errorPause('stalled', `no change for ${Math.round(sec * 1.5)} s on ${st.screen.kind}`);
+        const idle = Math.round(this.watchdog.idleMs() / 1000);
+        const why = errorPause('stalled', `no change for ${idle} s on ${st.screen.kind}`);
         this.pause(why, true);
         return { kind: 'pause', why };
       }

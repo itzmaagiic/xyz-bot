@@ -37,12 +37,44 @@ describe('Watchdog (R-095)', () => {
     const c = clock();
     const w = new Watchdog(c.now);
     w.observe('a', 60_000);
-    c.advance(61_000);
+    c.advance(59_000);
+    w.observe('a', 60_000);
+    c.advance(2_000);
     expect(w.observe('a', 60_000)).toBe('reread');
     c.advance(1_000);
     expect(w.observe('b', 60_000)).toBe('ok');
-    c.advance(61_000);
+    c.advance(59_000);
+    w.observe('b', 60_000);
+    c.advance(2_000); // ticks come every few seconds; one jump ≥ limit would be a 'resumed' gap
     expect(w.observe('b', 60_000)).toBe('reread');
+  });
+
+  it('a gap of at least the limit between two observations (device asleep) restarts the timer, no stall', () => {
+    const c = clock();
+    const w = new Watchdog(c.now);
+    expect(w.observe('a', 60_000)).toBe('ok');
+    c.advance(5 * 60_000); // iPhone auto-lock in the middle of a fight: JS frozen, Date.now keeps running
+    expect(w.observe('a', 60_000)).toBe('resumed');
+    expect(w.gapMs).toBe(5 * 60_000);
+    c.advance(59_000);
+    expect(w.observe('a', 60_000)).toBe('ok');
+    c.advance(2_000);
+    expect(w.observe('a', 60_000)).toBe('reread');
+  });
+
+  it('never reports a stall without a re-read first; the stall comes limit/2 after the re-read', () => {
+    const c = clock();
+    const w = new Watchdog(c.now);
+    w.observe('a', 60_000);
+    c.advance(59_000);
+    expect(w.observe('a', 60_000)).toBe('ok');
+    c.advance(59_000); // idle 118 s > 1.5 × limit, but no re-read yet
+    expect(w.observe('a', 60_000)).toBe('reread');
+    c.advance(29_000);
+    expect(w.observe('a', 60_000)).toBe('ok');
+    c.advance(1_000);
+    expect(w.observe('a', 60_000)).toBe('stall');
+    expect(w.idleMs()).toBe(148_000); // the real duration, for the pause message
   });
 
   it('reset (start/pause) prevents an immediate stall after a long pause', () => {

@@ -42,6 +42,73 @@ describe('bot watchdog wiring (R-095)', () => {
     vi.setSystemTime(31_000); // > 30 s (1.5 × 20): pause "stalled"
     await bot.tick();
     expect(bot.view.status).toBe('paused');
-    expect(bot.view.pauseReason).toMatch(/^stalled: no change for 30 s on battle/);
+    expect(bot.view.pauseReason).toMatch(/^stalled: no change for 31 s on battle/); // the real idle time
+  });
+
+  it('iPhone auto-lock in the middle of a fight: after 5 min the bot resumes instead of an error pause', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(0);
+    const doc = loadFixture('battle-gym');
+    doc.getElementById('btn-auto-battle')!.setAttribute('disabled', '');
+    const bot = new BotController(platform, null, doc);
+    bot.view.settings = { ...DEFAULT_SETTINGS, watchdogSec: 60, reorderTeam: false };
+    bot.view.status = 'running';
+    await bot.tick();
+    vi.setSystemTime(300_000);
+    await bot.tick();
+    expect(bot.view.status).toBe('running');
+    expect(bot.log.toText()).toMatch(/watchdog: resumed after 300 s/);
+  });
+
+  it('a visible but disabled click target is never clicked and never counted as a failure (D-037)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(0);
+    const doc = loadFixture('title');
+    const btn = doc.querySelector<HTMLButtonElement>('#btn-history-run')!;
+    btn.disabled = true; // the engine decides to click it, the bot must not
+    const bot = new BotController(platform, null, doc);
+    bot.view.settings = { ...DEFAULT_SETTINGS, watchdogSec: 20 };
+    bot.view.status = 'running';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const internals = bot as any;
+    const click = vi.spyOn(internals.actor, 'click');
+    for (let t = 0; t <= 19_000; t += 1_000) {
+      vi.setSystemTime(t);
+      await bot.tick();
+    }
+    expect(click).not.toHaveBeenCalled();
+    expect(internals.failCount).toBe(0);
+    expect(bot.view.status).toBe('running');
+    for (let t = 20_000; t <= 31_000; t += 1_000) {
+      vi.setSystemTime(t);
+      await bot.tick();
+    }
+    expect(click).not.toHaveBeenCalled();
+    expect(bot.view.pauseReason).toMatch(/^stalled:/); // caught by the watchdog, not by "action keeps failing"
+  });
+
+  it('start() after a pause restarts the watchdog: no stall shortly after resuming', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(0);
+    const doc = loadFixture('battle-gym');
+    doc.getElementById('btn-auto-battle')!.setAttribute('disabled', '');
+    const bot = new BotController(platform, null, doc);
+    bot.view.settings = { ...DEFAULT_SETTINGS, watchdogSec: 60, reorderTeam: false };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (bot as any).loopRunning = true; // drive the ticks by hand: start() must not spawn the real loop
+    bot.start();
+    await bot.tick();
+    vi.setSystemTime(50_000);
+    await bot.tick();
+    bot.pause('paused by user');
+    vi.setSystemTime(80_000);
+    bot.start();
+    vi.setSystemTime(81_000);
+    await bot.tick();
+    vi.setSystemTime(111_000);
+    await bot.tick();
+    vi.setSystemTime(141_000); // 61 s after start(): at most a re-read; measured from the pause it would be a stall
+    await bot.tick();
+    expect(bot.view.status).toBe('running');
   });
 });

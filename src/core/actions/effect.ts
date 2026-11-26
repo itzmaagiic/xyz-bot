@@ -4,6 +4,7 @@
  * - An effect is: the target is detached, hidden or no longer usable, or the screen signature changed.
  * - Waiting is event-driven (MutationObserver on the document) instead of fixed polling.
  */
+import { noteError } from '../log/note';
 import { isActionable, isShown } from '../screens/detector';
 
 export type Precheck = 'ok' | 'missing' | 'not-actionable';
@@ -32,10 +33,20 @@ export function waitForEffect(
       observer.disconnect();
       resolve(v);
     };
+    // a check that throws must settle the wait (false = no effect seen) instead of leaving it pending forever
+    const check = (): boolean | null => {
+      try {
+        return effect();
+      } catch (e) {
+        noteError('effect:check', e);
+        return null;
+      }
+    };
     const observer = new MO(() => {
-      if (effect()) finish(true);
+      const r = check();
+      if (r !== false) finish(r === true);
     });
     observer.observe(doc.documentElement, { attributes: true, childList: true, characterData: true, subtree: true });
-    const timer = setTimeout(() => finish(effect()), timeoutMs);
+    const timer = setTimeout(() => finish(check() === true), timeoutMs);
   });
 }
