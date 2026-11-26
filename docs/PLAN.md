@@ -32,7 +32,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 - [x] Jede Angabe aus HA §1 ist als bestätigt, teilweise oder offen markiert (§10.1). Die Wiki-Quellen und pokelike-guide.fr sind ausgewertet (§11).
 - [x] Die offenen Fragen stehen gebündelt in GAME_RECON §13 und sind P3 und P4 zugeordnet (D-029).
 
-## Phase 2 – Projektgerüst und Build-Pipeline
+## Phase 2 – Projektgerüst und Build-Pipeline ✅ (Session 1, 2026-11-26)
 **Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Der übernommene Stand (D-016) baut beide Ziele bereits. Hier werden Gerüst und Pipeline mit Nachweis abgenommen und die Lücken geschlossen, z. B. ~~WebKit im SessionStart-Hook~~ → WebKit über das Setup-Skript der Umgebung (D-026), Doku-Checks und iPhone-Viewport in `playwright.config.ts`.
 **R-IDs:** R-032 bis R-034, R-078 bis R-082, R-098 bis R-100, R-102 bis R-105, R-107, R-192, R-193, R-199, R-201, R-208, R-232, R-246, R-247, R-260
 **Abnahmekriterien**

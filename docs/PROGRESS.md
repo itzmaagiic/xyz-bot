@@ -1,21 +1,19 @@
 # Fortschritt
 
 **Stand:** 2026-11-26
-**Aktuelle Phase:** P2
-_(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
+**Aktuelle Phase:** P3
+_(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Review-Tor P2, Runde 7 (nur B7):**
-  - Runde 6 bestätigte 23 von 25 P2-Zeilen. Der einzige Blocker war B7: Subtyp-Reduktion bei Ternär, `??` und `||`.
-  - B7 ist behoben, die Zweige werden einzeln typisiert, die Mutationsprobe ist rot. V1 (`.js`-Endung) und V2 (unabhängig vom Arbeitsverzeichnis) sind mit erledigt.
-  - V3 (typescript-eslint-Lücke bei `addEventListener`) und V4 (`bridge-main.ts` neutral ablegen) sind Vorbefunde für P3 (D-036).
+- Nichts. Phase 3 beginnt mit einem Superpowers-Plan (brainstorming → writing-plans).
 
 ## Nächster Schritt
-1. **Abschluss Phase 2:**
-   - Gesamt-Review erledigt: 0 Critical, 3 Important und 3 hochgestufte Minor-Funde behoben (`5132ac5`), die übrigen Minor-Funde sind im Review-Tor behoben (siehe „Vorbefunde aus Gesamt-Review und Review-Tor P2“).
-   - **Läuft:** das Review-Tor nach CLAUDE.md Regel 5 mit requirements-, ui- und strategy-reviewer parallel.
-   - Danach: ihre Funde beheben, das Ergebnis hier eintragen, `**Aktuelle Phase:**` auf P3 schalten.
-2. **Phase 3 beginnt mit** dem **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8, Live-Lauf 3 bestätigt ihn erneut) und der Aufklärung der Restbildschirme (D-029). Außerdem stehen R-015/R-016 an, zu bestätigen in der ersten frisch gebauten Session (D-034).
+1. **Phase 3 (Kern und Baseline-Run):** Superpowers-Plan anlegen. Schwerpunkte, in dieser Reihenfolge:
+   - **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8): gesperrtes SKIP nicht klicken, sondern warten, Kampffortschritt in der Signatur (R-087, R-094, R-190). Alle drei Live-Läufe scheiterten daran.
+   - Aufklärung der Restbildschirme (D-029, R-224), Run-Logs nach D-005 unter `runs/` (R-006, R-009), belastbares Live-Urteil (R-254).
+   - Laufzeit-Handler für `unhandledrejection`/`error` (R-200, deckt die Lint-Lücken aus D-036), MAIN-Welt-Fehler ins Bot-Log (R-253), Speicherfehler sichtbar (R-259).
+   - In der ersten **frisch gebauten** Session R-015 und R-016 bestätigen (D-034).
+2. Vorbefunde der Reviewer für P3 bis P5 stehen unten und in `docs/superpowers/audits/2026-11-26-p2-gate-ui-strategy.md`.
 
 ## Entscheidungen (Nutzer hat delegiert, D-023)
 - **Pokédollar:** Die strenge Regel bleibt, Ausgaben nur mit Freigabe, Budget-Standard 0. **Erledigt.**
@@ -81,6 +79,10 @@ _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kom
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-26 · Session 1: **Phase 2 abgeschlossen, Review-Tor bestanden.**
+  - requirements-reviewer: bestanden in Runde 7, nach 6 Runden mit Funden; ui- und strategy-reviewer: nicht anwendbar, ihre Vorbefunde siehe oben.
+  - Ergebnis: verlässliche Build-Pipeline mit automatischen Checks für Userscript-API, Metadaten, ES2020/Safari 15, Artefakte, Import-Grenzen und stille Fehler (inkl. typbewusster Regeln, Bedrohungsmodell D-036), außerdem `check:docs` und Hook mit Branch-Warnung und vollständiger Kurzform.
+  - Stand: `vitest` 308/308, E2E 35 bestanden und 3 übersprungen. Aktuelle Phase ist jetzt **P3**.
 - 2026-11-26 · Session 1, P2:
   - **Tasks 1–9** nach `docs/superpowers/plans/2026-11-25-phase2-geruest-build.md`, mit Gesamt-Review (frischer Reviewer: 0 Critical, 6 Important behoben).
   - Ergebnis: `noteError` und ESLint-Regel gegen stille Fehler, Import-Grenzen, Userscript nur mit der GM-Schnittmenge und Fallback `pkbot.*`, `@grant` aus der Nutzung, Update-URLs, lesbare ES2020-Bridge, Bundle-Check (Syntax, Safari 15), `check:userscript`, `check:docs`, Branch-Warnung im Hook, E2E auf allen Viewports aus UI.md, Live-Urteil mit Stillstandserkennung, USERSCRIPT_API.md, CHANGELOG.

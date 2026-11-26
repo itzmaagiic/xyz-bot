@@ -254,3 +254,7 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - `local/no-adapter-import` bestimmt das Repo-Root aus dem eigenen Dateiort statt aus `cwd`. Damit wirkt die Regel gleich, egal ob vom Root, aus `src/` oder in einer IDE. Endungen wie `clipboard.js` sind eingeschlossen.
   - **Bekannte Lücke (P3, R-200):** Dieselbe Subtyp-Reduktion trifft `@typescript-eslint/no-misused-promises` bei `addEventListener('click', cond ? sync : async)`. Das ist eine Lücke in typescript-eslint selbst. Abgedeckt wird sie vom Laufzeit-Handler aus R-200.
   - **Vorbefund P3:** Der gemeinsame MAIN-Welt-Einstieg `bridge-main.ts` liegt in `platform/chrome/`, wird aber auch ins Userscript gebündelt. Er gehört an einen neutralen Ort. Dazu kommt eine Lint-Grenze zwischen den Adaptern (`chrome` ↔ `userscript`).
+- **Abschluss (Runde 7, 2026-11-26):** Review-Tor P2 bestanden. Als bekannte Lücken bleiben, abgedeckt durch den Laufzeit-Handler aus R-200 (P3):
+  - **Subtyp-Reduktion abseits der direkten Zuweisung:** `const h = on ? s : work; b.onclick = h`, `(…)!`, `(…) satisfies`, Array-Index, IIFE.
+  - **Nackte globale Zuweisung** `onmessage = async …`, ohne Member links.
+  - **Theoretischer Fehlalarm** bei `b.onclick = work && s` bzw. `s || work`. Er schlägt in die sichere Richtung aus.
