@@ -1,0 +1,137 @@
+{
+  "run_id": "20261126-204040-fhgb",
+  "started": "2026-11-26T20:40:40.455Z",
+  "ended": "2026-11-26T20:43:28.786Z",
+  "durationMs": 168331,
+  "result": "loss",
+  "progress": {
+    "badges": 4,
+    "map": 4,
+    "eliteIndex": 0,
+    "maxLevel": 44,
+    "teamSize": 5
+  },
+  "game_version": "3.8",
+  "mode": {
+    "setting": "story",
+    "region": 1,
+    "variant": "classic",
+    "run": "story",
+    "gen": 1
+  },
+  "profile": {
+    "chalKind": "arena",
+    "chalLevel": null,
+    "trainer": "boy",
+    "preferredStarter": null,
+    "chalStarter": null,
+    "resumeRuns": true,
+    "actionDelayMs": 300,
+    "watchdogSec": 60,
+    "takeShiny": true,
+    "reorderTeam": true,
+    "flags": {
+      "jointOrder": false,
+      "trade": false,
+      "top3": false,
+      "multiplicative": false,
+      "nextMapRoute": true
+    }
+  },
+  "cause": {
+    "kind": "loss",
+    "node": "boss",
+    "map": 4,
+    "boss": "Koga",
+    "team": [
+      {
+        "name": "Ivysaur",
+        "level": 28,
+        "hp": "0/71"
+      },
+      {
+        "name": "Hypno",
+        "level": 38,
+        "hp": "0/112"
+      },
+      {
+        "name": "Flareon",
+        "level": 44,
+        "hp": "0/111"
+      },
+      {
+        "name": "Primeape",
+        "level": 44,
+        "hp": "0/111"
+      },
+      {
+        "name": "Mr-mime",
+        "level": 34,
+        "hp": "0/71"
+      }
+    ]
+  },
+  "counts": {
+    "decisions": 104,
+    "clicks": 99,
+    "noEffect": 0,
+    "watchdogRereads": 0,
+    "pauses": 0
+  },
+  "screenTimes": {
+    "title": {
+      "n": 1,
+      "totalMs": 411,
+      "maxMs": 411
+    },
+    "region-select": {
+      "n": 1,
+      "totalMs": 539,
+      "maxMs": 539
+    },
+    "trainer": {
+      "n": 1,
+      "totalMs": 402,
+      "maxMs": 402
+    },
+    "starter": {
+      "n": 1,
+      "totalMs": 532,
+      "maxMs": 532
+    },
+    "map": {
+      "n": 35,
+      "totalMs": 50145,
+      "maxMs": 3367
+    },
+    "catch": {
+      "n": 4,
+      "totalMs": 1943,
+      "maxMs": 552
+    },
+    "battle": {
+      "n": 27,
+      "totalMs": 105639,
+      "maxMs": 10910
+    },
+    "elite-prep": {
+      "n": 5,
+      "totalMs": 4435,
+      "maxMs": 2737
+    },
+    "badge": {
+      "n": 4,
+      "totalMs": 1617,
+      "maxMs": 488
+    },
+    "item": {
+      "n": 4,
+      "totalMs": 2671,
+      "maxMs": 964
+    }
+  },
+  "pauses": [],
+  "errors": [],
+  "optionCoverage": 0.47572815533980584,
+  "dropped": 0
+}

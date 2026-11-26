@@ -5,26 +5,19 @@
 _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **P3a „Kämpfe ohne Hänger“: umgesetzt und live belegt.**
-  - Ergebnis: Der Bot klickt nur noch bedienbare Ziele, die Kampfsignatur enthält den KP-Fortschritt, dazu kommt ein Watchdog.
-  - Live-Lauf vom 2026-11-26: 10 min ohne Hänger, bis zu 7 Orden, 6 Runs.
-  - Gesamt-Review (frischer Reviewer): Urteil „mit Korrekturen“, keine kritischen Funde, alle wichtigen Funde behoben:
-    - Der Watchdog startet nach Zeitlücken neu und meldet `stalled` nur nach einem Neueinlesen.
-    - Zwei Prüfschwerpunkte sind jetzt getestet und mit Mutationsproben belegt.
-    - Die Wirkungsprüfung hängt nicht mehr, wenn eine Prüfung wirft.
-  - 345 Unit-Tests grün. Die kleineren Funde stehen unten unter „Vorbefunde aus dem Gesamt-Review P3a“.
-- **P3b „Run-Logs, Live-Urteil, MAIN-Welt-Fehler“: Spec und Plan fertig (D-038).**
-  - Spec: `docs/superpowers/specs/2026-11-26-p3b-run-logs-design.md`.
-  - Plan: `docs/superpowers/plans/2026-11-26-p3b-run-logs.md` mit 8 Tasks, Ausführung inline mit TDD in der Reihenfolge T1, T3, T2, T4 bis T8.
+- Gerade läuft kein Inkrement. **P3a** (Kämpfe ohne Hänger, D-037) und **P3b** (Run-Logs, Live-Urteil, MAIN-Welt-Fehler, D-038) sind abgeschlossen, live belegt und haben ihren Gesamt-Review bestanden (siehe „Erledigt“). 411 Unit-Tests grün, 44 E2E-Tests bestanden, 3 gewollt übersprungen.
 
 ## Nächster Schritt
-1. **Phase 3 (Kern und Baseline-Run):** Weitere Inkremente, in dieser Reihenfolge:
-   - ~~Hänger bei langen Bosskämpfen~~ → erledigt in P3a (D-037).
-   - **P3b:** Run-Logs nach D-005 unter `runs/` mit Zusammenfassung (R-006, R-007, R-009), belastbares Live-Urteil (R-254), MAIN-Welt-Fehler ins Log (R-253).
-   - Aufklärung der Restbildschirme (D-029, R-224), Run-Logs nach D-005 unter `runs/` (R-006, R-009), belastbares Live-Urteil (R-254).
-   - Laufzeit-Handler für `unhandledrejection`/`error` (R-200, deckt die Lint-Lücken aus D-036), MAIN-Welt-Fehler ins Bot-Log (R-253), Speicherfehler sichtbar (R-259).
+1. **Phase 3 (Kern und Baseline-Run), weitere Inkremente in dieser Reihenfolge:**
+   - ~~Hänger bei langen Bosskämpfen (P3a)~~ und ~~Run-Logs, Live-Urteil, MAIN-Welt-Fehler (P3b)~~ sind erledigt (D-037, D-038).
+   - **P3c:**
+     - Laufzeit-Handler für `unhandledrejection`/`error` (R-200, deckt die Lint-Lücken aus D-036).
+     - Speicherfehler sichtbar machen (R-259).
+     - Run-Logs sollen ein Neuladen überstehen (R-109).
+     - Pause und Stopp greifen sofort (R-011).
+   - Aufklärung der Restbildschirme (D-029, R-224).
    - In der ersten **frisch gebauten** Session R-015 und R-016 bestätigen (D-034).
-2. Vorbefunde der Reviewer für P3 bis P5 stehen unten und in `docs/superpowers/audits/2026-11-26-p2-gate-ui-strategy.md`.
+2. Die Vorbefunde der Reviewer für P3 bis P5 stehen unten und in `docs/superpowers/audits/2026-11-26-p2-gate-ui-strategy.md`.
 
 ## Entscheidungen (Nutzer hat delegiert, D-023)
 - **Pokédollar:** Die strenge Regel bleibt, Ausgaben nur mit Freigabe, Budget-Standard 0. **Erledigt.**
@@ -67,6 +60,21 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 12. Die Einstellungen sind standardmäßig aufgeklappt und belegen ≈48 % des Panels.
 13. Sprachen gemischt (Deutsch und Englisch), interne Optionsnamen im Hinweis. Der Live-Viewport ist 1280 statt 1440 breit.
 
+## Vorbefunde aus dem Gesamt-Review P3b (2026-11-26, zurückgestellt)
+1. **Neustart der Bridge:** Er wird nur an einem kleineren Zähler erkannt. Eine Seiten-Nonce im Snapshot wäre wasserdicht. In der Praxis laden Bot und Bridge immer gemeinsam neu.
+2. **Team-Signatur im Live-Test:** Sie hängt von der Reihenfolge ab, also zählt ein Tausch als Fortschritt. Fix: sortieren.
+3. **Verweildauer bei offenen oder abgebrochenen Runs:** `screenTimes` fehlt die laufende Verweildauer des aktuellen Bildschirms, damit auch die des Stillstands selbst.
+4. **`item:skip` als Option:** Es wird gewählt, steht aber nicht unter den Item-Optionen.
+5. **Neuladen auf dem Game-Over-Bildschirm:** Das erzeugt einen einzeiligen Schein-Run mit Niederlage. Der doppelte `stats.runs`-Zähler bestand schon vorher. Das verzerrt A/B-Zählungen.
+6. **`waitForEffect`:** Die Prüfung endet beim ersten Fehler im Observer. Fix: kurzzeitige Fehler ignorieren, nur am Timeout als `false` werten.
+7. **Zeitlimit des Live-Tests:** Es berücksichtigt `LIVE_STALL_MIN` nicht (`playwright.config.ts`).
+8. **Speicher und Exportgröße:**
+   - Das Profil wird für jede Zeile neu angelegt.
+   - Im ungünstigsten Fall wird der Export etwa 40 MB groß (10 × 3000 Zeilen). Auf dem iPhone beobachten.
+9. **Kleinkram:**
+   - `RunError.t` ist in Epoch-ms, sonst wird ISO verwendet.
+   - `exportFileName` verwendet UTC.
+
 ## Vorbefunde aus dem Gesamt-Review P3a (2026-11-26, zurückgestellt)
 Die kleinen Funde mit Fix-Idee kommen in ein späteres P3-Inkrement bzw. nach P5:
 1. **Der KP-Hash schwächt die Wirkungsprüfung im Kampf.** Bleibt SKIP nach einem Klick bedienbar, klickt der Bot ihn alle 1 bis 3 s erneut, statt einen Fehlschlag zu melden. Fix: `ScreenInfo` aufteilen in `signature` (Wirkung, `failKey`) und `progress` (KP, nur für den Watchdog). Dazu einen Replay-Test mit `watchdogSec=15` und einem Kampf von 33,4 s.
@@ -106,6 +114,35 @@ Die kleinen Funde mit Fix-Idee kommen in ein späteres P3-Inkrement bzw. nach P5
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-26 · Session 1, P3a und P3b:
+  - **P3a „Kämpfe ohne Hänger“: umgesetzt und live belegt.**
+    - Ergebnis: Der Bot klickt nur noch bedienbare Ziele, die Kampfsignatur enthält den KP-Fortschritt, dazu kommt ein Watchdog.
+    - Live-Lauf vom 2026-11-26: 10 min ohne Hänger, bis zu 7 Orden, 6 Runs.
+    - Gesamt-Review (frischer Reviewer): Urteil „mit Korrekturen“, keine kritischen Funde, alle wichtigen Funde behoben:
+      - Der Watchdog startet nach Zeitlücken neu und meldet `stalled` nur nach einem Neueinlesen.
+      - Zwei Prüfschwerpunkte sind jetzt getestet und mit Mutationsproben belegt.
+      - Die Wirkungsprüfung hängt nicht mehr, wenn eine Prüfung wirft.
+    - 345 Unit-Tests grün. Die kleineren Funde stehen unten unter „Vorbefunde aus dem Gesamt-Review P3a“.
+  - **P3b „Run-Logs, Live-Urteil, MAIN-Welt-Fehler“: umgesetzt, live belegt, Gesamt-Review bestanden (D-038).**
+    - Gesamt-Review: Urteil „mit Korrekturen“, 0 kritische und 4 wichtige Funde, alle behoben. Dazu 2 hochgestufte kleine Funde und einer nebenbei:
+      - Bossname nur für dieselbe Karte bzw. Top-4-Stufe.
+      - Wiederholte Fehler zählen je Run.
+      - Pausenzeit ist keine Verweildauer.
+      - Zeitstempel vorgemerkter Fehler.
+      - Abbruchgrund bei einer Pause am Ende.
+      - Ein Recorder-Fehler hält den Bot nie an.
+    - Kleinere Funde siehe „Vorbefunde aus dem Gesamt-Review P3b“.
+    - Spec `docs/superpowers/specs/2026-11-26-p3b-run-logs-design.md`, Plan `docs/superpowers/plans/2026-11-26-p3b-run-logs.md`, 8 Tasks inline mit TDD.
+    - **Run-Logs nach D-005:**
+      - Jede Entscheidung mit Zustand, Optionen und Scores (Karte, Fang, Item, Starter), Wahl, Begründung, Konfidenz und Ergebnis.
+      - Zusammenfassung je Run mit Ergebnis, Fortschritt, Todesursache, Kampfdauern und Fehlern.
+      - Export über das Overlay. Übernahme mit `npm run runs:import` nach dem Geheimnis-Scan.
+    - **Pausen mit Art, MAIN-Welt-Fehler im Log, Live-Urteil mit Budgets je Bildschirm und Nachlauf.**
+    - **Live 2026-11-26:**
+      - Lauf 1: Urteil leer, 197 Fortschrittsereignisse, 6 Runs bis 5 Orden. Dabei gefunden: `boss: null`, behoben.
+      - Lauf 2: Urteil leer, 207 Fortschrittsereignisse, 5 Runs bis 6 Orden.
+      - Die 5 Runs aus Lauf 2 liegen unter `runs/`.
+    - 411 Unit-Tests, 44 E2E-Tests bestanden, 3 gewollt übersprungen.
 - 2026-11-26 · Session 1: **Phase 2 abgeschlossen, Review-Tor bestanden.**
   - requirements-reviewer: bestanden in Runde 7, nach 6 Runden mit Funden; ui- und strategy-reviewer: nicht anwendbar, ihre Vorbefunde siehe oben.
   - Ergebnis: verlässliche Build-Pipeline mit automatischen Checks für Userscript-API, Metadaten, ES2020/Safari 15, Artefakte, Import-Grenzen und stille Fehler (inkl. typbewusster Regeln, Bedrohungsmodell D-036), außerdem `check:docs` und Hook mit Branch-Warnung und vollständiger Kurzform.

@@ -1,0 +1,157 @@
+{
+  "run_id": "20261126-204559-goyw",
+  "started": "2026-11-26T20:45:59.411Z",
+  "ended": "2026-11-26T20:49:51.582Z",
+  "durationMs": 232171,
+  "result": "loss",
+  "progress": {
+    "badges": 6,
+    "map": 6,
+    "eliteIndex": 0,
+    "maxLevel": 46,
+    "teamSize": 6
+  },
+  "game_version": "3.8",
+  "mode": {
+    "setting": "story",
+    "region": 1,
+    "variant": "classic",
+    "run": "story",
+    "gen": 1
+  },
+  "profile": {
+    "chalKind": "arena",
+    "chalLevel": null,
+    "trainer": "boy",
+    "preferredStarter": null,
+    "chalStarter": null,
+    "resumeRuns": true,
+    "actionDelayMs": 300,
+    "watchdogSec": 60,
+    "takeShiny": true,
+    "reorderTeam": true,
+    "flags": {
+      "jointOrder": false,
+      "trade": false,
+      "top3": false,
+      "multiplicative": false,
+      "nextMapRoute": true
+    }
+  },
+  "cause": {
+    "kind": "loss",
+    "node": "trainer",
+    "map": 6,
+    "boss": null,
+    "team": [
+      {
+        "name": "Sandslash",
+        "level": 45,
+        "hp": "0/122"
+      },
+      {
+        "name": "Venusaur",
+        "level": 40,
+        "hp": "0/114"
+      },
+      {
+        "name": "Tentacruel",
+        "level": 43,
+        "hp": "0/121"
+      },
+      {
+        "name": "Tauros",
+        "level": 44,
+        "hp": "0/120"
+      },
+      {
+        "name": "Kangaskhan",
+        "level": 45,
+        "hp": "0/149"
+      },
+      {
+        "name": "Hypno",
+        "level": 46,
+        "hp": "0/134"
+      }
+    ]
+  },
+  "counts": {
+    "decisions": 131,
+    "clicks": 127,
+    "noEffect": 0,
+    "watchdogRereads": 0,
+    "pauses": 0
+  },
+  "screenTimes": {
+    "gameover": {
+      "n": 1,
+      "totalMs": 723,
+      "maxMs": 723
+    },
+    "title": {
+      "n": 1,
+      "totalMs": 524,
+      "maxMs": 524
+    },
+    "region-select": {
+      "n": 1,
+      "totalMs": 460,
+      "maxMs": 460
+    },
+    "starter": {
+      "n": 1,
+      "totalMs": 450,
+      "maxMs": 450
+    },
+    "map": {
+      "n": 45,
+      "totalMs": 53823,
+      "maxMs": 2359
+    },
+    "catch": {
+      "n": 12,
+      "totalMs": 5700,
+      "maxMs": 562
+    },
+    "battle": {
+      "n": 29,
+      "totalMs": 153687,
+      "maxMs": 15786
+    },
+    "elite-prep": {
+      "n": 6,
+      "totalMs": 9293,
+      "maxMs": 6640
+    },
+    "badge": {
+      "n": 6,
+      "totalMs": 2594,
+      "maxMs": 504
+    },
+    "swap": {
+      "n": 6,
+      "totalMs": 3085,
+      "maxMs": 625
+    },
+    "item": {
+      "n": 1,
+      "totalMs": 921,
+      "maxMs": 921
+    },
+    "trade": {
+      "n": 2,
+      "totalMs": 734,
+      "maxMs": 401
+    },
+    "shiny": {
+      "n": 1,
+      "totalMs": 404,
+      "maxMs": 404
+    }
+  },
+  "pauses": [],
+  "errors": [],
+  "optionCoverage": 0.5,
+  "dropped": 0
+}

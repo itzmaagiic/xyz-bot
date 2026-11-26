@@ -1,0 +1,147 @@
+{
+  "run_id": "20261126-204328-duwa",
+  "started": "2026-11-26T20:43:28.987Z",
+  "ended": "2026-11-26T20:45:13.382Z",
+  "durationMs": 104395,
+  "result": "loss",
+  "progress": {
+    "badges": 3,
+    "map": 3,
+    "eliteIndex": 0,
+    "maxLevel": 27,
+    "teamSize": 6
+  },
+  "game_version": "3.8",
+  "mode": {
+    "setting": "story",
+    "region": 1,
+    "variant": "classic",
+    "run": "story",
+    "gen": 1
+  },
+  "profile": {
+    "chalKind": "arena",
+    "chalLevel": null,
+    "trainer": "boy",
+    "preferredStarter": null,
+    "chalStarter": null,
+    "resumeRuns": true,
+    "actionDelayMs": 300,
+    "watchdogSec": 60,
+    "takeShiny": true,
+    "reorderTeam": true,
+    "flags": {
+      "jointOrder": false,
+      "trade": false,
+      "top3": false,
+      "multiplicative": false,
+      "nextMapRoute": true
+    }
+  },
+  "cause": {
+    "kind": "loss",
+    "node": "trainer",
+    "map": 3,
+    "boss": null,
+    "team": [
+      {
+        "name": "Ivysaur",
+        "level": 27,
+        "hp": "0/69"
+      },
+      {
+        "name": "Gloom",
+        "level": 26,
+        "hp": "0/67"
+      },
+      {
+        "name": "Hypno",
+        "level": 26,
+        "hp": "0/80"
+      },
+      {
+        "name": "Rhyhorn",
+        "level": 25,
+        "hp": "0/75"
+      },
+      {
+        "name": "Mankey",
+        "level": 25,
+        "hp": "0/55"
+      },
+      {
+        "name": "Nidorina",
+        "level": 25,
+        "hp": "0/70"
+      }
+    ]
+  },
+  "counts": {
+    "decisions": 79,
+    "clicks": 77,
+    "noEffect": 0,
+    "watchdogRereads": 0,
+    "pauses": 0
+  },
+  "screenTimes": {
+    "gameover": {
+      "n": 1,
+      "totalMs": 701,
+      "maxMs": 701
+    },
+    "title": {
+      "n": 1,
+      "totalMs": 492,
+      "maxMs": 492
+    },
+    "region-select": {
+      "n": 1,
+      "totalMs": 340,
+      "maxMs": 340
+    },
+    "starter": {
+      "n": 1,
+      "totalMs": 514,
+      "maxMs": 514
+    },
+    "map": {
+      "n": 27,
+      "totalMs": 30137,
+      "maxMs": 1861
+    },
+    "catch": {
+      "n": 7,
+      "totalMs": 3337,
+      "maxMs": 548
+    },
+    "battle": {
+      "n": 17,
+      "totalMs": 63116,
+      "maxMs": 9735
+    },
+    "elite-prep": {
+      "n": 3,
+      "totalMs": 1677,
+      "maxMs": 619
+    },
+    "badge": {
+      "n": 3,
+      "totalMs": 1386,
+      "maxMs": 534
+    },
+    "swap": {
+      "n": 2,
+      "totalMs": 768,
+      "maxMs": 451
+    },
+    "item": {
+      "n": 3,
+      "totalMs": 2128,
+      "maxMs": 925
+    }
+  },
+  "pauses": [],
+  "errors": [],
+  "optionCoverage": 0.5256410256410257,
+  "dropped": 0
+}

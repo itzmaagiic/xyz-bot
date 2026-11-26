@@ -1,0 +1,105 @@
+{
+  "run_id": "20261126-204951-8ifv",
+  "started": "2026-11-26T20:49:51.804Z",
+  "ended": null,
+  "durationMs": 54584,
+  "result": "open",
+  "progress": {
+    "badges": 2,
+    "map": 2,
+    "eliteIndex": 0,
+    "maxLevel": 18,
+    "teamSize": 5
+  },
+  "game_version": "3.8",
+  "mode": {
+    "setting": "story",
+    "region": 1,
+    "variant": "classic",
+    "run": "story",
+    "gen": 1
+  },
+  "profile": {
+    "chalKind": "arena",
+    "chalLevel": null,
+    "trainer": "boy",
+    "preferredStarter": null,
+    "chalStarter": null,
+    "resumeRuns": true,
+    "actionDelayMs": 300,
+    "watchdogSec": 60,
+    "takeShiny": true,
+    "reorderTeam": true,
+    "flags": {
+      "jointOrder": false,
+      "trade": false,
+      "top3": false,
+      "multiplicative": false,
+      "nextMapRoute": true
+    }
+  },
+  "cause": null,
+  "counts": {
+    "decisions": 42,
+    "clicks": 42,
+    "noEffect": 0,
+    "watchdogRereads": 0,
+    "pauses": 0
+  },
+  "screenTimes": {
+    "gameover": {
+      "n": 1,
+      "totalMs": 641,
+      "maxMs": 641
+    },
+    "title": {
+      "n": 1,
+      "totalMs": 456,
+      "maxMs": 456
+    },
+    "region-select": {
+      "n": 1,
+      "totalMs": 442,
+      "maxMs": 442
+    },
+    "starter": {
+      "n": 1,
+      "totalMs": 520,
+      "maxMs": 520
+    },
+    "map": {
+      "n": 14,
+      "totalMs": 16606,
+      "maxMs": 1744
+    },
+    "catch": {
+      "n": 4,
+      "totalMs": 1975,
+      "maxMs": 573
+    },
+    "battle": {
+      "n": 8,
+      "totalMs": 30692,
+      "maxMs": 11377
+    },
+    "elite-prep": {
+      "n": 2,
+      "totalMs": 872,
+      "maxMs": 519
+    },
+    "badge": {
+      "n": 2,
+      "totalMs": 766,
+      "maxMs": 448
+    },
+    "trade": {
+      "n": 2,
+      "totalMs": 1001,
+      "maxMs": 526
+    }
+  },
+  "pauses": [],
+  "errors": [],
+  "optionCoverage": 0.5476190476190477,
+  "dropped": 0
+}

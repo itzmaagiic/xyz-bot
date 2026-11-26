@@ -1,0 +1,137 @@
+{
+  "run_id": "20261126-204513-oikt",
+  "started": "2026-11-26T20:45:13.674Z",
+  "ended": "2026-11-26T20:45:59.184Z",
+  "durationMs": 45510,
+  "result": "loss",
+  "progress": {
+    "badges": 1,
+    "map": 1,
+    "eliteIndex": 0,
+    "maxLevel": 13,
+    "teamSize": 4
+  },
+  "game_version": "3.8",
+  "mode": {
+    "setting": "story",
+    "region": 1,
+    "variant": "classic",
+    "run": "story",
+    "gen": 1
+  },
+  "profile": {
+    "chalKind": "arena",
+    "chalLevel": null,
+    "trainer": "boy",
+    "preferredStarter": null,
+    "chalStarter": null,
+    "resumeRuns": true,
+    "actionDelayMs": 300,
+    "watchdogSec": 60,
+    "takeShiny": true,
+    "reorderTeam": true,
+    "flags": {
+      "jointOrder": false,
+      "trade": false,
+      "top3": false,
+      "multiplicative": false,
+      "nextMapRoute": true
+    }
+  },
+  "cause": {
+    "kind": "loss",
+    "node": "question",
+    "map": 1,
+    "boss": null,
+    "team": [
+      {
+        "name": "Bulbasaur",
+        "level": 10,
+        "hp": "0/29"
+      },
+      {
+        "name": "Krabby",
+        "level": 13,
+        "hp": "0/30"
+      },
+      {
+        "name": "Goldeen",
+        "level": 11,
+        "hp": "0/30"
+      },
+      {
+        "name": "Magikarp",
+        "level": 13,
+        "hp": "0/28"
+      }
+    ]
+  },
+  "counts": {
+    "decisions": 37,
+    "clicks": 35,
+    "noEffect": 0,
+    "watchdogRereads": 0,
+    "pauses": 0
+  },
+  "screenTimes": {
+    "gameover": {
+      "n": 1,
+      "totalMs": 732,
+      "maxMs": 732
+    },
+    "title": {
+      "n": 1,
+      "totalMs": 394,
+      "maxMs": 394
+    },
+    "region-select": {
+      "n": 1,
+      "totalMs": 461,
+      "maxMs": 461
+    },
+    "starter": {
+      "n": 1,
+      "totalMs": 501,
+      "maxMs": 501
+    },
+    "map": {
+      "n": 13,
+      "totalMs": 13950,
+      "maxMs": 1752
+    },
+    "battle": {
+      "n": 8,
+      "totalMs": 26580,
+      "maxMs": 6079
+    },
+    "catch": {
+      "n": 3,
+      "totalMs": 1258,
+      "maxMs": 483
+    },
+    "elite-prep": {
+      "n": 1,
+      "totalMs": 566,
+      "maxMs": 566
+    },
+    "badge": {
+      "n": 1,
+      "totalMs": 465,
+      "maxMs": 465
+    },
+    "item": {
+      "n": 1,
+      "totalMs": 378,
+      "maxMs": 378
+    },
+    "trade": {
+      "n": 1,
+      "totalMs": 517,
+      "maxMs": 517
+    }
+  },
+  "pauses": [],
+  "errors": [],
+  "optionCoverage": 0.5277777777777778,
+  "dropped": 0
+}
