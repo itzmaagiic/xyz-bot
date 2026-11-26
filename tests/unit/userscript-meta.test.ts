@@ -228,16 +228,17 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
     ).toBe(true);
   });
 
-  it("platformLeaks finds the other platform's API in a built bundle (artifact level, D-036)", () => {
-    expect(platformLeaks('const x = chrome.runtime.id; browser.tabs;', 'userscript')).toEqual([
-      'chrome.runtime',
-      'browser.tabs',
+  it("platformLeaks finds the other platform's API in a built bundle on token level (artifact level, D-036)", () => {
+    expect(platformLeaks('const x = chrome.runtime.id; browser.tabs;', 'userscript')).toEqual(['chrome', 'browser']);
+    expect(platformLeaks('chrome?.runtime; const { runtime } = unsafeWindow;', 'userscript')).toEqual([
+      'chrome',
+      'unsafeWindow',
     ]);
-    expect(platformLeaks('GM.getValue("a"); GM_setValue("a", 1); GM.info', 'chrome')).toEqual([
-      'GM.getValue',
-      'GM_setValue',
-      'GM.info',
-    ]);
-    expect(platformLeaks('const chromeVersion = 1; navigator.userAgent', 'userscript')).toEqual([]);
+    expect(platformLeaks('GM["getValue"]("a"); const { setValue } = GM; GM_info', 'chrome')).toEqual(['GM', 'GM_info']);
+    expect(platformLeaks('const chromeVersion = 1; navigator.userAgent; const GMT = 0', 'userscript')).toEqual([]);
+    expect(platformLeaks('const GMT = 0; GMapping()', 'chrome')).toEqual([]);
+    // esbuild writes module path comments into unminified bundles – they are no API use
+    expect(platformLeaks('  // src/platform/chrome/bridge-main.ts\nfoo();', 'userscript')).toEqual([]);
+    expect(platformLeaks('const u = "https://x.invalid/a"; chrome.runtime;', 'userscript')).toEqual(['chrome']);
   });
 });

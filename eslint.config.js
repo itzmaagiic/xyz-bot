@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import noAdapterImport from './eslint-rules/no-adapter-import.mjs';
 import noPromiseHandler from './eslint-rules/no-promise-handler.mjs';
 import noSilentCatch from './eslint-rules/no-silent-catch.mjs';
 
@@ -50,7 +51,15 @@ export default tseslint.config(
   {
     // R-199: no silent errors – every catch rethrows, logs, or calls noteError
     files: ['src/**/*.ts'],
-    plugins: { local: { rules: { 'no-silent-catch': noSilentCatch, 'no-promise-handler': noPromiseHandler } } },
+    plugins: {
+      local: {
+        rules: {
+          'no-silent-catch': noSilentCatch,
+          'no-promise-handler': noPromiseHandler,
+          'no-adapter-import': noAdapterImport,
+        },
+      },
+    },
     rules: {
       'local/no-silent-catch': [
         'error',
@@ -66,6 +75,8 @@ export default tseslint.config(
     files: ['src/**/*.ts'],
     ignores: ['src/platform/chrome/**', 'src/platform/userscript/**', 'src/platform/clipboard.ts'],
     rules: {
+      // path-resolving: works from every directory, also src/platform/types.ts ('./chrome/…') (D-036)
+      'local/no-adapter-import': 'error',
       'no-restricted-imports': [
         'error',
         {

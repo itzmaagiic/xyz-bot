@@ -20,9 +20,11 @@ export default {
     const checker = services.program.getTypeChecker();
     const thenable = (t) =>
       t.isUnion() ? t.types.some(thenable) : !!checker.getPropertyOfType(checker.getApparentType(t), 'then');
+    // a handler of union type (`cond ? async () => … : null`, `h: (() => Promise<void>) | null`) counts like the handler
     const returnsThenable = (node) => {
-      const type = checker.getTypeAtLocation(services.esTreeNodeToTSNodeMap.get(node));
-      return type.getCallSignatures().some((sig) => thenable(sig.getReturnType()));
+      const type = checker.getNonNullableType(checker.getTypeAtLocation(services.esTreeNodeToTSNodeMap.get(node)));
+      const parts = type.isUnion() ? type.types : [type];
+      return parts.some((t) => t.getCallSignatures().some((sig) => thenable(sig.getReturnType())));
     };
     return {
       AssignmentExpression(node) {

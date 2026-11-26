@@ -80,4 +80,55 @@ describe('lint guard rails with type information (R-199, R-032, D-036)', () => {
     const code = "export interface P {\n  readonly name: 'chrome' | 'userscript';\n}\n";
     expect(await ids(code, 'src/platform/types.ts')).toEqual([]);
   });
+
+  // B5 (Runde 5): handlers with a union type (… | null) are judged like the handler itself
+  it.each([
+    [
+      'a conditional handler',
+      `${WORK}declare const on: boolean;\nconst b = document.createElement('button');\nb.onclick = on ? async () => { await work(); } : null;\n`,
+    ],
+    [
+      'a nullable handler variable',
+      `${WORK}declare const h: (() => Promise<void>) | null;\nconst b = document.createElement('button');\nb.onclick = h;\n`,
+    ],
+    [
+      'an optional handler with ??',
+      `${WORK}declare const o: { onClick?: () => Promise<void> };\nconst b = document.createElement('button');\nb.onclick = o.onClick ?? null;\n`,
+    ],
+  ])('flags %s that returns a promise', async (_n, code) => {
+    expect(await ids(code, 'src/ui/toast.ts')).toContain('local/no-promise-handler');
+  });
+
+  // B6 (Runde 5): the import boundary resolves paths – from inside src/platform/ too (types.ts, new files)
+  it.each([
+    ['an import', "import { copyWithFallback } from './userscript/copy';\nexport const f = copyWithFallback;\n"],
+    ['a re-export *', "export * from './chrome/messages';\n"],
+    ['a named re-export', "export { makeStorage } from './userscript/storage';\n"],
+    ['the clipboard helper', "import { copyViaDom } from './clipboard';\nexport const f = copyViaDom;\n"],
+    ['a dynamic import()', "export const m = () => import('./userscript/copy');\n"],
+  ])('src/platform/types.ts may not reach adapter code via %s', async (_n, code) => {
+    expect(await ids(code, 'src/platform/types.ts')).toContain('local/no-adapter-import');
+  });
+
+  it('a new shared folder is checked by behaviour, not only by configuration', async () => {
+    expect(
+      await ids("import { x } from '../platform/chrome/messages';\nexport const y = x;\n", 'src/core/flags.ts'),
+    ).toContain('local/no-adapter-import');
+  });
+});
+
+describe('src/ contains only TypeScript and static assets (lint scope = build scope)', () => {
+  it('no .js/.mjs/.cjs/.mts/.cts/.tsx under src/', async () => {
+    const { readdirSync, statSync } = await import('node:fs');
+    const bad: string[] = [];
+    const walk = (d: string) => {
+      for (const f of readdirSync(d)) {
+        const p = join(d, f);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (!/\.ts$/.test(f) && !/\/static\/[^/]+\.(html|css)$/.test(p)) bad.push(p);
+      }
+    };
+    walk(join(__dirname, '..', '..', 'src'));
+    expect(bad).toEqual([]);
+  });
 });

@@ -238,3 +238,14 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - **Artefakt-Ebene:** Der Build prüft, dass im Userscript-Bundle kein `chrome.*`/`browser.*` und in den Chrome-Bundles kein `GM.*`/`GM_*` steht (`platformLeaks`). Das fängt auch das „Umbenennen über Module“ ab, das Lint bewusst nicht prüft.
   - **Verhaltenstests mit Typinformation:** `tests/unit/lint-behaviour.test.ts`, `lintText` mit vorhandenem Pfad.
   - **Bekannte Lücke:** `Promise.allSettled` mit ignorierten Ergebnissen. Das deckt der Laufzeit-Handler aus R-200 ab (P3).
+- **Nachtrag Runde 5 (2026-11-26):**
+  - „Jede `on*`-Zuweisung“ umfasst Handler mit Union-Typ (`… | null | undefined`, Ternär, `??`).
+  - Die Import-Grenze arbeitet pfadauflösend (`local/no-adapter-import`), wirkt also aus jedem Verzeichnis gleich, auch aus `src/platform/types.ts`.
+  - Unter `src/` liegen nur `.ts` und statische Assets. Das prüft ein Test.
+  - `platformLeaks` prüft Tokens und überspringt die Modulpfad-Kommentare von esbuild.
+  - **Ausdrücklich „bewusst nicht erkannt“:**
+    - Handler-Zuweisung über berechneten Key (`b['onclick'] = …`) oder `Object.assign(b, { onclick })`
+    - `const _p = work()` (das `_` schaltet `no-unused-vars` ab)
+
+    Beides deckt der Laufzeit-Handler aus R-200 ab (P3).
+  - **Folge des Literal-Verbots:** `core/` und `ui/` vergleichen nie `platform.name === 'chrome'`. Plattform-Unterschiede kommen als Fähigkeiten oder Label aus dem Adapter.

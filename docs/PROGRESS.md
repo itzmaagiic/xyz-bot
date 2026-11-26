@@ -5,14 +5,11 @@
 _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Review-Tor P2, Runde 5 (gezielt):**
-  - Runde 4 war „nicht bestanden“ wegen weiterer Varianten derselben Klassen: Key-Varianten beim Destructuring, `as`/`satisfies` (B1) und `on*`-Handler mit Promise-Rückgabe ohne `async` (B2).
-  - Jetzt sind die Klassen geschlossen statt einzelner Muster:
-    - Plattform-Namen auch als String- und Template-Text gesperrt.
-    - Typbewusste Regel `local/no-promise-handler`.
-    - Geltungsbereich umgedreht.
-    - Artefakt-Check `platformLeaks`.
-    - Verhaltenstests mit Typinformation (D-036, Nachtrag Runde 4).
+- **Review-Tor P2, Runde 6 (gezielt):**
+  - Runde 5 bestätigte B1, B2 und R-032. Offen blieben B5 (Handler mit Union-Typ) und B6 (Import-Grenze aus `src/platform/types.ts`).
+  - Beide sind geschlossen (Union-Glieder werden geprüft, Import-Regel `local/no-adapter-import` löst Pfade auf).
+  - Überholte Nachweise sind durchgestrichen, D-036 hat den Nachtrag Runde 5.
+  - Billige Vorbefunde gleich mit erledigt: Test „nur .ts unter src/“, `platformLeaks` auf Token-Ebene.
 
 ## Nächster Schritt
 1. **Abschluss Phase 2:**

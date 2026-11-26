@@ -142,12 +142,14 @@ export function es2020SyntaxError(code) {
 }
 
 /**
- * The other platform's API in a built bundle (artifact level, D-036): `chrome.x`/`browser.x` in the userscript,
- * `GM.x`/`GM_x` in the Chrome bundles. Catches what lint deliberately leaves out (re-export through modules …).
+ * The other platform's API in a built bundle (artifact level, D-036): the tokens `chrome`/`browser`/`unsafeWindow` in
+ * the userscript, `GM`/`GM_*` in the Chrome bundles. Catches what lint deliberately leaves out (re-export through modules …).
  */
 export function platformLeaks(code, platform) {
-  const re = platform === 'userscript' ? /\b(?:chrome|browser)\.\w+/g : /\bGM(?:\.\w+|_\w+)/g;
-  return [...new Set(code.match(re) ?? [])];
+  // token level: also chrome?.x, GM['x'], destructuring. Whole-line comments are skipped – esbuild keeps its module
+  // path comments (`// src/platform/chrome/…`) in unminified bundles; other comments are stripped by esbuild.
+  const re = platform === 'userscript' ? /\b(?:chrome|browser|unsafeWindow)\b/g : /\bGM(?:_\w+)?\b/g;
+  return [...new Set(code.replace(/^\s*\/\/.*$/gm, '').match(re) ?? [])];
 }
 
 /** Backtick literal that evaluates to exactly `s` and keeps its line breaks (readable embedding, R-107). */
