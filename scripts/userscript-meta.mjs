@@ -20,6 +20,30 @@ export const NO_GRANT_NEEDED = Object.freeze([]);
 export const NAMESPACE = 'https://github.com/itzmaagiic/xyz-bot';
 export const RAW_BASE = 'https://raw.githubusercontent.com/itzmaagiic/xyz-bot/main/dist/';
 export const MATCHES = Object.freeze(['https://pokelike.xyz/*', 'https://www.pokelike.xyz/*']);
+const META_KEYS = new Set([
+  'name',
+  'namespace',
+  'version',
+  'description',
+  'match',
+  'run-at',
+  'inject-into',
+  'noframes',
+  'grant',
+  'updateURL',
+  'downloadURL',
+]);
+const SINGLE_KEYS = [
+  'name',
+  'namespace',
+  'version',
+  'description',
+  'run-at',
+  'inject-into',
+  'noframes',
+  'updateURL',
+  'downloadURL',
+];
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const MAX_LINE = 400;
 const MAX_LONG_LINES = 2;
@@ -180,6 +204,15 @@ export function checkUserscript({ userJs, metaJs, version }) {
   expect1('updateURL', RAW_BASE + 'pokelike-bot.meta.js');
   expect1('downloadURL', RAW_BASE + 'pokelike-bot.user.js');
   if (meta.has('require')) errs.push('@require is not allowed: everything is bundled (R-107)');
+  // whitelist (R-193): nothing beyond R-103–R-105 – no @include/@connect/@resource …, no extra @match, no duplicates
+  for (const k of meta.keys())
+    if (!META_KEYS.has(k) && k !== 'require') errs.push(`unexpected @${k} (R-193 whitelist)`);
+  for (const m of meta.get('match') ?? [])
+    if (!MATCHES.includes(m)) errs.push(`@match ${m} is not allowed – only pokelike.xyz`);
+  for (const k of SINGLE_KEYS) {
+    const n = (meta.get(k) ?? []).length;
+    if (n > 1) errs.push(`@${k} appears ${n}× – only once allowed`);
+  }
 
   if (!userJs.startsWith(metaJs)) errs.push('pokelike-bot.user.js must start with the .meta.js block');
   const code = userJs.startsWith(metaJs) ? userJs.slice(metaJs.length) : userJs;

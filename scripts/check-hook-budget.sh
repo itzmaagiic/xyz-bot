@@ -22,6 +22,10 @@ for p in 0 1 2 3 4 5 6 7; do
   detail_ok=1
   if printf '%s' "$idblock" | grep -qE "^  P$p( \(AKTUELL\))?:"; then
     printf '%s' "$out" | grep -q "^Aktuelle Phase P$p im Detail" || detail_ok=0
+    # vollständig: so viele Zeilen wie im Kopf angekündigt („(N offene Punkte“)
+    want=$(printf '%s\n' "$out" | sed -nE "s/^Aktuelle Phase P$p im Detail \(([0-9]+) offene Punkte.*/\1/p")
+    got=$(printf '%s\n' "$out" | awk '/^Aktuelle Phase P[0-9]+ im Detail/ {f=1; next} f && /^$/ {exit} f' | wc -l | tr -d ' ')
+    [ -n "$want" ] && [ "$want" = "$got" ] || detail_ok=0
   fi
   echo "P$p: $chars Zeichen, fehlende offene IDs: $missing, Nächster Schritt: $next_ok, Kurzform: $detail_ok, gekürzt: $gekuerzt"
   if [ "$chars" -gt 9000 ] || [ "$missing" -gt 0 ] || [ "$next_ok" -eq 0 ] || [ "$detail_ok" -eq 0 ]; then fail=1; fi

@@ -27,7 +27,7 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 ### Behoben (Gesamt-Review P2)
 
 - Scheitert im Userscript nur der GM-Schreibvorgang (etwa bei vollem Speicher), gilt nach einem Reload trotzdem die neueste Einstellung (R-100, R-102).
-- Behandelte Fehler erscheinen als Warnung im Overlay-Log und im Log-Export (R-199).
+- Behandelte Fehler erscheinen im Overlay-Log und im Log-Export, gedämpft als `debug` statt als Warnung (R-199, D-035).
 - Der Bundle-Check erkennt RegExp-Lookbehind, das vor Safari 16.4 das ganze Skript am Laden hindern würde (R-107).
 - Der Live-Test wartet nicht mehr auf eine fehlende Pause-Anzeige. Er scheitert auch, wenn der Bot läuft, aber 4 min lang keinen Fortschritt macht (R-082).
 - Der Hook warnt wieder, wenn ein als erledigt eingetragener Branch neue Commits bekommt (R-247).
@@ -39,6 +39,14 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 - Der Kompatibilitäts-Check für Safari 15 deckt mehr APIs ab, erkennt nur echte Feature-Erkennung an und warnt bei CSS, das nur die Darstellung verschlechtert. Der Build schreibt erst nach der Prüfung (R-107).
 - Der Fallback-Schlüssel heißt `pkbot.settings` statt `pkbot.pkbot.settings`. Fehlt GM, wird das einmal vermerkt (R-100, R-102).
 - Der SessionStart-Hook zeigt die Kurzform der aktuellen Phase wieder vollständig. Das prüft jetzt ein Test (R-232).
+
+### Behoben (Review-Tor P2, Runde 2)
+
+- Keine stillen Fehler aus Promises ohne Fehlerbehandlung: typbewusste ESLint-Regeln, `noteRejection` (R-199, D-035).
+- Ein Einzelschritt, der auf eine verbotene Aktion trifft, pausiert mit „blocked: …“ wie die Schleife (R-147, R-199).
+- Plattform-APIs sind in `core/` und `ui/` auch über Casts, Aliase und berechnete `import()` gesperrt (R-032).
+- Der Metadaten-Check lässt nur die erlaubten Schlüssel zu (R-193).
+- Hook: Unterpunkte der neuesten „Erledigt“-Einträge sind sichtbar, durchgestrichener Alttext fehlt in der Kurzform, die Vollständigkeit wird geprüft (R-232, D-035).
 
 ### Bekannt
 

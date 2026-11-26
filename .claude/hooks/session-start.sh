@@ -93,6 +93,7 @@ trap 'rm -f "$DETAIL"' EXIT
         line = $0; sub(/^[[:space:]]+/, "", line)
         cut = index(line, " — Quelle"); if (cut > 0) line = substr(line, 1, cut - 1)
         sub(/\*\*R-/, "R-", line); sub(/\*\* \[P[0-9]+\]/, "", line)
+        gsub(/~~[^~]*~~ *(→ *)?/, "", line)              # durchgestrichener Alttext gehört nicht in die Kurzform
         n_items++; item[n_items] = line; item_sec[n_items] = section
       }
       END {
@@ -140,6 +141,7 @@ trap 'rm -f "$DETAIL"' EXIT
       in_done && /^## / { in_done = 0 }
       in_done {
         if ($0 ~ /^- /) { n++; if (n <= 3) print; else if (n == 4) print "- … ältere Einträge siehe docs/PROGRESS.md" }
+        else if ($0 ~ /^[[:space:]]+- / && n <= 3) print     # Unterpunkte der drei neuesten Einträge
         next
       }
       { print }

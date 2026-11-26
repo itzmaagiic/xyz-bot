@@ -63,7 +63,7 @@ Das Userscript nutzt nur die GM-Funktionen, die alle drei Manager gemeinsam habe
 - **Tastenkürzel auf der Spielseite:** `Alt+Shift+P` Start/Pause · `Alt+Shift+S` Schritt · `Alt+Shift+O` Overlay ein/aus.
 - **Spieleinstellungen** (z. B. Kämpfe automatisch überspringen) ändert der Bot **nur nach deiner zweistufigen Bestätigung**
   im Overlay („Einschalten …“ → „Ja, ändern“).
-- **Sicherheit:** Der Bot liest den Spielzustand nur, schreibt nie in den Spielstand (localStorage) und patcht keine
+- **Sicherheit:** Der Bot liest den Spielzustand nur, schreibt nie in die Schlüssel des Spiels (`poke_*`, `pkrl_*`, nur der Userscript-Fallback nutzt eigene `pkbot.*`-Schlüssel) und patcht keine
   Spielfunktionen. Unbekannte Bildschirme oder Dialoge pausieren ihn mit Hinweis. Ändert sich die Spielversion
   (bekannt: v3.8), zeigt er eine Warnung und pausiert schon beim ersten Fehlschlag.
 
@@ -100,7 +100,7 @@ npm run check:docs        # Konsistenz der Gedächtnis-Dateien (läuft auch in n
 ```
 
 `PKBOT_SAVE` darf auf einen localStorage-Export **ohne** Cloud-Token zeigen. Er wird nur in ein Wegwerf-Profil geladen.
-Solche Dateien gehören nie ins Repo (`.gitignore`). WebKit für die E2E-Tests: `npx playwright install webkit`.
+Solche Dateien gehören nie ins Repo (`.gitignore`). WebKit für die E2E-Tests: `npx playwright install webkit && npx playwright install-deps webkit`.
 
 ## Bekannte Grenzen
 

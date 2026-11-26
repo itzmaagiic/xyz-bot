@@ -193,4 +193,32 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
       errs.join(' | '),
     ).toBe(true);
   });
+
+  const withMeta = (extra: string) => {
+    const b = bundle();
+    const metaJs = b.metaJs.replace('// ==/UserScript==', extra + '\n// ==/UserScript==');
+    return { ...b, metaJs, userJs: metaJs + '\n' + CODE };
+  };
+
+  it.each([
+    ['@include', '// @include      *', /unexpected @include/],
+    ['@connect', '// @connect      example.invalid', /unexpected @connect/],
+    ['@resource', '// @resource     x https://example.invalid/x', /unexpected @resource/],
+    ['an extra @match', '// @match        https://*/*', /@match https:\/\/\*\/\* is not allowed/],
+    ['a second @run-at', '// @run-at       document-start', /@run-at appears 2×/],
+  ])('checkUserscript rejects %s (whitelist, R-193)', (_n, line, re) => {
+    const errs = checkUserscript(withMeta(line));
+    expect(
+      errs.some((e: string) => re.test(e)),
+      errs.join(' | '),
+    ).toBe(true);
+  });
+
+  it('checkUserscript rejects a version that is not SemVer', () => {
+    const errs = checkUserscript(bundle(CODE, undefined, '1.2'));
+    expect(
+      errs.some((e: string) => /SemVer/.test(e)),
+      errs.join(' | '),
+    ).toBe(true);
+  });
 });

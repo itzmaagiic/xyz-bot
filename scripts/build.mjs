@@ -214,7 +214,7 @@ async function buildUserscript() {
   const hits = code.split(BRIDGE_PLACEHOLDER).length - 1;
   if (hits !== 1) throw new Error(`bridge placeholder found ${hits}× in the userscript bundle, expected exactly 1`);
   code = code.replace(BRIDGE_PLACEHOLDER, () => toTemplateLiteral(bridge)); // function form: no $-patterns
-  // @grant is derived from what the bundle really uses (R-104); GM.info needs no grant
+  // @grant is derived from what the bundle really uses (R-104); every used GM API is granted (NO_GRANT_NEEDED is empty)
   const grants = usedGmApis(code)
     .gm.filter((a) => !NO_GRANT_NEEDED.includes(a))
     .map((a) => 'GM.' + a);

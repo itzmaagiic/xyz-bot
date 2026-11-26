@@ -5,14 +5,15 @@
 _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Review-Tor P2, Runde 2:**
-  - Alle Funde des requirements-reviewer aus Runde 1 sind behoben (`b0dafd4`, `b0bda2c`, `3a6798e` und die folgenden Doku-Commits). Die Lücken in R-032, R-199 und R-107 sind im Code geschlossen, dazu kommen die Kurzform im Hook samt Test (R-232), PLAN, Doku-Widersprüche, R-252 erweitert und die neuen R-253/R-254.
-  - Verifikation: `vitest` 248/248, E2E 35 bestanden und 3 übersprungen, alle Checks grün.
-  - Erneute Prüfung durch den requirements-reviewer läuft.
+- **Review-Tor P2, Runde 3:**
+  - Runde 2 (requirements-reviewer) war „nicht bestanden“: R-199 und R-032 noch zu hoch bewertet, dazu Doku-Widersprüche.
+  - Alles behoben (`2b55d98` und folgende): typbewusste Promise-Regeln plus `noteRejection`, `step()` wie die Schleife, Allowlist auch gegen pauschale disables, Plattform-Namen auf jedem Objekt, Whitelist für Metadaten, Hook (Unterpunkte, Durchstreichungen, Zeilenzahl der Kurzform), D-035, neue R-255 bis R-259.
+  - Verifikation: `vitest` 268/268, E2E 35 bestanden und 3 übersprungen, alle Checks grün.
+  - Runde 3 läuft.
 
 ## Nächster Schritt
 1. **Abschluss Phase 2:**
-   - Gesamt-Review erledigt: 0 Critical, 3 Important und 3 hochgestufte Minor-Funde behoben (`5132ac5`), die übrigen Minor-Funde stehen unten unter „Vorbefunde aus dem Gesamt-Review P2“.
+   - Gesamt-Review erledigt: 0 Critical, 3 Important und 3 hochgestufte Minor-Funde behoben (`5132ac5`), die übrigen Minor-Funde sind im Review-Tor behoben (siehe „Vorbefunde aus Gesamt-Review und Review-Tor P2“).
    - **Läuft:** das Review-Tor nach CLAUDE.md Regel 5 mit requirements-, ui- und strategy-reviewer parallel.
    - Danach: ihre Funde beheben, das Ergebnis hier eintragen, `**Aktuelle Phase:**` auf P3 schalten.
 2. **Phase 3 beginnt mit** dem **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8, Live-Lauf 3 bestätigt ihn erneut) und der Aufklärung der Restbildschirme (D-029). Außerdem stehen R-015/R-016 an, zu bestätigen in der ersten frisch gebauten Session (D-034).

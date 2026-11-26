@@ -66,7 +66,7 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 - Entscheidung: P0 Einrichtung, Übernahme und Zerlegung (abgeschlossen erst mit dem Review-Tor R-243) · P1 Aufklärung · P2 Gerüst und Build · P3 Kern mit Baseline-Run · P4 Strategie · P5 Oberfläche · P6 Härtung und E2E auf allen Zielen · P7 Lieferung. Details in `docs/PLAN.md`.
 - Begründung: Der Hauptauftrag nennt selbst „Phase 1: Aufklärung (bevor Bot-Logik entsteht)“. Die Nummerierung übernimmt das. Die Reihenfolge stellt sicher, dass Infrastruktur und Kern stehen, bevor Strategie und Oberfläche darauf aufbauen. Ein früher echter Run in P3 liefert Logs für die Strategiearbeit.
 
-**D-015 – Phasen-Tag in jeder Anforderung, der Hook filtert nach aktueller Phase** (2026-11-25)
+**D-015 – Phasen-Tag in jeder Anforderung, der Hook filtert nach aktueller Phase** (2026-11-25) · *Reihenfolge der Ausgabe ersetzt durch D-035*
 - Entscheidung: Jede R-Zeile trägt `[Pn]`. PROGRESS.md enthält die Zeile `**Aktuelle Phase:** Pn`. Der SessionStart-Hook gibt **zuerst** die Zählung und die ID-Listen aller offenen Punkte je Phase aus, damit keiner verloren geht. **Danach** folgt PROGRESS.md ohne die Details unter „Vorbefunde …“, und zuletzt kommen die offenen Punkte der aktuellen Phase in Kurzform. Am 2026-11-25 nachgeschärft, nachdem der Budget-Test bei längerer PROGRESS.md 129 abgeschnittene IDs gemeldet hatte. Abgeschnitten wird zeilenweise bei 9.000 Bytes, also nie mitten in einem UTF-8-Zeichen. Ein Test belegt das Budget je Phase (R-232).
 - Begründung: Bei über 200 Anforderungen würde die vollständige Liste das Limit von 10.000 Zeichen für Hook-Ausgaben sprengen. So sieht jede Session sofort, was jetzt dran ist, und kein offener Punkt fehlt in der Ausgabe.
 
@@ -152,7 +152,7 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 **D-031 – Phase 2: Design freigegeben; Fallback-Speicher localStorage mit Präfix `pkbot.`** (2026-11-25)
 - Entscheidung: Das Design steht in `docs/superpowers/specs/2026-11-25-phase2-design.md` (Ansatz 1: Checks als Code plus ESLint-Regeln, eingebunden in `npm test` und `npm run lint`).
   - Das Userscript nutzt nur die GM-Schnittmenge aus R-099. ~~`GM.addValueChangeListener` gibt es nur per Feature-Erkennung~~ → `GM.addValueChangeListener` wird nicht genutzt, das Userscript hat kein `onChange` (siehe Abgleich unten; korrigiert innerhalb von D-031 nach dem Gesamt-Review P2). Die Legacy-APIs `GM_*` entfallen.
-  - Fehlt GM oder wirft es, weicht der Speicher auf `localStorage` unter `pkbot.<key>` aus, danach auf einen Speicher im RAM. Jeder Fallback wird vermerkt (`noteError`): ein Fehler bei jedem gescheiterten Aufruf, das Fehlen von `GM.getValue`/`GM.setValue` einmal beim Start (`gmOrNote`, seit dem Review-Tor P2).
+  - Fehlt GM oder wirft es, weicht der Speicher auf `localStorage` unter `pkbot.<key>` aus, danach auf einen Speicher im RAM. ~~Jeder Fallback wird als Fehler vermerkt.~~ → Jeder Fallback wird vermerkt (`noteError`): ein Fehler bei jedem gescheiterten Aufruf, das Fehlen von `GM.getValue`/`GM.setValue` einmal beim Start (`gmOrNote`, seit dem Review-Tor P2).
   - `@grant` wird aus der tatsächlichen Nutzung im Bundle erzeugt und geprüft. `@updateURL`/`@downloadURL` zeigen auf GitHub raw (`main/dist/…`). Funktionieren können die Links erst, wenn `dist/` eingecheckt ist, das kommt in P7 (R-203).
   - Die Bridge wird nicht minifiziert, `target` ist `es2020`.
 - Begründung für das Präfix: Der Manipulationsschutz des Spiels (`pk.storageDigest`, GAME_RECON §12.9) erfasst nur `poke_*`-Schlüssel. `pkbot.` kollidiert weder mit `poke_*` noch mit `pkrl_*` und verändert den Digest nicht. Damit ist R-102 erfüllbar, ohne gegen R-145 bzw. D-018 zu verstoßen: Das ist kein Schreiben in den Speicher **des Spiels**, sondern eigener Speicher unter eigenem Präfix auf derselben Origin, und nur der Fallback, wenn GM fehlt.
@@ -183,3 +183,22 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 - Entscheidung 1: R-015 (Tests, Screenshots und Runs in der Cloud) und R-016 (Abhängigkeiten in jeder neuen Session) tragen jetzt `[P3]`. Bestätigt werden sie in der ersten **frisch gebauten** Session. Erst in einem neu aufgebauten Container zeigt sich, ob das Setup-Skript (D-026) `npm ci` und WebKit wirklich einrichtet. Diese Session wurde nur neu gestartet, nicht neu gebaut (`node_modules` stammt vom ersten Start).
 - Entscheidung 2: Neue Anforderung **R-252** [P7, eigene Idee]: Der Nutzer nimmt den Bot auf einem echten iPhone mit der App Userscripts ab. Die Cloud hat kein iOS-Gerät. WebKit-Emulation, GM-Shim und die statischen Checks (ES2020-Syntax, Sperrliste von APIs nach Safari 15.0) belegen viel, aber nicht die echte Installation, das Update über `@updateURL` und die Bedienung per Touch.
 - Begründung: Beide Punkte hängen an Bedingungen außerhalb dieser Session. Sie in P2 offen zu lassen, würde die Phase blockieren, ohne dass weitere Arbeit hier etwas ändert. In ihren neuen Phasen sind sie sichtbar (Hook, PLAN).
+
+**D-035 – Review-Tor P2: Reihenfolge der Hook-Ausgabe, gedämpfte Fehleranzeige, typbewusstes Linting, Ersatznachweis iOS 15** (2026-11-26)
+- **Hook-Reihenfolge (ersetzt den Teil von D-015, nach dem die Kurzform „zuletzt“ kommt):** Der Hook gibt Wichtiges zuerst aus. Die Reihenfolge:
+  1. Pflichthinweis
+  2. Git- und Branch-Zeilen
+  3. Zählung und IDs aller offenen Punkte
+  4. PROGRESS-Kopf (Stand, Phase, In Arbeit, Nächster Schritt)
+  5. Kurzform der aktuellen Phase. Die Zeilenlänge passt sich an `HOOK_DETAIL_BYTES` an, durchgestrichener Alttext wird entfernt.
+  6. Rest von PROGRESS, mit den Unterpunkten der drei neuesten „Erledigt“-Einträge
+
+  Gekürzt wird nur am Ende. `scripts/check-hook-budget.sh` (auch in `npm test`) prüft für jede Phase: IDs, „Nächster Schritt“ und die Kurzform mit allen angekündigten Zeilen. Begründung: Mit der alten Reihenfolge fiel die Kurzform in jeder Phase der Kürzung zum Opfer (Review-Tor P2, Runde 1).
+- **Behandelte Fehler erscheinen gedämpft (`debug`) im Bot-Log statt als Warnung.** Begründung (UI-Review P2): Orange gehört echten Problemen. Ein Fallback, der funktioniert, ist eine Information. Sichtbar bleibt er in Overlay-Log und Export (R-199). Ein Fehler, der die ganze Fallback-Kette betrifft, soll laut R-253 (P3) zur Warnung werden.
+- **Typbewusstes Linting für `src/**`:** `@typescript-eslint/no-floating-promises` (`ignoreVoid: false`) und `no-misused-promises`. Jede Fire-and-forget-Promise läuft über `noteRejection(where, p)`. Begründung: Eine abgelehnte Promise ohne Handler ist ein stiller Fehler (R-199, Review-Tor P2, Runde 2). Der Aufwand ist gering, ESLint braucht dafür rund 4 s.
+- **Ersatznachweis für „läuft ab Safari iOS 15“ (R-107, R-252):** Ein Lauf auf einem echten Gerät mit iOS 15.x wird angestrebt (R-252). Ist keins verfügbar, gelten als Nachweis zusammen:
+  - die statischen Checks (ES2020-Parse, Sperrliste neuerer APIs, nur echte Feature-Erkennung)
+  - der WebKit-E2E
+  - der Gerätelauf auf der ältesten verfügbaren iOS-Version, mit Versionsangabe im Prüfprotokoll
+
+  Begründung: iOS-15-Geräte sind selten verfügbar. Die statischen Checks decken genau die Ursachen ab, an denen ein Skript auf iOS 15 scheitert (Syntax, fehlende APIs).
