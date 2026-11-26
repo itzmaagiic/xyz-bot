@@ -16,8 +16,9 @@ export class Logger {
 
   constructor(private readonly max = 500) {}
 
-  log(level: LogLevel, msg: string, data?: unknown): void {
-    const e: LogEntry = { t: Date.now(), level, msg, data };
+  /** `t` defaults to now; pass it for events that happened earlier (e.g. an error noted in the page, R-253) */
+  log(level: LogLevel, msg: string, data?: unknown, t: number = Date.now()): void {
+    const e: LogEntry = { t, level, msg, data };
     this.buf.push(e);
     if (this.buf.length > this.max) this.buf.splice(0, this.buf.length - this.max);
     for (const s of this.subs) {
