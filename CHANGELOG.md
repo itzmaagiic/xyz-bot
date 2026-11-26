@@ -33,6 +33,7 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 - Der Hook warnt wieder, wenn ein als erledigt eingetragener Branch neue Commits bekommt (R-247).
 
 ### Behoben (Review-Tor P2)
+
 - Import-Grenzen lassen sich nicht mehr über `globalThis.chrome`, `window.GM` oder `import()` umgehen. `src/app.ts` ist eingeschlossen (R-032).
 - Keine stillen Fehler mehr in `.then`-Fehlerhandlern und bei einem fehlgeschlagenen Start: Er wird als Toast gemeldet (R-199).
 - Der Kompatibilitäts-Check für Safari 15 deckt mehr APIs ab, erkennt nur echte Feature-Erkennung an und warnt bei CSS, das nur die Darstellung verschlechtert. Der Build schreibt erst nach der Prüfung (R-107).
