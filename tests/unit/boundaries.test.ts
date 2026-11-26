@@ -50,4 +50,26 @@ describe('import boundaries (R-032)', () => {
     expect(ids).not.toContain('no-restricted-globals');
     expect(ids).not.toContain('no-restricted-imports');
   });
+
+  it.each([
+    ['globalThis.chrome', 'export const p = globalThis.chrome;\n'],
+    ['window.GM', 'export const p = window.GM;\n'],
+    ['self.browser', 'export const p = self.browser;\n'],
+  ])('core may not reach platform APIs via %s', async (_n, code) => {
+    expect(await ruleIds(code, 'src/core/x.ts')).toContain('no-restricted-properties');
+  });
+
+  it('core may not load platform code with a dynamic import()', async () => {
+    const ids = await ruleIds("export const m = () => import('../platform/chrome/content');\n", 'src/core/x.ts');
+    expect(ids).toContain('no-restricted-syntax');
+  });
+
+  it('the shared bootstrap src/app.ts follows the same boundaries', async () => {
+    const ids = await ruleIds(
+      "import { a } from './platform/userscript/main';\nexport const p = [a, chrome.runtime];\n",
+      'src/app.ts',
+    );
+    expect(ids).toContain('no-restricted-imports');
+    expect(ids).toContain('no-restricted-globals');
+  });
 });

@@ -1,5 +1,5 @@
 /** Chrome content script (isolated world): platform adapter + shared app. */
-import { startApp } from '../../app';
+import { reportStartFailure, startApp } from '../../app';
 import { READY_ATTR } from '../../core/bridge/protocol';
 import { copyViaDom } from '../clipboard';
 import { bindPageShortcuts, type Platform } from '../types';
@@ -54,38 +54,40 @@ const platform: Platform = {
   },
 };
 
-void startApp(platform).then(({ bot }) => {
-  chrome.runtime.onMessage.addListener((msg: ContentRequest, _sender, reply) => {
-    switch (msg?.type) {
-      case 'pkbot:start':
-        bot.start();
-        break;
-      case 'pkbot:pause':
-        bot.pause('paused from popup');
-        break;
-      case 'pkbot:status':
-        break;
-      case 'pkbot:toggle':
-      case 'pkbot:step':
-      case 'pkbot:overlay':
-        // handled by the shortcut listener; still answer with the status below
-        break;
-      default:
-        return false;
-    }
-    const v = bot.view;
-    const r: StatusReply = {
-      status: v.status,
-      pauseReason: v.pauseReason,
-      screen: v.screen,
-      lastDecision: v.lastDecision,
-      bridge: v.bridge,
-      version: v.version,
-      runs: v.stats.runs,
-      wins: v.stats.wins,
-      losses: v.stats.losses,
-    };
-    reply(r);
-    return false;
-  });
-});
+startApp(platform)
+  .then(({ bot }) => {
+    chrome.runtime.onMessage.addListener((msg: ContentRequest, _sender, reply) => {
+      switch (msg?.type) {
+        case 'pkbot:start':
+          bot.start();
+          break;
+        case 'pkbot:pause':
+          bot.pause('paused from popup');
+          break;
+        case 'pkbot:status':
+          break;
+        case 'pkbot:toggle':
+        case 'pkbot:step':
+        case 'pkbot:overlay':
+          // handled by the shortcut listener; still answer with the status below
+          break;
+        default:
+          return false;
+      }
+      const v = bot.view;
+      const r: StatusReply = {
+        status: v.status,
+        pauseReason: v.pauseReason,
+        screen: v.screen,
+        lastDecision: v.lastDecision,
+        bridge: v.bridge,
+        version: v.version,
+        runs: v.stats.runs,
+        wins: v.stats.wins,
+        losses: v.stats.losses,
+      };
+      reply(r);
+      return false;
+    });
+  })
+  .catch((e: unknown) => reportStartFailure(e));

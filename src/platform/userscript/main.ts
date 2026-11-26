@@ -4,7 +4,7 @@
  * GM functions are always called literally as `GM.<name>` so the build can derive @grant from the bundle (R-104).
  * Bridge: injected <script> element into the page (CustomEvent protocol); DOM fallback if that fails.
  */
-import { startApp } from '../../app';
+import { reportStartFailure, startApp } from '../../app';
 import { READY_ATTR } from '../../core/bridge/protocol';
 import { noteError } from '../../core/log/note';
 import { copyViaDom } from '../clipboard';
@@ -66,4 +66,4 @@ const platform: Platform = {
   },
 };
 
-void startApp(platform);
+startApp(platform).catch((e: unknown) => reportStartFailure(e));

@@ -2,6 +2,17 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import noSilentCatch from './eslint-rules/no-silent-catch.mjs';
 
+const PLATFORM_GLOBALS = [
+  'chrome',
+  'browser',
+  'GM',
+  'GM_info',
+  'GM_getValue',
+  'GM_setValue',
+  'GM_setClipboard',
+  'unsafeWindow',
+];
+
 export default tseslint.config(
   // generated or local-only output (all gitignored) is never linted
   {
@@ -28,11 +39,11 @@ export default tseslint.config(
     // R-199: no silent errors – every catch rethrows, logs, or calls noteError
     files: ['src/**/*.ts'],
     plugins: { local: { rules: { 'no-silent-catch': noSilentCatch } } },
-    rules: { 'local/no-silent-catch': 'error' },
+    rules: { 'local/no-silent-catch': ['error', { reporters: ['noteError', 'reportStartFailure'] }] },
   },
   {
     // R-032: one codebase – core/ and ui/ stay platform-neutral; only platform/types (the adapter contract) is shared
-    files: ['src/core/**/*.ts', 'src/ui/**/*.ts'],
+    files: ['src/core/**/*.ts', 'src/ui/**/*.ts', 'src/app.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -47,9 +58,28 @@ export default tseslint.config(
       ],
       'no-restricted-globals': [
         'error',
-        ...['chrome', 'browser', 'GM', 'GM_info', 'GM_getValue', 'GM_setValue', 'GM_setClipboard', 'unsafeWindow'].map(
-          (name) => ({ name, message: 'Platform API – only allowed in src/platform/* (R-032).' }),
+        ...PLATFORM_GLOBALS.map((name) => ({
+          name,
+          message: 'Platform API – only allowed in src/platform/* (R-032).',
+        })),
+      ],
+      // the same APIs reached through a global object (globalThis.chrome, window.GM, self.browser …)
+      'no-restricted-properties': [
+        'error',
+        ...['globalThis', 'window', 'self'].flatMap((object) =>
+          PLATFORM_GLOBALS.map((property) => ({
+            object,
+            property,
+            message: 'Platform API – only allowed in src/platform/* (R-032).',
+          })),
         ),
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportExpression[source.value=/(^|\\/)platform\\/(chrome|userscript|clipboard)/]',
+          message: 'core/ and ui/ must not load platform-specific code, not even with import() (R-032).',
+        },
       ],
     },
   },

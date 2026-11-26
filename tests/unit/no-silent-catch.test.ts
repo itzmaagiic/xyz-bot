@@ -21,6 +21,11 @@ describe('local/no-silent-catch (R-199)', () => {
       "p.catch((e) => noteError('x', e));",
       "p.catch(function (e) { noteError('x', e); });",
       'p.then(() => 1);',
+      {
+        code: 'start().catch((e) => reportStartFailure(e));',
+        options: [{ reporters: ['noteError', 'reportStartFailure'] }],
+      },
+      "p.then(ok, (e) => noteError('x', e));",
     ],
     invalid: [
       { code: 'try { f(); } catch { /* c */ }', errors: [{ messageId: 'silent' }] },
@@ -32,6 +37,12 @@ describe('local/no-silent-catch (R-199)', () => {
       { code: 'p.catch(() => undefined);', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch(() => null);', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch((e) => { return e && null; });', errors: [{ messageId: 'silent' }] },
+      { code: 'p.then(ok, () => null);', errors: [{ messageId: 'silent' }] },
+      { code: 'p.then(undefined, function () { return 1; });', errors: [{ messageId: 'silent' }] },
+      { code: 'p.catch(noop);', errors: [{ messageId: 'silent' }] },
+      { code: 'start().catch((e) => reportStartFailure(e));', errors: [{ messageId: 'silent' }] },
+      { code: 'p.catch(String);', errors: [{ messageId: 'silent' }] },
+      { code: 'p.catch(this.ignore);', errors: [{ messageId: 'silent' }] },
     ],
   });
 });

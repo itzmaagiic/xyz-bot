@@ -1,6 +1,7 @@
 /** Shared bootstrap used by both targets. */
 import { BotController } from './core/bot';
 import { BridgeClient } from './core/bridge/client';
+import { noteError } from './core/log/note';
 import type { Platform } from './platform/types';
 import { Overlay } from './ui/overlay';
 import { toast } from './ui/toast';
@@ -8,6 +9,17 @@ import { toast } from './ui/toast';
 export interface App {
   bot: BotController;
   overlay: Overlay;
+}
+
+/**
+ * A failed start must not vanish as an unhandled rejection (R-199): note it, log it to the console and tell the user
+ * with a toast – the overlay may not exist yet.
+ */
+export function reportStartFailure(e: unknown, doc: Document = document): void {
+  noteError('app:start', e);
+  const msg = e instanceof Error ? e.message : String(e);
+  console.error('[pkbot] start failed', e);
+  toast(`Pokelike Bot konnte nicht starten: ${msg}`, 8000, doc);
 }
 
 /** Debounce so a key that reaches both chrome.commands and the page only acts once. */
