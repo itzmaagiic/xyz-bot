@@ -60,6 +60,7 @@ export class StateReader {
   private async fetchPageErrors(since: number): Promise<void> {
     try {
       const r = await this.bridge!.request<{ seq: number; errors: NotedError[] }>('errors', { since });
+      this.errSeq = Math.max(this.errSeq, r.seq); // the answer may already hold notes made after the snapshot
       this.pageErrors?.(r.errors);
     } catch (e) {
       this.errSeq = Math.min(this.errSeq, since); // fetch again on the next read

@@ -10,7 +10,7 @@ export interface NotedError {
   msg: string;
   count: number;
   t: number;
-  /** running number of this distinct error in its world (the page bridge reports it, R-253) */
+  /** change number: set on the first note and on every repeat (the page bridge reports changes by it, R-253) */
   seq: number;
 }
 
@@ -18,6 +18,8 @@ const MAX = 50;
 let buf: NotedError[] = [];
 let seq = 0;
 const subs = new Set<(e: NotedError) => void>();
+const everySubs = new Set<(e: NotedError) => void>();
+let inEvery = false;
 
 function message(err: unknown): string {
   if (err instanceof Error) return err.message || err.name;
@@ -36,6 +38,8 @@ export function noteError(where: string, err: unknown): void {
   if (hit) {
     hit.count++;
     hit.t = Date.now();
+    hit.seq = ++seq;
+    notifyEvery(hit);
     return;
   }
   const entry: NotedError = { where, msg, count: 1, t: Date.now(), seq: ++seq };
@@ -50,6 +54,29 @@ export function noteError(where: string, err: unknown): void {
       noteError('note:subscriber', e);
     }
   }
+  notifyEvery(entry);
+}
+
+function notifyEvery(e: NotedError): void {
+  if (inEvery) return; // an error inside an every-subscriber is noted, but never re-announced (no recursion)
+  inEvery = true;
+  try {
+    for (const fn of everySubs) {
+      try {
+        fn(e);
+      } catch (err) {
+        noteError('note:subscriber', err);
+      }
+    }
+  } finally {
+    inEvery = false;
+  }
+}
+
+/** Called on every occurrence, repeats included (per-run error counts, R-253). Returns the unsubscribe. */
+export function onEveryNote(fn: (e: NotedError) => void): () => void {
+  everySubs.add(fn);
+  return () => everySubs.delete(fn);
 }
 
 /** For fire-and-forget promises (event handlers, timers): a rejection is noted instead of vanishing (R-199). */
@@ -67,12 +94,12 @@ export function recentErrors(): readonly NotedError[] {
   return buf;
 }
 
-/** Number of distinct errors noted so far (monotonic, survives clearNotedErrors; a page reload starts at 0). */
+/** Number of notes so far, repeats included (monotonic, survives clearNotedErrors; a page reload starts at 0). */
 export function noteSeq(): number {
   return seq;
 }
 
-/** The noted errors newer than `since` (by seq) – what the page bridge hands to the bot (R-253). */
+/** The noted errors that changed after `since` (new or repeated) – what the page bridge hands to the bot (R-253). */
 export function errorsSince(since: number): NotedError[] {
   return buf.filter((e) => e.seq > since);
 }

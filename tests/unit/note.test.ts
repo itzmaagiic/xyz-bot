@@ -5,6 +5,7 @@ import {
   noteError,
   noteRejection,
   noteSeq,
+  onEveryNote,
   onNotedError,
   recentErrors,
 } from '../../src/core/log/note';
@@ -27,15 +28,31 @@ describe('noteError (R-199)', () => {
     expect(list[49]!.msg).toBe('e59');
   });
 
-  it('numbers each distinct error (seq); a repeat only counts up; errorsSince returns the newer ones (R-253)', () => {
+  it('seq counts every note, also repeats; errorsSince returns the entries changed since then (R-253)', () => {
     const s0 = noteSeq();
     noteError('a', new Error('x'));
-    noteError('a', new Error('x'));
     noteError('b', new Error('y'));
-    expect(noteSeq()).toBe(s0 + 2);
-    expect(recentErrors().map((e) => e.seq)).toEqual([s0 + 1, s0 + 2]);
-    expect(errorsSince(s0 + 1).map((e) => e.where)).toEqual(['b']);
-    expect(errorsSince(s0 + 2)).toEqual([]);
+    noteError('a', new Error('x')); // a repeat: count 2, and it is "new" again for whoever fetched up to s0 + 2
+    expect(noteSeq()).toBe(s0 + 3);
+    expect(recentErrors().map((e) => [e.where, e.count, e.seq])).toEqual([
+      ['a', 2, s0 + 3],
+      ['b', 1, s0 + 2],
+    ]);
+    expect(errorsSince(s0 + 2).map((e) => [e.where, e.count])).toEqual([['a', 2]]);
+    expect(errorsSince(s0 + 3)).toEqual([]);
+  });
+
+  it('onEveryNote sees every occurrence, onNotedError only the first (R-253: per-run counts, quiet log)', () => {
+    const every: number[] = [];
+    const first: number[] = [];
+    const off1 = onEveryNote((e) => every.push(e.count));
+    const off2 = onNotedError((e) => first.push(e.count));
+    noteError('r', new Error('again'));
+    noteError('r', new Error('again'));
+    off1();
+    off2();
+    expect(every).toEqual([1, 2]);
+    expect(first).toEqual([1]);
   });
 
   it('accepts non-Error values', () => {

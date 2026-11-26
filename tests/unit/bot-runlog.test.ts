@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../src/core/actions/actor';
 import { BotController } from '../../src/core/bot';
-import { clearNotedErrors, noteError } from '../../src/core/log/note';
+import { clearNotedErrors, noteError, recentErrors } from '../../src/core/log/note';
 import { DEFAULT_SETTINGS } from '../../src/core/settings';
 import type { Platform } from '../../src/platform/types';
 import { loadFixture } from './helpers';
@@ -98,5 +98,57 @@ describe('bot → run log wiring (R-006, R-009)', () => {
     expect(s.pauses.map((p) => p.kind)).toEqual(['stalled']);
     expect(s.result).toBe('aborted');
     expect(s.errors).toContainEqual(expect.objectContaining({ world: 'bot', where: 'test:where', msg: 'boom' }));
+  });
+
+  it('an error noted before the bot starts keeps its own time stamp in the log (P2 finding)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    clearNotedErrors();
+    vi.setSystemTime(5_000);
+    noteError('early:where', new Error('before start'));
+    vi.setSystemTime(90_000);
+    const { b } = bot('title');
+    expect(b.log.entries().find((e) => e.msg === 'handled: early:where – before start')!.t).toBe(5_000);
+  });
+
+  it('pause() suspends the dwell clock: the paused minutes are not counted for the screen', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(0);
+    const { b, click } = bot('title');
+    click.mockImplementation(async (el: Element) => {
+      (el as HTMLButtonElement).disabled = true;
+    });
+    await b.tick(); // run open, screen title observed at t = 0
+    vi.setSystemTime(1_000);
+    b.pause('paused by user');
+    vi.setSystemTime(600_000);
+    b.view.status = 'running';
+    await b.tick(); // title again – the 10 paused minutes are not title dwell time
+    expect(b.runs.summaries()[0]!.screenTimes.title ?? { maxMs: 0 }).toMatchObject({ maxMs: 1_000 });
+  });
+
+  it('a repeated bot-world error reaches the run it happens in (count per run)', async () => {
+    clearNotedErrors();
+    const { b, click } = bot('title');
+    click.mockImplementation(async (el: Element) => el.remove());
+    await b.tick(); // run 1 open
+    noteError('sim:x', new Error('fallback'));
+    b.runs.record({ kind: 'stop', why: 'game over', result: 'loss' }, await b.refresh());
+    b.runs.record({ kind: 'click', selector: '#a', why: 'next run' }, await b.refresh());
+    noteError('sim:x', new Error('fallback')); // the same error again, in run 2
+    const [one, two] = b.runs.summaries();
+    expect(one!.errors).toContainEqual(expect.objectContaining({ where: 'sim:x', count: 1 }));
+    expect(two!.errors).toContainEqual(expect.objectContaining({ where: 'sim:x', count: 1 }));
+  });
+
+  it('a broken run recorder never stops the bot: the error is noted, the tick goes on', async () => {
+    clearNotedErrors();
+    const { b, click } = bot('title');
+    click.mockImplementation(async (el: Element) => el.remove());
+    vi.spyOn(b.runs, 'observe').mockImplementation(() => {
+      throw new Error('recorder bug');
+    });
+    await expect(b.tick()).resolves.toMatchObject({ kind: 'click' });
+    expect(b.view.status).toBe('running');
+    expect(recentErrors().some((e) => e.where === 'bot:runlog' && e.msg === 'recorder bug')).toBe(true);
   });
 });

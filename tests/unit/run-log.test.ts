@@ -175,6 +175,8 @@ describe('RunRecorder: D-005 lines (R-006)', () => {
     const r2 = recorder(clock());
     r2.record(click(), st('map'));
     r2.pause('user', 'paused by user');
+    expect(r2.summaries()[0]).toMatchObject({ result: 'open', cause: { kind: 'pause', pauseKind: 'user' } });
+    r2.record(click(), st('map')); // resumed: the pause is history, no cause any more
     expect(r2.summaries()[0]).toMatchObject({ result: 'open', cause: null });
   });
 
@@ -216,6 +218,57 @@ describe('RunRecorder: D-005 lines (R-006)', () => {
     r.observe(st('battle', run({ currentMap: 2, map, currentNodeId: 'b' })));
     r.record(stop('loss'), st('gameover', run({ currentMap: 2 })));
     expect(r.summaries()[0]!.cause).toMatchObject({ kind: 'loss', node: 'boss', boss: 'Misty' });
+  });
+
+  it('the boss name is only used for the same map and eliteIndex (Top-4 chain) and never carried into a new run', () => {
+    const c = clock();
+    const r = recorder(c);
+    const map = {
+      mapIndex: 8,
+      nodes: { b: { id: 'b', type: 'boss', layer: 5, col: 0, visited: false, accessible: true } },
+      edges: [],
+    };
+    const sim = { nodeRates: {}, bossNoHeal: { 0: 0.4 }, bossHeal: { 0: 0.5 }, bossName: 'Lorelei' };
+    r.record(click(), st('map', run({ currentMap: 8, map, eliteIndex: 0 }), { sim }));
+    // the gauntlet goes on without a map screen: Bruno, Agatha … – Lorelei must not be named for them
+    r.observe(st('battle', run({ currentMap: 8, map, currentNodeId: 'b', eliteIndex: 2 })));
+    const end = r.record(stop('loss'), st('gameover', run({ currentMap: 8, eliteIndex: 2 })));
+    expect(r.summaries()[0]!.cause).toMatchObject({ kind: 'loss', node: 'boss', boss: null });
+    expect(end.state!.nextBoss).toBeNull();
+    // next run: a boss loss without any (successful) simulation names no boss from the previous run
+    c.advance(1_000);
+    const m1 = { ...map, mapIndex: 1 };
+    r.record(click(), st('map', run({ currentMap: 8, map: m1, eliteIndex: 0 })));
+    r.observe(st('battle', run({ currentMap: 8, map: m1, currentNodeId: 'b', eliteIndex: 0 })));
+    r.record(stop('loss'), st('gameover', run({ currentMap: 8 })));
+    expect(r.summaries()[1]!.cause).toMatchObject({ kind: 'loss', boss: null });
+  });
+
+  it('paused time is no dwell time: suspend() closes the current screen until the next observation', () => {
+    const c = clock();
+    const r = recorder(c);
+    r.record(click(), st('map'));
+    r.observe(st('map'));
+    c.advance(1_000);
+    r.suspend(); // the bot pauses on the map
+    c.advance(600_000); // the user plays by hand for 10 minutes
+    r.observe(st('battle'));
+    c.advance(2_000);
+    r.observe(st('map'));
+    expect(r.summaries()[0]!.screenTimes).toEqual({
+      map: { n: 1, totalMs: 1_000, maxMs: 1_000 },
+      battle: { n: 1, totalMs: 2_000, maxMs: 2_000 },
+    });
+  });
+
+  it('a run that ends on a wanted pause names it as the cause (R-009: Abbruchgrund), result stays open', () => {
+    const r = recorder(clock());
+    r.record(click(), st('map'));
+    r.pause('unsupported', 'screen "mystery-screen" is not automated yet');
+    expect(r.summaries()[0]).toMatchObject({
+      result: 'open',
+      cause: { kind: 'pause', pauseKind: 'unsupported', reason: 'screen "mystery-screen" is not automated yet' },
+    });
   });
 
   it('observe accumulates the dwell time per screen kind (n, totalMs, maxMs)', () => {
@@ -283,6 +336,22 @@ describe('RunRecorder: limits, errors and export (R-091, R-253)', () => {
     expect(errs).toHaveLength(50);
     expect(errs[0]).toMatchObject({ world: 'main', where: 'sim', msg: 'boom', count: 3 });
     expect(errs[1]).toMatchObject({ world: 'bot', where: 'sim', msg: 'boom', count: 1 });
+  });
+
+  it('per run, an error counts its own occurrences: a repeat in the next run appears there with count 1', () => {
+    const c = clock();
+    const r = recorder(c);
+    r.record(click(), st('map'));
+    r.error({ ...noted('sim', 'fallback', 1), seq: 1 }, 'main');
+    r.error({ ...noted('sim', 'fallback', 3), seq: 2 }, 'main'); // the page noted it twice more
+    r.record(stop('loss'), st('gameover'));
+    c.advance(1_000);
+    r.record(click(), st('map'));
+    r.error({ ...noted('sim', 'fallback', 4), seq: 3 }, 'main'); // one more time, now in run 2
+    r.error({ ...noted('sim', 'fallback', 4), seq: 3 }, 'main'); // the same report delivered twice: no new occurrence
+    const [one, two] = r.summaries();
+    expect(one!.errors).toEqual([expect.objectContaining({ where: 'sim', count: 3 })]);
+    expect(two!.errors).toEqual([expect.objectContaining({ where: 'sim', count: 1 })]);
   });
 
   it('exportBundle without any run is valid with runs: []', () => {

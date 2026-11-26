@@ -14,7 +14,7 @@ import { FLAGS } from './flags';
 import { readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
-import { type NotedError, noteError, noteRejection, onNotedError, recentErrors } from './log/note';
+import { type NotedError, noteError, noteRejection, onEveryNote, onNotedError, recentErrors } from './log/note';
 import { errorPause, type PauseKind } from './pause-reason';
 import { Watchdog } from './watchdog';
 import { BOT_VERSION } from './version';
@@ -88,17 +88,24 @@ export class BotController {
     this.actor = new Actor();
     // R-199: handled errors are visible in the overlay log and the log export – also those noted before start-up
     // muted level: a handled error is information, not an alarm (UI review P2); real problems stay warn/error
-    const show = (e: NotedError) => {
-      this.log.debug(`handled: ${e.where} – ${e.msg}`);
-      this.runs.error(e, 'bot');
-    };
-    for (const e of recentErrors()) show(e);
+    // the log shows each distinct error once, with its own time stamp; the run log counts every occurrence (R-253)
+    const show = (e: NotedError) => this.log.log('debug', `handled: ${e.where} – ${e.msg}`, undefined, e.t);
+    for (const e of recentErrors()) {
+      show(e);
+      this.rec(() => this.runs.error(e, 'bot'));
+    }
     onNotedError(show);
+    onEveryNote((e) => this.rec(() => this.runs.error(e, 'bot')));
     // R-253: errors noted in the page's main world (bridge, simulator) – muted, with their own time stamp
+    const pageLogged = new Set<string>();
     this.reader.onPageErrors((errs) => {
       for (const e of errs) {
-        this.log.log('debug', `handled (page): ${e.where} – ${e.msg}`, undefined, e.t);
-        this.runs.error(e, 'main');
+        const key = `${e.where}|${e.msg}`;
+        if (!pageLogged.has(key)) {
+          pageLogged.add(key);
+          this.log.log('debug', `handled (page): ${e.where} – ${e.msg}`, undefined, e.t);
+        }
+        this.rec(() => this.runs.error(e, 'main'));
       }
     });
   }
@@ -194,8 +201,9 @@ export class BotController {
     this.view.pauseKind = reason ? kind : null;
     if (reason) {
       this.log.warn(`paused: ${reason}`);
-      this.runs.pause(kind, reason);
+      this.rec(() => this.runs.pause(kind, reason));
     }
+    this.rec(() => this.runs.suspend()); // paused minutes are no screen time
     this.emit();
     if (notify && wasRunning && reason) noteRejection('bot:notify', this.notify('Pokelike bot paused', reason));
   }
@@ -267,9 +275,19 @@ export class BotController {
   }
 
   /** Logs an executed decision and records it in the run log (one place for both, R-006). */
-  private decided(d: RecordableDecision, st: GameState, data: unknown): DecisionLine {
+  private decided(d: RecordableDecision, st: GameState, data: unknown): DecisionLine | undefined {
     this.log.log('decision', d.why, data);
-    return this.runs.record(d, st);
+    return this.rec(() => this.runs.record(d, st));
+  }
+
+  /** The run log is an observer: a bug in it is noted, never allowed to stop or crash the bot (R-199). */
+  private rec<T>(fn: () => T): T | undefined {
+    try {
+      return fn();
+    } catch (e) {
+      noteError('bot:runlog', e);
+      return undefined;
+    }
   }
 
   private async notify(title: string, body: string): Promise<void> {
@@ -442,7 +460,7 @@ export class BotController {
 
   async tick(): Promise<Decision | null> {
     let st = await this.refresh();
-    this.runs.observe(st);
+    this.rec(() => this.runs.observe(st));
     // R-095 watchdog (D-037): the signature includes battle progress, so only a real standstill trips it
     if (this.view.status === 'running') {
       const sec = this.view.settings.watchdogSec;
@@ -451,7 +469,7 @@ export class BotController {
         this.log.info(`watchdog: resumed after ${Math.round(this.watchdog.gapMs / 1000)} s – timer restarted`);
       } else if (wd === 'reread') {
         this.log.warn(`watchdog: no change for ${sec} s on ${st.screen.kind} – re-reading the game state`);
-        this.runs.count('watchdogRereads');
+        this.rec(() => this.runs.count('watchdogRereads'));
         st = await this.refresh();
         this.watchdog.observe(st.screen.signature, sec * 1000); // a changed state clears the alarm at once
       } else if (wd === 'stall') {
@@ -477,12 +495,12 @@ export class BotController {
           this.log.debug(`possible pause: ${d.why}`);
           return { kind: 'wait', ms: 900, why: 'confirming unknown state' };
         }
-        this.runs.record(d, st);
+        this.rec(() => this.runs.record(d, st));
         this.pause(d.why, true, d.cause);
         return d;
       }
       case 'stop': {
-        this.runs.record(d, st);
+        this.rec(() => this.runs.record(d, st));
         const s = this.view.stats;
         s.runs++;
         if (d.result === 'win') s.wins++;
@@ -572,7 +590,7 @@ export class BotController {
     await this.actor.click(el);
     this.view.stats.actions++;
     const changed = await waitForEffect(this.doc, el, before, () => detectScreen(this.doc).signature, VERIFY_TIMEOUT);
-    this.runs.setOutcome(line, changed ? 'ok' : 'no-effect');
+    if (line) this.rec(() => this.runs.setOutcome(line, changed ? 'ok' : 'no-effect'));
     if (changed) {
       this.failCount = 0;
       this.failKey = null;

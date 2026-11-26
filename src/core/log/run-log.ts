@@ -119,9 +119,9 @@ interface RunRecord {
   counts: RunSummary['counts'];
   screenTimes: Record<string, ScreenTime>;
   pauses: { kind: PauseKind; reason: string; t: number }[];
-  /** the run's last event was an error pause (no decision after it) */
-  endedOnError: boolean;
-  errors: RunError[];
+  /** the run's last event was a pause (no decision after it): its abort reason (R-009) */
+  endedOnPause: boolean;
+  errors: ErrorBook;
   progress: RunSummary['progress'];
   lastBattle: { node: string | null; map: number; boss: string | null; team: ShortMon[] } | null;
   version: string | null;
@@ -130,6 +130,13 @@ interface RunRecord {
 }
 
 const MAX_ERRORS = 50;
+
+/** errors of one run (or of the time before a run): entries plus the global count seen last, per key */
+interface ErrorBook {
+  list: RunError[];
+  base: Map<string, number>;
+}
+const newBook = (): ErrorBook => ({ list: [], base: new Map() });
 const iso = (t: number) => new Date(t).toISOString();
 const hp = (m: Mon) => `${m.currentHp}/${m.maxHp}`;
 
@@ -140,10 +147,11 @@ export class RunRecorder {
   private readonly maxLines: number;
   private runs: RunRecord[] = [];
   private open: RunRecord | null = null;
-  private pendingErrors: RunError[] = [];
+  private pendingErrors: ErrorBook = newBook();
   private screen: string | null = null;
   private screenSince = 0;
-  private lastBoss: string | null = null;
+  /** boss of the last map simulation – valid only for that map and eliteIndex (Top-4 chain, failed sims) */
+  private bossAt: { name: string; map: number; elite: number } | null = null;
 
   constructor(
     private readonly o: {
@@ -166,18 +174,11 @@ export class RunRecorder {
     const t = this.now();
     const kind = st.screen.kind;
     if (kind !== this.screen) {
-      if (this.screen !== null && this.open) {
-        const s = this.open.screenTimes[this.screen] ?? { n: 0, totalMs: 0, maxMs: 0 };
-        this.open.screenTimes[this.screen] = s;
-        const ms = t - this.screenSince;
-        s.n++;
-        s.totalMs += ms;
-        s.maxMs = Math.max(s.maxMs, ms);
-      }
+      this.closeDwell(t);
       this.screen = kind;
       this.screenSince = t;
     }
-    if (st.sim?.bossName) this.lastBoss = st.sim.bossName;
+    this.noteBoss(st);
     if (!this.open) return;
     this.track(this.open, st);
     const run = st.run;
@@ -186,7 +187,7 @@ export class RunRecorder {
       this.open.lastBattle = {
         node: nodeType,
         map: run.currentMap,
-        boss: nodeType === 'boss' ? this.lastBoss : null,
+        boss: nodeType === 'boss' ? this.bossFor(st) : null,
         team: run.team.map((m) => ({ name: m.name, level: m.level, hp: hp(m) })),
       };
     }
@@ -194,9 +195,9 @@ export class RunRecorder {
 
   record(d: RecordableDecision, st: GameState): DecisionLine {
     const t = this.now();
-    // the bot attaches the map simulation after observe(): the boss name reaches the recorder here
-    if (st.sim?.bossName) this.lastBoss = st.sim.bossName;
     const r = this.open ?? this.openRun(t, st);
+    // the bot attaches the map simulation after observe(): the boss name reaches the recorder here
+    this.noteBoss(st);
     this.track(r, st);
     const ctx = this.o.context();
     const tr = d.trace;
@@ -206,7 +207,7 @@ export class RunRecorder {
       step: ++r.step,
       game_version: st.version,
       screen: st.screen.kind,
-      state: compact(st, this.lastBoss),
+      state: compact(st, this.bossFor(st)),
       options: (tr?.options ?? []).map((x) => ({ id: x.id, label: x.label })),
       scores: Object.fromEntries((tr?.options ?? []).map((x) => [x.id, { score: x.score, ...(x.factors ?? {}) }])),
       chosen: tr?.chosen ?? describe(d),
@@ -222,7 +223,7 @@ export class RunRecorder {
       r.dropped++;
     }
     r.counts.decisions++;
-    r.endedOnError = false;
+    r.endedOnPause = false;
     if (d.kind === 'click') r.counts.clicks++;
     if (d.kind !== 'pause' && d.kind !== 'stop') {
       r.actions++;
@@ -247,12 +248,34 @@ export class RunRecorder {
     if (!r) return;
     r.pauses.push({ kind, reason, t: this.now() });
     r.counts.pauses++;
-    r.endedOnError = isErrorKind(kind);
+    r.endedOnPause = true;
   }
 
+  /** The bot paused: close the current screen's dwell time – paused minutes are no screen time (R-254 budgets). */
+  suspend(): void {
+    this.closeDwell(this.now());
+    this.screen = null;
+  }
+
+  /**
+   * A noted error (every occurrence for the bot world, changed entries for the page world). Per run, an error
+   * counts its own occurrences: the difference of the global count to the last one seen (first sighting = 1).
+   */
   error(e: NotedError, world: 'bot' | 'main'): void {
-    const entry: RunError = { world, where: e.where, msg: e.msg, count: e.count, t: e.t };
-    addError(this.open ? this.open.errors : this.pendingErrors, entry);
+    const book = this.open ? this.open.errors : this.pendingErrors;
+    const key = `${world}|${e.where}|${e.msg}`;
+    const hit = book.list.find((x) => x.world === world && x.where === e.where && x.msg === e.msg);
+    if (!hit) {
+      if (book.list.length >= MAX_ERRORS) return;
+      book.list.push({ world, where: e.where, msg: e.msg, count: 1, t: e.t });
+      book.base.set(key, e.count);
+      return;
+    }
+    const delta = e.count - (book.base.get(key) ?? e.count);
+    if (delta <= 0) return; // the same report delivered again
+    hit.count += delta;
+    hit.t = e.t;
+    book.base.set(key, e.count);
   }
 
   count(key: 'watchdogRereads'): void {
@@ -272,6 +295,26 @@ export class RunRecorder {
     };
   }
 
+  private closeDwell(t: number): void {
+    if (this.screen === null || !this.open) return;
+    const s = this.open.screenTimes[this.screen] ?? { n: 0, totalMs: 0, maxMs: 0 };
+    this.open.screenTimes[this.screen] = s;
+    const ms = t - this.screenSince;
+    s.n++;
+    s.totalMs += ms;
+    s.maxMs = Math.max(s.maxMs, ms);
+  }
+
+  private noteBoss(st: GameState): void {
+    if (st.sim?.bossName && st.run)
+      this.bossAt = { name: st.sim.bossName, map: st.run.currentMap, elite: st.run.eliteIndex };
+  }
+
+  private bossFor(st: GameState): string | null {
+    const b = this.bossAt;
+    return b && st.run && b.map === st.run.currentMap && b.elite === st.run.eliteIndex ? b.name : null;
+  }
+
   private openRun(t: number, st: GameState): RunRecord {
     const ctx = this.o.context();
     const r: RunRecord = {
@@ -287,16 +330,16 @@ export class RunRecorder {
       counts: { decisions: 0, clicks: 0, noEffect: 0, watchdogRereads: 0, pauses: 0 },
       screenTimes: {},
       pauses: [],
-      endedOnError: false,
-      errors: [],
+      endedOnPause: false,
+      errors: this.pendingErrors,
       progress: { badges: 0, map: 0, eliteIndex: 0, maxLevel: 0, teamSize: 0 },
       lastBattle: null,
       version: st.version,
       mode: { ...ctx.mode, run: null, gen: null },
       profile: ctx.profile,
     };
-    for (const e of this.pendingErrors) addError(r.errors, e);
-    this.pendingErrors = [];
+    this.pendingErrors = newBook();
+    this.bossAt = null; // never name the boss of the previous run
     this.runs.push(r);
     if (this.runs.length > this.maxRuns) this.runs.shift();
     this.open = r;
@@ -318,7 +361,8 @@ export class RunRecorder {
 
   private summary(r: RunRecord): RunSummary {
     const last = r.pauses[r.pauses.length - 1]; // no .at(): Safari 15.0 (R-107)
-    const result = r.result ?? (r.endedOnError ? 'aborted' : 'open');
+    const trailing = r.endedOnPause && r.result === null ? last : undefined;
+    const result = r.result ?? (trailing && isErrorKind(trailing.kind) ? 'aborted' : 'open');
     const cause: RunCause =
       result === 'loss'
         ? {
@@ -328,8 +372,8 @@ export class RunRecorder {
             boss: r.lastBattle?.boss ?? null,
             team: r.lastBattle?.team ?? [],
           }
-        : result === 'aborted' && last
-          ? { kind: 'pause', pauseKind: last.kind, reason: last.reason }
+        : trailing
+          ? { kind: 'pause', pauseKind: trailing.kind, reason: trailing.reason }
           : null;
     return {
       run_id: r.id,
@@ -345,21 +389,11 @@ export class RunRecorder {
       counts: { ...r.counts },
       screenTimes: structuredCopy(r.screenTimes),
       pauses: r.pauses.map((p) => ({ kind: p.kind, reason: p.reason, t: iso(p.t) })),
-      errors: r.errors.map((e) => ({ ...e })),
+      errors: r.errors.list.map((e) => ({ ...e })),
       optionCoverage: r.actions ? r.withOptions / r.actions : 0,
       dropped: r.dropped,
     };
   }
-}
-
-function addError(list: RunError[], e: RunError): void {
-  const hit = list.find((x) => x.world === e.world && x.where === e.where && x.msg === e.msg);
-  if (hit) {
-    hit.count = Math.max(hit.count, e.count);
-    hit.t = e.t;
-    return;
-  }
-  if (list.length < MAX_ERRORS) list.push({ ...e });
 }
 
 function structuredCopy(o: Record<string, ScreenTime>): Record<string, ScreenTime> {
