@@ -202,3 +202,32 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - der Gerätelauf auf der ältesten verfügbaren iOS-Version, mit Versionsangabe im Prüfprotokoll
 
   Begründung: iOS-15-Geräte sind selten verfügbar. Die statischen Checks decken genau die Ursachen ab, an denen ein Skript auf iOS 15 scheitert (Syntax, fehlende APIs).
+
+**D-036 – Bedrohungsmodell der Lint-Leitplanken (R-032, R-199)** (2026-11-26)
+- Zweck: Festlegen, welche Umgehungen die automatischen Checks erkennen **müssen** und welche bewusst nicht. Ohne diese Grenze ließe sich jede Review-Runde um eine weitere Umgehung verlängern (Review-Tor P2, Runden 1 bis 3).
+- **Muss erkannt werden** (natürliche Muster, die beim normalen Programmieren oder durch Kopieren entstehen), jeweils mit Test:
+  - **Plattform-APIs in `core/`, `ui/` und `app.ts` (R-032):**
+    - Import und `import()` (auch berechnet)
+    - Globale wie `chrome` und `GM`
+    - Property auf jedem Objekt: `globalThis.chrome`, Cast, Alias, `document.defaultView`, `window.window`
+    - `declare const GM` und andere Bezeichner mit Plattform-Namen
+    - Destructuring
+    - String- und Template-Keys
+  - **Stille Fehler (R-199):**
+    - leere oder kommentarlose catch-Blöcke
+    - `.catch(() => x)` und `.catch(bezeichner)`
+    - Rejection-Handler in `.then(a, b)`
+    - schwebende Promises (typbewusst, auch `void p`)
+    - async-Callbacks an Stellen, die `void` erwarten
+    - `el.onx = async …`
+    - Abschalten per `eslint-disable`: nur pro Regel und nur laut Allowlist
+    - Abschalten per Inline-Konfiguration `/* eslint regel: "off" */`
+- **Bewusst nicht erkannt** (vorsätzliche Umgehung, kein Versehen; fällt im Code-Review auf):
+  - `Reflect.get`
+  - `Object.getOwnPropertyDescriptor`
+  - Strings, die zur Laufzeit zusammengebaut werden
+  - `new Function`/`eval`
+  - Umbenennen über Module
+  - eine geänderte ESLint-Konfiguration selbst
+- **Absicherung zur Laufzeit statt Lint:** Ein globaler Handler für `unhandledrejection`/`error`, der über `noteError` meldet, fängt, was Lint nicht sieht. Er kommt mit R-200 in P3.
+- Folge: Eine neue Umgehung aus der ersten Liste ist ein Fehler, der Test und Fix braucht. Eine aus der zweiten Liste ist kein Fund für das Review-Tor.

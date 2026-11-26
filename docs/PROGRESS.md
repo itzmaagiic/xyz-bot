@@ -5,11 +5,10 @@
 _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kommt Phase 2: Gerüst und Build, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **Review-Tor P2, Runde 3:**
-  - Runde 2 (requirements-reviewer) war „nicht bestanden“: R-199 und R-032 noch zu hoch bewertet, dazu Doku-Widersprüche.
-  - Alles behoben (`2b55d98` und folgende): typbewusste Promise-Regeln plus `noteRejection`, `step()` wie die Schleife, Allowlist auch gegen pauschale disables, Plattform-Namen auf jedem Objekt, Whitelist für Metadaten, Hook (Unterpunkte, Durchstreichungen, Zeilenzahl der Kurzform), D-035, neue R-255 bis R-259.
-  - Verifikation: `vitest` 268/268, E2E 35 bestanden und 3 übersprungen, alle Checks grün.
-  - Runde 3 läuft.
+- **Review-Tor P2, Runde 4 (gezielt):**
+  - Runde 3 war „nicht bestanden“ wegen weiterer natürlicher Umgehungen: `declare const GM`, Destructuring, Template-Key, Inline-Konfiguration, `el.onclick = async`.
+  - Alles geschlossen. Das Bedrohungsmodell D-036 legt fest, was die Leitplanken erkennen müssen. Neu ist R-260.
+  - Runde 4 prüft gezielt diese Punkte.
 
 ## Nächster Schritt
 1. **Abschluss Phase 2:**
@@ -65,6 +64,11 @@ _(Phase 0 und Phase 1 sind abgeschlossen, beide Review-Tore bestanden. Jetzt kom
   - **P3:** SKIP-Hänger (R-087, R-094, R-190), Run-Logs (R-006, R-009), Live-Urteil (neu R-254), Heilung beim Kartenwechsel klären.
   - **P4:** Lead-Tausch auf der Karte, Boss-Reihenfolge bei 100 %, Fangwahl bei Sättigung, R-250, R-251.
   - **P5:** Kontrast von `<select>` und Checkbox auf WebKit hell, Verdeckung, Touch-Ziele, Safe Area, Screenshot-Befehl, `:focus-visible`-Fallback.
+- Review-Tor P2, Runde 3 (requirements-reviewer), Vorbefunde für P3:
+  - Verhaltenstest mit Typinformation für die Lint-Regeln: ein Fixture-Verzeichnis im tsconfig mit Dateien, die rot sein **müssen**.
+  - Globaler `unhandledrejection`-Handler (R-200, D-036).
+  - Speicherfehler auch auf der Optionsseite zeigen (R-259).
+  - In der echten Hook-Ausgabe (≈ 8,9 KB) kommt von „Erledigt“ nur der erste Unterpunkt an. Beobachten und den Eintrag knapp halten.
 
 ## Bekannte Probleme
 - **Live-Lauf 1 (P1, 2026-11-25, Story Classic Kanto, frisches Profil):** Nach 2,3 Minuten 3 Orden, 31 Fortschrittsschritte, Team Venusaur 36, Weepinbell 31, Beedrill 31, Butterfree 31, Magnemite 29. Dann **Pause**: „action keeps failing: no effect after clicking #btn-auto-battle[0]“ im Bosskampf auf Karte 3 (Knoten `n8_0`). Der Test zählt das als „bestanden“, weil er nur Fortschritt prüft. Er muss Hänger künftig als Fehler werten (R-190). Möglicherweise hat parallele CPU-Last durch E2E-Läufe eines Reviewers mitgewirkt. Wiederholung ohne Parallelität und mit `PKBOT_OUT=artifacts/live` steht aus. Gespeichert wurde in fast jedem Bildschirm (Karte 17×, Kampf 17×, Item 3×, Fang 2×, Elite-Prep 2×), gut für Resume (R-194).

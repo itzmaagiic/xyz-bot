@@ -22,7 +22,7 @@ describe('no silent failures outside catch blocks (R-199)', () => {
     }
   });
 
-  it('eslint-disable in src/ only per rule and only from the allowlist – never blanket', () => {
+  it('eslint-disable in src/ only per rule and only from the allowlist – never blanket, never inline config', () => {
     // file → rules that may be disabled there (each with a reason in the comment)
     const allowed: Record<string, string[]> = {
       'src/core/log/note.ts': ['local/no-silent-catch'],
@@ -35,8 +35,11 @@ describe('no silent failures outside catch blocks (R-199)', () => {
       for (const f of readdirSync(d)) {
         const p = join(d, f);
         if (statSync(p).isDirectory()) walk(p);
-        else
-          for (const m of readFileSync(p, 'utf8').matchAll(/eslint-disable(?:-next-line|-line)?([^\n*]*)/g)) {
+        else {
+          const text = readFileSync(p, 'utf8');
+          // inline rule configuration (/* eslint some/rule: "off" */) would switch rules off unnoticed (D-036)
+          if (/\/\*\s*eslint\s+[^*]*:/.test(text)) bad.push(`${relative(root, p)}: inline eslint rule configuration`);
+          for (const m of text.matchAll(/eslint-disable(?:-next-line|-line)?([^\n*]*)/g)) {
             const rules = (m[1] ?? '')
               .split('--')[0]!
               .split(',')
@@ -46,6 +49,7 @@ describe('no silent failures outside catch blocks (R-199)', () => {
             if (!rules.length) bad.push(`${file}: blanket eslint-disable`);
             for (const r of rules) if (!(allowed[file] ?? []).includes(r)) bad.push(`${file}: ${r}`);
           }
+        }
       }
     };
     walk(join(root, 'src'));

@@ -127,11 +127,12 @@ export class Overlay {
     const step = this.h('button', { id: 'pk-step' }, 'Schritt');
     step.onclick = () => noteRejection('overlay:step', this.bot.step());
     const copy = this.h('button', { id: 'pk-copy' }, 'Log kopieren');
-    copy.onclick = async () =>
-      toast(
-        (await this.platform.copyText(this.bot.log.toText())) ? 'Log kopiert' : 'Kopieren nicht möglich',
-        2500,
-        this.doc,
+    copy.onclick = () =>
+      noteRejection(
+        'overlay:copy',
+        this.platform
+          .copyText(this.bot.log.toText())
+          .then((ok) => toast(ok ? 'Log kopiert' : 'Kopieren nicht möglich', 2500, this.doc)),
       );
     ctr.append(start, step, copy);
     body.appendChild(ctr);
@@ -185,13 +186,14 @@ export class Overlay {
       box.append(this.h('div', {}, `Wirklich diese Spieleinstellungen einschalten? ${this.confirmKeys.join(', ')}`));
       const row = this.h('div', { class: 'row' });
       const yes = this.h('button', { id: 'pk-speed-yes', class: 'primary' }, 'Ja, ändern');
-      yes.onclick = async () => {
+      yes.onclick = () => {
         const k = this.confirmKeys ?? [];
         this.confirmKeys = null;
-        toast(
-          (await this.bot.applyGameSettings(k)) ? 'Spieleinstellungen geändert' : 'Ändern fehlgeschlagen',
-          3000,
-          this.doc,
+        noteRejection(
+          'overlay:apply-game-settings',
+          this.bot
+            .applyGameSettings(k)
+            .then((ok) => toast(ok ? 'Spieleinstellungen geändert' : 'Ändern fehlgeschlagen', 3000, this.doc)),
         );
       };
       const no = this.h('button', { id: 'pk-speed-no' }, 'Abbrechen');

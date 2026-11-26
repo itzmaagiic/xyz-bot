@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Hinweis: Mit pipefail nie `printf … | grep -q` – grep beendet sich beim ersten Treffer, printf bekommt SIGPIPE und
+# die Pipeline gilt als fehlgeschlagen (flackernder Test unter Last). Deshalb Here-Strings (<<<).
 # R-232: Prüft für jede Phase P0–P7, dass die Ausgabe des SessionStart-Hooks unter 9.000 Zeichen bleibt und dabei
 # vollständig zeigt: jede offene R-ID (❌/🟡), „Nächster Schritt“ aus PROGRESS und – wenn die Phase offene Punkte
 # hat – die Kurzform „Aktuelle Phase Pn im Detail“. Geprüft wird mit 400 Bytes Reserve für die Git- und
@@ -15,16 +17,16 @@ for p in 0 1 2 3 4 5 6 7; do
   out="$(CLAUDE_PROJECT_DIR="$TMP" HOOK_MAX_BYTES=8600 "$ROOT/.claude/hooks/session-start.sh")"
   chars=$(printf '%s' "$out" | python3 -c 'import sys; print(len(sys.stdin.read()))')
   missing=0
-  idblock="$(printf '%s\n' "$out" | awk '/^Offene\/teilweise Punkte nach Phase/ {f=1; next} f && /^$/ {exit} f')"
-  for id in $open_ids; do printf '%s' "$idblock" | grep -qE "(^|[^0-9])$id([^0-9]|$)" || missing=$((missing+1)); done
-  gekuerzt=$(printf '%s' "$out" | grep -c 'gekürzt –' || true)
-  next_ok=1; printf '%s' "$out" | grep -q '^## Nächster Schritt' || next_ok=0
+  idblock="$(awk '/^Offene\/teilweise Punkte nach Phase/ {f=1; next} f && /^$/ {exit} f' <<< "$out")"
+  for id in $open_ids; do grep -qE "(^|[^0-9])$id([^0-9]|$)" <<< "$idblock" || missing=$((missing+1)); done
+  gekuerzt=$(grep -c 'gekürzt –' <<< "$out" || true)
+  next_ok=1; grep -q '^## Nächster Schritt' <<< "$out" || next_ok=0
   detail_ok=1
-  if printf '%s' "$idblock" | grep -qE "^  P$p( \(AKTUELL\))?:"; then
-    printf '%s' "$out" | grep -q "^Aktuelle Phase P$p im Detail" || detail_ok=0
+  if grep -qE "^  P$p( \(AKTUELL\))?:" <<< "$idblock"; then
+    grep -q "^Aktuelle Phase P$p im Detail" <<< "$out" || detail_ok=0
     # vollständig: so viele Zeilen wie im Kopf angekündigt („(N offene Punkte“)
-    want=$(printf '%s\n' "$out" | sed -nE "s/^Aktuelle Phase P$p im Detail \(([0-9]+) offene Punkte.*/\1/p")
-    got=$(printf '%s\n' "$out" | awk '/^Aktuelle Phase P[0-9]+ im Detail/ {f=1; next} f && /^$/ {exit} f' | wc -l | tr -d ' ')
+    want=$(sed -nE "s/^Aktuelle Phase P$p im Detail \(([0-9]+) offene Punkte.*/\1/p" <<< "$out")
+    got=$(awk '/^Aktuelle Phase P[0-9]+ im Detail/ {f=1; next} f && /^$/ {exit} f' <<< "$out" | wc -l | tr -d ' ')
     [ -n "$want" ] && [ "$want" = "$got" ] || detail_ok=0
   fi
   echo "P$p: $chars Zeichen, fehlende offene IDs: $missing, Nächster Schritt: $next_ok, Kurzform: $detail_ok, gekürzt: $gekuerzt"

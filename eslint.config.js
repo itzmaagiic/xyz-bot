@@ -3,6 +3,14 @@ import tseslint from 'typescript-eslint';
 import noSilentCatch from './eslint-rules/no-silent-catch.mjs';
 
 const PLATFORM_NAME_RE = '/^(chrome|browser|GM|GM_\\w+|unsafeWindow)$/';
+const R032 = 'Platform API – only allowed in src/platform/* (R-032).';
+// R-199: `el.onclick = async () => …` returns a promise nobody handles (onclick is typed `any`, so
+// no-misused-promises cannot see it) – use a sync handler that passes the promise to noteRejection
+const ASYNC_HANDLER = {
+  selector: "AssignmentExpression[left.type='MemberExpression'] > :function[async=true].right",
+  message:
+    'Async function assigned as a handler is a floating promise – use a sync handler with noteRejection (R-199).',
+};
 const PLATFORM_GLOBALS = [
   'chrome',
   'browser',
@@ -54,6 +62,8 @@ export default tseslint.config(
         'error',
         { reporters: ['noteError', 'noteRejection', 'reportStartFailure', 'crashed'] },
       ],
+      // flat config replaces (not merges) no-restricted-syntax options – the core/ui block repeats ASYNC_HANDLER
+      'no-restricted-syntax': ['error', ASYNC_HANDLER],
     },
   },
   {
@@ -99,15 +109,15 @@ export default tseslint.config(
           selector: "ImportExpression[source.type!='Literal']",
           message: 'No computed import() in core/ and ui/ – it could hide a platform path (R-032).',
         },
-        // platform API names on ANY object: casts, aliases, document.defaultView, window.window … (R-032)
+        // threat model D-036: platform API names as ANY identifier – member on any object (casts, aliases,
+        // document.defaultView, window.window), `declare const GM`, destructuring keys …
+        { selector: `Identifier[name=${PLATFORM_NAME_RE}]`, message: R032 },
+        { selector: `MemberExpression[computed=true][property.value=${PLATFORM_NAME_RE}]`, message: R032 },
         {
-          selector: `MemberExpression[computed=false][property.name=${PLATFORM_NAME_RE}]`,
-          message: 'Platform API – only allowed in src/platform/* (R-032).',
+          selector: 'MemberExpression[computed=true] > TemplateLiteral.property',
+          message: 'No template-literal property keys in core/ and ui/ – they could hide a platform API (R-032).',
         },
-        {
-          selector: `MemberExpression[computed=true][property.value=${PLATFORM_NAME_RE}]`,
-          message: 'Platform API – only allowed in src/platform/* (R-032).',
-        },
+        ASYNC_HANDLER,
       ],
     },
   },

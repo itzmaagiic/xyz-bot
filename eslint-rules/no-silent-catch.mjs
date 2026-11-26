@@ -10,13 +10,9 @@ function isReportCall(node, reporters) {
   if (node.type !== 'CallExpression') return false;
   const c = node.callee;
   if (c.type === 'Identifier') return reporters.has(c.name);
-  // <x>.error(…) / <x>.warn(…), or a configured reporter called as a method (e.g. this.crashed(e))
-  return (
-    c.type === 'MemberExpression' &&
-    !c.computed &&
-    c.property.type === 'Identifier' &&
-    (LOG_METHODS.has(c.property.name) || reporters.has(c.property.name))
-  );
+  // <x>.error(…) / <x>.warn(…), or a configured reporter called as a method of `this` (e.g. this.crashed(e))
+  if (c.type !== 'MemberExpression' || c.computed || c.property.type !== 'Identifier') return false;
+  return LOG_METHODS.has(c.property.name) || (c.object.type === 'ThisExpression' && reporters.has(c.property.name));
 }
 
 /** true if `node` (not descending into nested functions) contains a throw or a report call */

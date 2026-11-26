@@ -45,6 +45,11 @@ describe('local/no-silent-catch (R-199)', () => {
       { code: 'p.then(undefined, function () { return 1; });', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch(noop);', errors: [{ messageId: 'silent' }] },
       { code: 'class B { m() { try { f(); } catch (e) { this.crashed(e); } } }', errors: [{ messageId: 'silent' }] },
+      {
+        code: 'try { f(); } catch (e) { foo.crashed(e); }',
+        options: [{ reporters: ['crashed'] }],
+        errors: [{ messageId: 'silent' }],
+      },
       { code: 'start().catch((e) => reportStartFailure(e));', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch(String);', errors: [{ messageId: 'silent' }] },
       { code: 'p.catch(this.ignore);', errors: [{ messageId: 'silent' }] },

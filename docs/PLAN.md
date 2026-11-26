@@ -34,7 +34,7 @@ Größere Aufgaben laufen innerhalb einer Phase nach dem Superpowers-Workflow (C
 
 ## Phase 2 – Projektgerüst und Build-Pipeline
 **Ziel:** Jede Session kann sofort bauen, linten, testen und beide Ziele erzeugen. Der übernommene Stand (D-016) baut beide Ziele bereits. Hier werden Gerüst und Pipeline mit Nachweis abgenommen und die Lücken geschlossen, z. B. ~~WebKit im SessionStart-Hook~~ → WebKit über das Setup-Skript der Umgebung (D-026), Doku-Checks und iPhone-Viewport in `playwright.config.ts`.
-**R-IDs:** R-032 bis R-034, R-078 bis R-082, R-098 bis R-100, R-102 bis R-105, R-107, R-192, R-193, R-199, R-201, R-208, R-232, R-246, R-247
+**R-IDs:** R-032 bis R-034, R-078 bis R-082, R-098 bis R-100, R-102 bis R-105, R-107, R-192, R-193, R-199, R-201, R-208, R-232, R-246, R-247, R-260
 **Abnahmekriterien**
 - TypeScript strict, Bundler (Entscheidung in DECISIONS), ESLint, Prettier, Vitest und Playwright sind eingerichtet. `npm run build`, `build:chrome`, `build:userscript`, `test`, `lint` und `e2e` laufen grün.
 - Die MV3-Erweiterung lässt sich in Chromium entpackt laden (E2E). Das Userscript hat einen vollständigen Metadaten-Block, und ein GM-Shim lädt es in Chromium und WebKit (E2E).

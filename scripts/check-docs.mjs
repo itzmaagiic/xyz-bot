@@ -2,8 +2,8 @@
 // - R-IDs unique and gap-free from R-001, "Nächste freie ID" = max + 1, every R-line tagged [P0]–[P7]
 // - tags match docs/PLAN.md in both directions (a ✅ item may be listed again in a later phase)
 // - every R-NNN / D-NNN referenced anywhere exists
-// - ✅ only with evidence: a non-empty "Nachweis:" and no "**Lücke:**"
-// - no R-ID of the committed version (git HEAD) has disappeared (memory protection, CLAUDE.md)
+// - ✅ only with evidence: a non-empty "Nachweis:" and no "**Lücke:**"; a ~~struck~~ part names its D-entry
+// - no R-ID of a committed version (git HEAD and origin/main) has disappeared (memory protection, CLAUDE.md)
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';

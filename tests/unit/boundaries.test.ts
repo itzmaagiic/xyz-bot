@@ -106,4 +106,31 @@ describe('import boundaries (R-032)', () => {
     expect(cfg.rules['@typescript-eslint/no-floating-promises']).toEqual([2, { ignoreVoid: false }]);
     expect(cfg.rules['@typescript-eslint/no-misused-promises']?.[0]).toBe(2);
   });
+
+  // threat model D-036: natural patterns must be caught (declare, destructuring, template key)
+  it.each([
+    [
+      'a declared global',
+      "declare const GM: { getValue(k: string): Promise<unknown> };\nexport const p = GM.getValue('x');\n",
+    ],
+    ['destructuring', 'const { chrome: c } = globalThis as unknown as Record<string, unknown>;\nexport const p = c;\n'],
+    ['a template-literal key', 'export const p = (globalThis as unknown as Record<string, unknown>)[`chrome`];\n'],
+  ])('core may not reach platform APIs through %s', async (_n, code) => {
+    expect(await ruleIds(code, 'src/core/x.ts')).toContain('no-restricted-syntax');
+  });
+
+  it.each(['src/ui/x.ts', 'src/core/x.ts', 'src/platform/chrome/x.ts'])(
+    'an async function assigned as a handler (el.onclick = async …) is flagged in %s (R-199)',
+    async (file) => {
+      const code =
+        "const b = document.createElement('button');\nb.onclick = async () => {\n  await Promise.resolve();\n};\n";
+      expect(await ruleIds(code, file)).toContain('no-restricted-syntax');
+    },
+  );
+
+  it('a sync handler that hands its promise to noteRejection is fine', async () => {
+    const code =
+      "import { noteRejection } from '../core/log/note';\nconst b = document.createElement('button');\nb.onclick = () => noteRejection('x', Promise.resolve());\n";
+    expect(await ruleIds(code, 'src/ui/x.ts')).toEqual([]);
+  });
 });
