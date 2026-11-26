@@ -86,6 +86,25 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 - Vor jedem Top-4-Mitglied erscheint die Boss-Vorbereitung; die Reihenfolge-Simulation hob die Kettenchance dort
   z. B. von 3 % auf 65–78 %.
 
+## Run-Logs lesen (P3b, D-005, D-038)
+
+- **Woher:**
+  - Overlay → „Runs exportieren“ (Datei `pkbot-runs-<Datum>.json`, Format `pkbot-runs/1`).
+  - Übernahme ins Repo mit `npm run runs:import -- <datei>` nach `runs/<YYYY-MM-DD>-<HHMMSS>-<rand4>/`.
+  - Der Live-Test exportiert selbst nach `PKBOT_OUT/runs-export.json`, mit `LIVE_SAVE_RUNS=1` direkt nach `runs/`.
+- **`decisions.jsonl`:** eine Zeile je ausgeführter Entscheidung (Wartezyklen nicht). Die Felder:
+  - `state`: Team mit KP und Typen, Items, Beutel, Orden, Karte, Knoten samt Typ, `eliteIndex`, nächster Boss
+  - `options`, `scores`: alle bewerteten Optionen mit Score und Faktoren, etwa `boss`, `survive`, `next` bei Routen
+  - `chosen`, `reason`, `confidence`: die simulierte Erfolgsquote, falls vorhanden
+  - `outcome`: `ok` oder `no-effect` beim Klick, `win` oder `loss` beim Run-Ende
+- **`summary.json`:**
+  - `result`: `win`, `loss`, `open` oder `aborted`; `progress`
+  - `cause`: bei einer Niederlage der letzte Kampf mit Knotentyp, Karte, Boss und Team, beim Abbruch die Pause mit Art
+  - `screenTimes`: Verweildauer je Bildschirm, also die Kampfdauern für die Budgets im Live-Test
+  - `errors`: aus beiden Welten
+  - `optionCoverage`: der Anteil der Entscheidungen mit Optionen. In P3b sind das Karte, Fang, Item und Starter, der Rest folgt mit R-116 in P4.
+- **A/B-Vergleiche:** `profile.flags` und `bot_version` je Run zeigen, mit welcher Konfiguration gespielt wurde.
+
 ## Offene Hebel
 
 1. Abnutzung früher erkennen: Pokécenter und Sacred Ash gezielter, Trainer meiden, wenn die Mannschaft angeschlagen ist.

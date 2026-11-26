@@ -4,6 +4,28 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Hinzugefügt (Phase 3, P3b)
+
+- **Run-Logs nach D-005** (R-006, R-009):
+  - Jede ausgeführte Entscheidung wird mit Zustand, Optionen und Bewertungen, Wahl, Begründung, Konfidenz und Ergebnis aufgezeichnet.
+  - Zu jedem Run gibt es eine Zusammenfassung mit Ergebnis, Fortschritt, Dauer, Spiel- und Bot-Version, Modus, Profil, Todesursache bzw. Abbruchgrund und Verweildauer je Bildschirm.
+- **Knopf „Runs exportieren“ im Overlay:** Er lädt die Run-Logs als `pkbot-runs-<Datum>.json` herunter. Wo kein Download geht, kopiert er sie (R-006).
+- **`npm run runs:import -- <datei>`:** Übernimmt einen Export nach `runs/`, nur wenn die Prüfung auf Geheimnisse nichts findet. Ein Test prüft alles unter `runs/` (R-007, R-148, R-210).
+- **Fehler aus dem Spielkontext** (Bridge, Simulator) erscheinen gedämpft im Bot-Log und in den Run-Logs (R-253).
+- **Pausen tragen eine Art** (`#pk-pause[data-kind]`, R-254):
+  - gewollt: Nutzer, Run beendet, Einstellung passt nicht
+  - nicht unterstützter Bildschirm
+  - Fehler
+- **Live-Test** (R-254):
+  - Fortschritt auch in der Top-4-Kette und beim Team.
+  - Stillstands-Budget je Bildschirm: Kampf 120 s, Karte 180 s, sonst 90 s.
+  - Nachlauf am Ende, damit auch ein späterer Hänger auffällt.
+
+### Behoben (Phase 3, Gesamt-Review P3a)
+
+- Der Watchdog pausierte nach einer Bildschirmsperre auf dem iPhone sofort mit „stalled“. Jetzt startet er nach einer Zeitlücke neu und pausiert nur nach vorherigem Neueinlesen (R-095).
+- Die Wirkungsprüfung hängt nicht mehr ewig, wenn eine Prüfung wirft (R-094).
+
 ### Behoben (Phase 3, P3a)
 
 - **Hänger bei langen Bosskämpfen** (GAME_RECON §12.8):
