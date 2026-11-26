@@ -8,7 +8,10 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 - **P3a „Kämpfe ohne Hänger“: umgesetzt und live belegt.**
   - Ergebnis: Der Bot klickt nur noch bedienbare Ziele, die Kampfsignatur enthält den KP-Fortschritt, dazu kommt ein Watchdog.
   - Live-Lauf vom 2026-11-26: 10 min ohne Hänger, bis zu 7 Orden, 6 Runs.
-  - Offen ist der Gesamt-Review (frischer Reviewer), danach P3b.
+  - Offen ist der Gesamt-Review (frischer Reviewer, läuft).
+- **P3b „Run-Logs, Live-Urteil, MAIN-Welt-Fehler“: Spec und Plan fertig (D-038).**
+  - Spec: `docs/superpowers/specs/2026-11-26-p3b-run-logs-design.md`.
+  - Plan: `docs/superpowers/plans/2026-11-26-p3b-run-logs.md` mit 8 Tasks, Ausführung inline mit TDD in der Reihenfolge T1, T3, T2, T4 bis T8.
 
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run):** Weitere Inkremente, in dieser Reihenfolge:

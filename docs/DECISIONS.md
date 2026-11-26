@@ -274,3 +274,24 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Die KP-Texte wechseln spätestens alle 2 s. Damit löst der Watchdog bei fortschreitenden Kämpfen nie aus, wohl aber bei echtem Stillstand.
 - Freigabe nach D-006: eigenes Review. Keine Widersprüche zu R-010, R-087, R-094, R-095, R-147 und R-241: Der Watchdog lädt nie neu, er liest nur.
 - Ausführung: inline mit TDD (wie D-031). Am Ende ein frischer Gesamt-Review und ein Live-Lauf als Nachweis.
+
+**D-038 – P3b: eigener RunRecorder nach D-005, Export aus dem Overlay, typisierte Pausen, Fortschritt je Bildschirm** (2026-11-26)
+- Entscheidung: Das Design steht in `docs/superpowers/specs/2026-11-26-p3b-run-logs-design.md`, gewählt ist Ansatz 2:
+  - `RunRecorder` in `core/log`, gefüttert vom BotController, mit Ringpuffer: 10 Runs, je 3000 Zeilen.
+  - Entscheidungen tragen ein optionales `trace` mit Optionen, Scores und Konfidenz. In P3b ist es für Karte, Fang, Item und Starter gefüllt, der Rest folgt mit R-116 in P4.
+  - Export als Datei aus dem Overlay, mit Kopieren als Fallback.
+  - `runs-lib` schreibt nach `runs/` nur nach einem Geheimnis-Scan. Ein Unit-Test prüft alles Eingecheckte.
+  - Pausen tragen eine Art: `BotView.pauseKind`, im DOM `#pk-pause[data-kind]`.
+  - Fehler aus der MAIN-Welt kommen über `errSeq` im Snapshot und den Bridge-Befehl `errors`.
+  - Das Live-Urteil arbeitet mit dem `ProgressTracker`:
+    - Bildschirmwechsel zählen nur, wenn die Kombination neu ist.
+    - Budgets je Bildschirm: Kampf 120 s, Karte 180 s, sonst 90 s.
+    - Nachlauf bis Fortschritt oder Budget.
+- Begründung:
+  - Ansatz 1 (aus dem Logger ableiten) hat weder Zustand noch Optionen, und der Ring verdrängt Entscheidungen.
+  - Ansatz 3 (nur im Live-Test aufzeichnen) gibt es bei echten Nutzer-Runs nicht und übersieht kurze Bildschirme.
+  - Die Pausen-Art als Attribut statt als Textpräfix übersteht die Übersetzung der Texte (R-174).
+  - Bildschirmwechsel nur als neue Kombination zu zählen, verhindert, dass eine Ping-Pong-Schleife als Fortschritt gilt. Das ist eine Präzisierung von R-254.
+- Freigabe nach D-006: eigenes Review. Keine Widersprüche zu R-145 und R-148: Der Recorder liest nie den localStorage, und `runs/` wird gescannt. R-146 bleibt unberührt: `errors` ist ein lokaler Bridge-Befehl ohne Netzwerk. R-237 bleibt unberührt.
+- Folgen: Persistenz der Run-Logs über ein Neuladen hinweg fehlt noch und folgt später mit R-109. `runs/` wächst mit jedem übernommenen Run (etwa 50 bis 150 KB je Run). Übernommen werden nur ausgewählte Läufe.
+- Ausführung: inline mit TDD (wie D-031 und D-037). Am Ende ein frischer Gesamt-Review und ein Live-Lauf mit `LIVE_SAVE_RUNS=1` als Nachweis.
