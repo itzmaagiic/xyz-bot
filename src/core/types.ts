@@ -179,14 +179,29 @@ export interface GameState {
   catchSim?: { index: number; current: number; next: number; value: number }[] | null;
 }
 
+/** One alternative the strategy weighed (run logs, D-005/R-006). */
+export interface DecisionOption {
+  id: string;
+  label: string;
+  score: number | null;
+  factors?: Record<string, number>;
+}
+
+/** All options of a decision with their scores, the chosen option id and a confidence (e.g. simulated odds). */
+export interface DecisionTrace {
+  options: DecisionOption[];
+  chosen: string | null;
+  confidence: number | null;
+}
+
 /** What the bot decided to do. */
 export type Decision =
-  | { kind: 'click'; selector: string; index?: number; why: string }
-  | { kind: 'swapTeam'; from: number; to: number; where: 'map' | 'elite-prep'; why: string }
+  | { kind: 'click'; selector: string; index?: number; why: string; trace?: DecisionTrace }
+  | { kind: 'swapTeam'; from: number; to: number; where: 'map' | 'elite-prep'; why: string; trace?: DecisionTrace }
   /** sequence of "swap lead with slot k" presses (Shift+k) realising a full battle order */
-  | { kind: 'reorder'; swaps: number[]; target: number[]; why: string }
+  | { kind: 'reorder'; swaps: number[]; target: number[]; why: string; trace?: DecisionTrace }
   /** open a bag item (use/equip dialog) – the game only opens it via a pointer-capture gesture */
-  | { kind: 'openBag'; index: number; itemId: string; why: string }
+  | { kind: 'openBag'; index: number; itemId: string; why: string; trace?: DecisionTrace }
   | { kind: 'wait'; ms: number; why: string }
-  | { kind: 'pause'; why: string }
-  | { kind: 'stop'; why: string; result?: 'win' | 'loss' };
+  | { kind: 'pause'; why: string; trace?: DecisionTrace }
+  | { kind: 'stop'; why: string; result?: 'win' | 'loss'; trace?: DecisionTrace };

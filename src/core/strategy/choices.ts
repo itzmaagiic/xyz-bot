@@ -1,11 +1,13 @@
 /** Pure decision functions per decision type. Inputs are plain data; outputs carry a human-readable reason. */
 import { bossTypesFor } from '../data/bosses';
-import type { Mon } from '../types';
+import type { DecisionOption, Mon } from '../types';
 import { monScore, moveOf, offense, weakestIndex, isFainted } from './evaluate';
 
 export interface Choice {
   index: number; // -1 = skip / keep
   why: string;
+  /** every option with its score, for the run logs (R-006) – never changes the pick */
+  options?: DecisionOption[];
 }
 
 const fmt = (n: number) => n.toFixed(1);
@@ -17,20 +19,28 @@ export function chooseCatch(
   maxTeamSize: number,
   vs: readonly string[] = [],
 ): Choice {
-  if (!offer.length) return { index: -1, why: 'no catch options' };
+  if (!offer.length) return { index: -1, why: 'no catch options', options: [] };
   const scored = offer.map((m, i) => ({ i, s: monScore(m, vs) + 0.15 * monScore(m) }));
+  const full = team.length >= maxTeamSize;
+  const weak = full ? team[weakestIndex(team)]! : null;
+  const weakScore = weak ? monScore(weak, vs) + 0.15 * monScore(weak) : 0;
+  const options: DecisionOption[] = [
+    ...scored.map((x) => ({ id: `catch:${x.i}`, label: offer[x.i]!.name, score: x.s })),
+    // skipping is the bar a candidate has to beat when the team is full (weakest × 1.1)
+    { id: 'catch:skip', label: 'skip', score: full ? weakScore * 1.1 : null },
+  ];
   scored.sort((a, b) => b.s - a.s || a.i - b.i);
   const top = scored[0]!;
   const cand = offer[top.i]!;
-  if (team.length < maxTeamSize)
-    return { index: top.i, why: `team has room; best option ${cand.name} (score ${fmt(top.s)})` };
-  const wi = weakestIndex(team);
-  const weak = team[wi]!;
-  const weakScore = monScore(weak, vs) + 0.15 * monScore(weak);
+  if (!weak) return { index: top.i, why: `team has room; best option ${cand.name} (score ${fmt(top.s)})`, options };
   if (top.s > weakScore * 1.1) {
-    return { index: top.i, why: `${cand.name} (${fmt(top.s)}) beats weakest ${weak.name} (${fmt(weakScore)})` };
+    return {
+      index: top.i,
+      why: `${cand.name} (${fmt(top.s)}) beats weakest ${weak.name} (${fmt(weakScore)})`,
+      options,
+    };
   }
-  return { index: -1, why: `no option beats weakest ${weak.name} (${fmt(weakScore)}) by 10%` };
+  return { index: -1, why: `no option beats weakest ${weak.name} (${fmt(weakScore)}) by 10%`, options };
 }
 
 /** Team full: which member to release for `incoming`, or -1 to keep the team. */
@@ -110,18 +120,19 @@ export function itemValue(rawId: string, team: readonly Mon[]): number {
 }
 
 export function chooseItem(ids: readonly (string | null)[], team: readonly Mon[]): Choice {
-  if (!ids.length) return { index: -1, why: 'no items offered' };
+  if (!ids.length) return { index: -1, why: 'no items offered', options: [] };
   let best = -1;
   let bestV = -Infinity;
-  ids.forEach((id, i) => {
+  const options: DecisionOption[] = ids.map((id, i) => {
     const v = id ? itemValue(id, team) : 3;
     if (v > bestV) {
       bestV = v;
       best = i;
     }
+    return { id: `item:${i}`, label: id ?? 'unknown item', score: v };
   });
-  if (bestV <= 0) return { index: -1, why: 'all items worthless' };
-  return { index: best, why: `take ${ids[best] ?? 'unknown item'} (value ${fmt(bestV)})` };
+  if (bestV <= 0) return { index: -1, why: 'all items worthless', options };
+  return { index: best, why: `take ${ids[best] ?? 'unknown item'} (value ${fmt(bestV)})`, options };
 }
 
 /** Which team member should hold / learn something: strongest attacker by default. */
@@ -142,19 +153,20 @@ export function chooseStarter(
   preferred?: number | null,
   early: readonly string[][] = [],
 ): Choice {
-  if (!options.length) return { index: -1, why: 'no starters' };
-  if (preferred != null) {
-    const i = options.findIndex((m) => m.speciesId === preferred);
-    if (i >= 0) return { index: i, why: `preferred starter #${preferred}` };
-  }
+  if (!options.length) return { index: -1, why: 'no starters', options: [] };
   const score = (m: Mon) =>
     early.length ? early.reduce((a, vs) => a + monScore(m, vs), 0) / early.length : monScore(m);
+  const scored: DecisionOption[] = options.map((m, i) => ({ id: `starter:${i}`, label: m.name, score: score(m) }));
+  if (preferred != null) {
+    const i = options.findIndex((m) => m.speciesId === preferred);
+    if (i >= 0) return { index: i, why: `preferred starter #${preferred}`, options: scored };
+  }
   let best = 0;
   options.forEach((m, i) => {
     if (score(m) > score(options[best]!)) best = i;
   });
   const vsTxt = early.length ? ` vs first bosses (${early.map((t) => t.join('/')).join(', ')})` : '';
-  return { index: best, why: `best starter ${options[best]!.name}${vsTxt}` };
+  return { index: best, why: `best starter ${options[best]!.name}${vsTxt}`, options: scored };
 }
 
 /**

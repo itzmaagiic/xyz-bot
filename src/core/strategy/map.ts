@@ -76,6 +76,8 @@ export interface RouteChoice {
   nodeId: string;
   value: number;
   path: string[];
+  /** best route per accessible first node (run logs, R-006) */
+  alternatives?: { nodeId: string; value: number; path: string[] }[];
 }
 
 /** Returns the best accessible node (or null). Pure; deterministic tie-break by node id. */
@@ -93,6 +95,7 @@ export function chooseRoute(
   }
   let budget = maxPaths;
   let best: RouteChoice | null = null;
+  const perFirst = new Map<string, { nodeId: string; value: number; path: string[] }>();
 
   const walk = (id: string, hp: number, size: number, value: number, path: string[], first: string) => {
     if (budget <= 0) return;
@@ -107,6 +110,8 @@ export function chooseRoute(
     const p = [...path, id];
     if (!kids.length) {
       budget--;
+      const alt = perFirst.get(first);
+      if (!alt || v > alt.value + 1e-9) perFirst.set(first, { nodeId: first, value: v, path: p });
       if (!best || v > best.value + 1e-9 || (Math.abs(v - best.value) < 1e-9 && first < best.nodeId)) {
         best = { nodeId: first, value: v, path: p };
       }
@@ -116,5 +121,6 @@ export function chooseRoute(
   };
 
   for (const id of [...accessible].sort()) walk(id, ctx.hp, ctx.teamSize, 0, [], id);
-  return best;
+  const res = best as RouteChoice | null;
+  return res ? { ...res, alternatives: [...perFirst.values()] } : null;
 }

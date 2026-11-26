@@ -105,6 +105,8 @@ export interface SimRouteChoice {
   boost: number;
   /** estimated chance vs the boss after this one */
   next: number;
+  /** best route per accessible first node (run logs, R-006) */
+  alternatives?: { nodeId: string; value: number; boss: number; survive: number; next: number; path: string[] }[];
 }
 
 export function evaluatePath(
@@ -183,6 +185,7 @@ export function chooseRouteSim(
   for (const e of map.edges) children.set(e.from, [...(children.get(e.from) ?? []), e.to]);
   let budget = maxPaths;
   let best: SimRouteChoice | null = null;
+  const perFirst = new Map<string, NonNullable<SimRouteChoice['alternatives']>[number]>();
   const walk = (id: string, path: string[], first: string) => {
     if (budget <= 0) return;
     const p = [...path, id];
@@ -191,6 +194,9 @@ export function chooseRouteSim(
       budget--;
       if (sim.pathSim && !sim.pathSim[p.join('>')]) return;
       const r = evaluatePath(p, map, ctx, sim);
+      const alt = perFirst.get(first);
+      if (!alt || r.value > alt.value + 1e-9)
+        perFirst.set(first, { nodeId: first, value: r.value, boss: r.boss, survive: r.survive, next: r.next, path: p });
       if (!best || r.value > best.value + 1e-9 || (Math.abs(r.value - best.value) < 1e-9 && first < best.nodeId))
         best = { nodeId: first, ...r };
       return;
@@ -198,7 +204,8 @@ export function chooseRouteSim(
     for (const k of kids) walk(k, p, first);
   };
   for (const id of [...accessible].sort()) walk(id, [], id);
-  return best;
+  const res = best as SimRouteChoice | null;
+  return res ? { ...res, alternatives: [...perFirst.values()] } : null;
 }
 
 /**

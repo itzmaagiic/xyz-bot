@@ -6,7 +6,7 @@ import { bossTypesFor } from '../data/bosses';
 import type { BotSettings } from '../settings';
 import { isActionable, isShown } from '../screens/detector';
 import { itemIdFromCard, parsePokeCard, readCards, readClickableMapNodes, typeFromClasses } from '../state/dom-reader';
-import type { Decision, GameState, Mon, RunState } from '../types';
+import type { Decision, DecisionOption, GameState, Mon, RunState } from '../types';
 import {
   chooseCatch,
   chooseHolder,
@@ -173,7 +173,13 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       const gen = state.run?.gen && state.run.gen > 1 ? state.run.gen : s.region;
       const early = s.mode === 'story' ? [bossTypesFor(gen, 0), bossTypesFor(gen, 1)].filter((t) => t.length) : [];
       const c = chooseStarter(cards, s.preferredStarter, early);
-      return { kind: 'click', selector: '#starter-choices .poke-card', index: c.index, why: c.why };
+      return {
+        kind: 'click',
+        selector: '#starter-choices .poke-card',
+        index: c.index,
+        why: c.why,
+        trace: trace(c.options, `starter:${c.index}`),
+      };
     }
     case 'map':
       return decideMap(state, doc, s, mem);
@@ -194,8 +200,15 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       const cards = Array.from(doc.querySelectorAll('#item-choices .item-card'));
       if (!cards.length) return { kind: 'wait', ms: 500, why: 'items loading' };
       const c = chooseItem(cards.map(itemIdFromCard), run?.team ?? []);
-      if (c.index < 0) return { kind: 'click', selector: '#btn-skip-item', why: c.why };
-      return { kind: 'click', selector: '#item-choices .item-card', index: c.index, why: c.why };
+      if (c.index < 0)
+        return { kind: 'click', selector: '#btn-skip-item', why: c.why, trace: trace(c.options, 'item:skip') };
+      return {
+        kind: 'click',
+        selector: '#item-choices .item-card',
+        index: c.index,
+        why: c.why,
+        trace: trace(c.options, `item:${c.index}`),
+      };
     }
     case 'shiny':
       return s.takeShiny
@@ -325,6 +338,11 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
   }
 }
 
+/** Trace for the run logs (R-006, D-038): never influences the decision itself. */
+function trace(options: DecisionOption[] | undefined, chosen: string, confidence: number | null = null) {
+  return options ? { options, chosen, confidence } : undefined;
+}
+
 function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineMemory): Decision {
   const run = state.run;
   const clickable = readClickableMapNodes(doc);
@@ -372,9 +390,16 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
     const r = chooseRouteSim(run.map, acc, ctxSim, state.sim);
     if (r) {
       const types = r.path.map((id) => run.map!.nodes[id]?.type).join('→');
+      const options = (r.alternatives ?? []).map((a) => ({
+        id: `node:${a.nodeId}`,
+        label: a.path.map((id) => run.map!.nodes[id]?.type).join('→'),
+        score: a.value,
+        factors: { boss: a.boss, survive: a.survive, next: a.next },
+      }));
       return {
         kind: 'click',
         selector: `.map-node--clickable[data-node-id="${r.nodeId}"]`,
+        trace: trace(options, `node:${r.nodeId}`, r.boss),
         why:
           (state.sim.pathSim
             ? `sim route ${types}: survive + beat ${state.sim.bossName ?? 'boss'} ${pct(r.boss)}, team Ø Lv ${r.boost.toFixed(0)}`
@@ -402,9 +427,15 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
   if (!pick) return { kind: 'pause', why: 'map nodes do not match game data' };
   const types =
     pick.path.map((id) => run.map!.nodes[id]?.type).join('→') + ` [xp need ${(ctx.xpNeed ?? 0).toFixed(1)}]`;
+  const options = (pick.alternatives ?? []).map((a) => ({
+    id: `node:${a.nodeId}`,
+    label: a.path.map((id) => run.map!.nodes[id]?.type).join('→'),
+    score: a.value,
+  }));
   return {
     kind: 'click',
     selector: `.map-node--clickable[data-node-id="${pick.nodeId}"]`,
+    trace: trace(options, `node:${pick.nodeId}`),
     why: `route ${types} (value ${pick.value.toFixed(1)}, team HP ${(ctx.hp * 100).toFixed(0)}%)`,
   };
 }
@@ -421,12 +452,27 @@ function decideCatch(state: GameState, doc: Document): Decision {
   const sim = bridgeMatches ? state.catchSim : null;
   if (sim?.length && run) {
     const pick = chooseCatchSim(sim, offer, run.team.length, run.maxTeamSize);
-    if (pick.index < 0) return { kind: 'click', selector: '#btn-skip-catch', why: pick.why };
-    return { kind: 'click', selector: '#catch-choices .poke-card', index: pick.index, why: pick.why };
+    const id = (i: number) => (i < 0 ? 'catch:skip' : `catch:${i}`);
+    const options = sim.map((o) => ({
+      id: id(o.index),
+      label: o.index < 0 ? 'skip' : (offer[o.index]?.name ?? '?'),
+      score: o.value,
+      factors: { current: o.current, next: o.next },
+    }));
+    const t = trace(options, id(pick.index), sim.find((o) => o.index === pick.index)?.current ?? null);
+    if (pick.index < 0) return { kind: 'click', selector: '#btn-skip-catch', why: pick.why, trace: t };
+    return { kind: 'click', selector: '#catch-choices .poke-card', index: pick.index, why: pick.why, trace: t };
   }
   const c = chooseCatch(offer, run?.team ?? [], run?.maxTeamSize ?? 6, vsTypes(run));
-  if (c.index < 0) return { kind: 'click', selector: '#btn-skip-catch', why: c.why };
-  return { kind: 'click', selector: '#catch-choices .poke-card', index: c.index, why: c.why };
+  if (c.index < 0)
+    return { kind: 'click', selector: '#btn-skip-catch', why: c.why, trace: trace(c.options, 'catch:skip') };
+  return {
+    kind: 'click',
+    selector: '#catch-choices .poke-card',
+    index: c.index,
+    why: c.why,
+    trace: trace(c.options, `catch:${c.index}`),
+  };
 }
 
 function decideSwap(state: GameState, doc: Document): Decision {
