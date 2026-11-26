@@ -13,7 +13,7 @@ import { FLAGS } from './flags';
 import { readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
-import { noteError } from './log/note';
+import { noteError, onNotedError, recentErrors, type NotedError } from './log/note';
 import { errorPause } from './pause-reason';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
@@ -76,6 +76,10 @@ export class BotController {
   ) {
     this.reader = new StateReader(bridge, doc);
     this.actor = new Actor();
+    // R-199: handled errors are visible in the overlay log and the log export – also those noted before start-up
+    const show = (e: NotedError) => this.log.warn(`handled error at ${e.where}`, e.msg);
+    for (const e of recentErrors()) show(e);
+    onNotedError(show);
   }
 
   async init(): Promise<void> {

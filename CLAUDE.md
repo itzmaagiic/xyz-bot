@@ -18,7 +18,7 @@ Den Umfang legt allein `docs/REQUIREMENTS.md` fest. Der Auftrag steht wörtlich 
 
 ## Unverhandelbare Regeln (Details: REQUIREMENTS H und N, D-017 bis D-020)
 - **Pokédollar** (Shop, Eier, Vitamine) gibt der Bot nie ohne ausdrückliche Bestätigung des Nutzers aus (R-237).
-- Kein Schreiben in den localStorage des Spiels, keine gepatchten Spielfunktionen, keine Eingriffe in Netzwerk oder Hall of Fame. Die einzigen Ausnahmen stehen in D-018 (R-145, R-238).
+- Kein Schreiben in den localStorage des Spiels, keine gepatchten Spielfunktionen, keine Eingriffe in Netzwerk oder Hall of Fame. Die einzigen Ausnahmen stehen in D-018 (R-145, R-238). Spielschlüssel (`poke_*`, `pkrl_*`) sind immer tabu. Erlaubt ist nur der eigene Fallback-Speicher des Userscripts unter `pkbot.*`, wenn GM fehlt (D-031, R-102).
 - „Reset Run“, Löschen und Logout klickt der Bot nie, außer der Nutzer erlaubt es ausdrücklich in den Einstellungen (R-147).
 - Simulationen laufen nur mit eigenen Seeds. Echte Zufallsergebnisse sagt der Bot nie vorher (R-239).
 - Unbekannter Bildschirm heißt pausieren, nie raten. Während eines Kampfes wird nie neu geladen (R-010, R-241).

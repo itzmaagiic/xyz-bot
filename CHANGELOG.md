@@ -24,6 +24,14 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 - Die eingebettete Bridge ist lesbar und nicht mehr minifiziert. Userscript und Bridge zielen auf ES2020 (Safari ab iOS 15) (R-107).
 - Der Live-Test wertet eine Fehler-Pause, etwa „action keeps failing“, als Fehlschlag (R-082).
 
+### Behoben (Gesamt-Review P2)
+
+- Scheitert im Userscript nur der GM-Schreibvorgang (etwa bei vollem Speicher), gilt nach einem Reload trotzdem die neueste Einstellung (R-100, R-102).
+- Behandelte Fehler erscheinen als Warnung im Overlay-Log und im Log-Export (R-199).
+- Der Bundle-Check erkennt RegExp-Lookbehind, das vor Safari 16.4 das ganze Skript am Laden hindern würde (R-107).
+- Der Live-Test wartet nicht mehr auf eine fehlende Pause-Anzeige. Er scheitert auch, wenn der Bot läuft, aber 4 min lang keinen Fortschritt macht (R-082).
+- Der Hook warnt wieder, wenn ein als erledigt eingetragener Branch neue Commits bekommt (R-247).
+
 ### Bekannt
 
 - Bei langen Bosskämpfen mit gesperrtem SKIP bleibt der Bot hängen (GAME_RECON §12.8). Der Live-Test meldet das jetzt als Fehler. Behoben wird es in Phase 3.

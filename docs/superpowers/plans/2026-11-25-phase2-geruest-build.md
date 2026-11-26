@@ -71,7 +71,7 @@
   - Echter Fallback: `noteError('<datei>:<zweck>', e)` und Rückgabewert wie bisher.
   - Absichtlich ignorierte Wirkung: `.catch((e) => noteError('…', e))`.
   - Kein Verhalten ändern.
-  - Hinweis: `page-bridge.ts` und `simulator.ts` laufen in der MAIN-Welt. `noteError` landet dort im Puffer der Bridge, das ist so gewollt. Ob die Bridge diese Fehler meldet, entscheidet P3 (R-249).
+  - Hinweis: `page-bridge.ts` und `simulator.ts` laufen in der MAIN-Welt. `noteError` landet dort im Puffer der Bridge, das ist so gewollt. Ob die Bridge diese Fehler meldet, entscheidet P3 (~~R-249~~ → R-253, korrigiert nach dem Gesamt-Review).
 
 - [ ] **Schritt 5:** `npm test && npm run typecheck && npm run lint` sind grün. Commit „R-199: noteError + ESLint-Regel no-silent-catch, alle stillen catch-Stellen behoben“.
 

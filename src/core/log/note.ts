@@ -2,7 +2,8 @@
  * Central sink for errors that are handled by a fallback (R-199: no silent errors).
  * Every catch block either rethrows, logs through a Logger, or calls noteError, so nothing is swallowed unseen.
  * Ring buffer of the last 50 distinct errors (same where+msg is counted, not repeated) plus one console.debug
- * line per distinct error.
+ * line per distinct error. Subscribers (onNotedError) – the bot logs each distinct error as a warning, so it shows
+ * in the overlay log and the log export.
  */
 export interface NotedError {
   where: string;
@@ -13,6 +14,7 @@ export interface NotedError {
 
 const MAX = 50;
 let buf: NotedError[] = [];
+const subs = new Set<(e: NotedError) => void>();
 
 function message(err: unknown): string {
   if (err instanceof Error) return err.message || err.name;
@@ -33,9 +35,24 @@ export function noteError(where: string, err: unknown): void {
     hit.t = Date.now();
     return;
   }
-  buf.push({ where, msg, count: 1, t: Date.now() });
+  const entry: NotedError = { where, msg, count: 1, t: Date.now() };
+  buf.push(entry);
   if (buf.length > MAX) buf = buf.slice(buf.length - MAX);
   if (typeof console !== 'undefined') console.debug('[pkbot]', where, msg);
+  for (const fn of subs) {
+    try {
+      fn(entry);
+    } catch (e) {
+      // a broken subscriber is itself noted; the dedupe above stops any recursion after one round
+      noteError('note:subscriber', e);
+    }
+  }
+}
+
+/** Called once per distinct error (first occurrence), e.g. to show it in the bot log. Returns the unsubscribe. */
+export function onNotedError(fn: (e: NotedError) => void): () => void {
+  subs.add(fn);
+  return () => subs.delete(fn);
 }
 
 export function recentErrors(): readonly NotedError[] {

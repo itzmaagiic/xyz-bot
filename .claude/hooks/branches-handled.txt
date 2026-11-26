@@ -1,3 +1,4 @@
 # Bekannte Remote-Branches, deren Stand bewusst NICHT in HEAD steckt (R-247). Der Hook meldet sie als „nicht mergen“.
-# Format: <branch-name>  <Begründung mit D-Verweis>. Eintrag entfernen, sobald der Branch gelöscht ist.
-claude/pokelike-bot-extension-skalzp  Inhalt schon übernommen (D-016); enthält noch den alten Verlauf mit privater Adresse, Nutzer löscht ihn (D-024, R-244)
+# Format: <branch-name>  <SHA-Anfang des erledigten Stands>  <Begründung mit D-Verweis>. Bekommt der Branch neue
+# Commits, warnt der Hook wieder. Eintrag entfernen, sobald der Branch gelöscht ist.
+claude/pokelike-bot-extension-skalzp  7b2ebc8  Inhalt schon übernommen (D-016); enthält noch den alten Verlauf mit privater Adresse, Nutzer löscht ihn (D-024, R-244)

@@ -112,6 +112,12 @@ describe('userscript metadata + bundle check (R-103–R-105, R-107, R-192, R-193
     ['syntax newer than ES2020 (class static block)', () => bundle(CODE + 'class A { static { } }\n'), /ES2020/],
     ['API newer than Safari 15.0 (Array.prototype.at)', () => bundle(CODE + 'const z = [1].at(-1);\n'), /Safari 15/],
     [
+      'RegExp lookbehind (Safari 16.4, a parse error on iOS 15)',
+      () => bundle(CODE + 'const r = /(?<=a)b/;\n'),
+      /lookbehind/,
+    ],
+    ['negative RegExp lookbehind', () => bundle(CODE + 'const r = /(?<!a)b/;\n'), /lookbehind/],
+    [
       'API newer than Safari 15.0 inside the embedded bridge text',
       () => bundle(CODE + 'const b = `structuredClone(x)`;\n'),
       /Safari 15/,

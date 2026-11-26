@@ -7,7 +7,7 @@
 import { chromium, expect, test } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isErrorPause } from '../../src/core/pause-reason';
+import { STALL_MS, liveVerdict } from './live-verdict';
 
 const EXT = process.env.PKBOT_EXT ?? join(import.meta.dirname, '..', '..', 'dist', 'chrome');
 const OUT = process.env.PKBOT_OUT ?? join(import.meta.dirname, '..', '..', 'test-results');
@@ -77,11 +77,15 @@ test('bot plays the real game without getting stuck', async () => {
 
   let last = first;
   let progressEvents = 0;
+  let lastProgressAt = Date.now();
   while (Date.now() - start < MINUTES * 60_000) {
     await page.waitForTimeout(2000);
     const st = await readState().catch(() => last);
     screens.set(st.screen, (screens.get(st.screen) ?? 0) + 1);
-    if (st.node !== last.node || st.map !== last.map || st.badges !== last.badges) progressEvents++;
+    if (st.node !== last.node || st.map !== last.map || st.badges !== last.badges) {
+      progressEvents++;
+      lastProgressAt = Date.now();
+    }
     if (st.saveSig !== last.saveSig) saveChangesByScreen.set(st.screen, (saveChangesByScreen.get(st.screen) ?? 0) + 1);
     last = st;
     console.log(
@@ -101,12 +105,13 @@ test('bot plays the real game without getting stuck', async () => {
     if (runsTxt) console.log(`[live]    stats: ${runsTxt}`);
     const status = await page.locator('#pk-toggle').textContent();
     if (status === 'Start') break; // paused → stop observing
+    if (Date.now() - lastProgressAt > STALL_MS) break; // hang without a pause – judged by liveVerdict below
   }
-  const pauseReason =
-    (await page
-      .locator('#pk-pause')
-      .textContent()
-      .catch(() => null)) ?? null;
+  // #pk-pause only exists while paused – never wait for it (a still-running bot is not a failure by itself)
+  const pauseEl = page.locator('#pk-pause');
+  const pauseReason = (await pauseEl.count()) ? await pauseEl.textContent({ timeout: 2000 }) : null;
+  const running = (await page.locator('#pk-toggle').textContent({ timeout: 2000 })) !== 'Start';
+  const verdict = liveVerdict({ progressEvents, pauseReason, running, msSinceProgress: Date.now() - lastProgressAt });
   const log = await page.evaluate(async () => {
     // overlay log is the source of truth
     const host = document.getElementById('pkbot-root');
@@ -124,6 +129,8 @@ test('bot plays the real game without getting stuck', async () => {
         screens: Object.fromEntries(screens),
         saveChangesByScreen: Object.fromEntries(saveChangesByScreen),
         pauseReason,
+        running,
+        verdict,
       },
       null,
       2,
@@ -132,7 +139,6 @@ test('bot plays the real game without getting stuck', async () => {
   writeFileSync(join(OUT, 'live-run.log'), log);
   await page.screenshot({ path: join(OUT, 'live-run.png') });
   await ctx.close();
-  expect(progressEvents, `no progress; pause: ${pauseReason}`).toBeGreaterThan(3);
-  // R-082/R-190: a hang or crash is a failure even when the bot made progress before it (D-027: 0 hangs)
-  expect(isErrorPause(pauseReason), `error pause: ${pauseReason}`).toBe(false);
+  // R-082/R-190: no progress, an error pause or a hang while running are failures (D-027: 0 hangs)
+  expect(verdict, verdict.join(' | ')).toEqual([]);
 });

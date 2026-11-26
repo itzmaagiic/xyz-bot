@@ -36,21 +36,23 @@ export function makeStorage(env: StorageEnv): PlatformStorage {
   const { gm, local } = env;
   const mem = new Map<string, string>();
 
+  // A `pkbot.` copy exists only while GM is missing or the last GM write failed (successful GM writes remove it),
+  // so it is the newest value and wins over GM – otherwise a quota error would silently revert the user's change.
   async function readRaw(key: string): Promise<unknown> {
-    if (gm?.getValue) {
-      try {
-        const v = await gm.getValue(key);
-        if (v !== undefined) return v;
-      } catch (e) {
-        noteError(`${WHERE}:gm-get`, e);
-      }
-    }
     if (local) {
       try {
         const v = local.getItem(LOCAL_PREFIX + key);
         if (v !== null) return v;
       } catch (e) {
         noteError(`${WHERE}:local-get`, e);
+      }
+    }
+    if (gm?.getValue) {
+      try {
+        const v = await gm.getValue(key);
+        if (v !== undefined) return v;
+      } catch (e) {
+        noteError(`${WHERE}:gm-get`, e);
       }
     }
     return mem.get(key);
@@ -67,7 +69,8 @@ export function makeStorage(env: StorageEnv): PlatformStorage {
           await gm.setValue(key, s);
           if (local) {
             try {
-              local.removeItem(LOCAL_PREFIX + key); // drop a stale fallback copy from an earlier failed GM write
+              // drop the fallback copy of an earlier failed GM write – only if there is one
+              if (local.getItem(LOCAL_PREFIX + key) !== null) local.removeItem(LOCAL_PREFIX + key);
             } catch (e) {
               noteError(`${WHERE}:local-remove`, e);
             }

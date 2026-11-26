@@ -33,7 +33,8 @@ trap 'rm -f "$DETAIL"' EXIT
   # Höchstens 5 s, ohne Passwortabfrage; ohne Netz nur ein Hinweis, nie ein Abbruch.
   if git -C "$ROOT" remote get-url origin >/dev/null 2>&1; then
     if refs="$(GIT_TERMINAL_PROMPT=0 run_limited 5 git -C "$ROOT" ls-remote --heads origin 2>/dev/null)"; then
-      # bekannte, erledigte Branches: "name  Begründung" je Zeile, # = Kommentar
+      # bekannte, erledigte Branches: "name  sha  Begründung" je Zeile, # = Kommentar.
+      # Nur solange der Stand des Branches mit dem eingetragenen SHA beginnt; neue Commits lösen wieder die Warnung aus.
       HANDLED="$ROOT/.claude/hooks/branches-handled.txt"
       unmerged=""; handled=""
       while read -r sha ref; do
@@ -41,9 +42,15 @@ trap 'rm -f "$DETAIL"' EXIT
         if ! git -C "$ROOT" cat-file -e "$sha^{commit}" 2>/dev/null \
           || ! git -C "$ROOT" merge-base --is-ancestor "$sha" HEAD 2>/dev/null; then
           name="${ref#refs/heads/}"
-          why="$( [ -f "$HANDLED" ] && awk -v n="$name" '$1 == n { $1 = ""; sub(/^ +/, ""); print; exit }' "$HANDLED" )"
-          if [ -n "$why" ]; then handled="$handled${handled:+; }$name (${sha:0:7}): $why"
-          else unmerged="$unmerged${unmerged:+, }$name (${sha:0:7})"; fi
+          entry="$( [ -f "$HANDLED" ] && awk -v n="$name" '$1 == n { $1 = ""; sub(/^ +/, ""); print; exit }' "$HANDLED" )"
+          known="${entry%% *}"; why="${entry#* }"
+          if [ -n "$entry" ] && [ -n "$known" ] && [ "${sha#"$known"}" != "$sha" ]; then
+            handled="$handled${handled:+; }$name (${sha:0:7}): $why"
+          elif [ -n "$entry" ]; then
+            unmerged="$unmerged${unmerged:+, }$name (${sha:0:7}, neuer Stand seit Eintrag $known)"
+          else
+            unmerged="$unmerged${unmerged:+, }$name (${sha:0:7})"
+          fi
         fi
       done <<< "$refs"
       [ -n "$unmerged" ] && echo "⚠️ Remote-Branches mit Stand, der nicht in HEAD enthalten ist: $unmerged → prüfen und ggf. mergen (D-016, R-247)"

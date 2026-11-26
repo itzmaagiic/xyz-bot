@@ -58,6 +58,8 @@ const POST_SAFARI15 = [
   [/\bArray\.fromAsync\(/, 'Array.fromAsync (Safari 16.4)', 'Array.fromAsync'],
   [/\b(?:Object|Map)\.groupBy\(/, 'Object/Map.groupBy (Safari 17.4)'],
   [/\bPromise\.withResolvers\(/, 'Promise.withResolvers (Safari 17.4)', 'Promise.withResolvers'],
+  // lookbehind is a parse-time SyntaxError before Safari 16.4 – the whole userscript would fail to load
+  [/\(\?<[=!]/, 'RegExp lookbehind (Safari 16.4)'],
 ];
 
 /** lines of `text` that use a post-Safari-15.0 feature without a same-line `typeof <global>` guard */

@@ -69,17 +69,29 @@ describe('SessionStart hook: remote branch warning (R-247)', () => {
     expect(out).toMatch(/Remote-Branches nicht geprüft/);
   });
 
-  it('lists handled branches from .claude/hooks/branches-handled.txt as "nicht mergen" instead of warning', () => {
+  function withHandled(content: string) {
     const dir = join(clone, '.claude', 'hooks');
     mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      join(dir, 'branches-handled.txt'),
-      '# name  reason\nfeature  enthält alten Verlauf, Nutzer löscht ihn (D-024)\n',
-    );
-    const { code, out } = runHook(clone);
-    rmSync(join(dir, 'branches-handled.txt'));
+    writeFileSync(join(dir, 'branches-handled.txt'), content);
+    try {
+      return runHook(clone);
+    } finally {
+      rmSync(join(dir, 'branches-handled.txt'));
+    }
+  }
+  const tip = (branch: string) => git(clone, 'ls-remote', 'origin', `refs/heads/${branch}`).split(/\s/)[0]!;
+
+  it('lists a handled branch whose tip still matches the recorded SHA as "nicht mergen"', () => {
+    const sha = tip('feature').slice(0, 7);
+    const { code, out } = withHandled(`# name  sha  reason\nfeature  ${sha}  enthält alten Verlauf (D-024)\n`);
     expect(code).toBe(0);
     expect(out).not.toMatch(/⚠️ Remote-Branches/);
     expect(out).toMatch(/nicht mergen.*feature \(.*D-024/);
+  });
+
+  it('warns again when a handled branch got new commits since it was recorded', () => {
+    const { out } = withHandled('feature  0000000  enthält alten Verlauf (D-024)\n');
+    expect(out).toMatch(/⚠️ Remote-Branches.*feature \(.*neuer Stand seit Eintrag/);
+    expect(out).not.toMatch(/nicht mergen.*feature/);
   });
 });

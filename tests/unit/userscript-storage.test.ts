@@ -106,6 +106,31 @@ describe('userscript storage (R-099, R-100, R-102)', () => {
     expect(await s.get('s')).toBe(2);
   });
 
+  it('a failed GM write wins over the older GM value after a reload (GM read still works)', async () => {
+    const local = fakeLocal();
+    const gm = fakeGm();
+    let fail = false;
+    const quota = {
+      getValue: gm.getValue,
+      setValue: async (k: string, v: string) => {
+        if (fail) throw new Error('quota');
+        await gm.setValue(k, v);
+      },
+    };
+    await makeStorage({ gm: quota, local }).set('s', { speed: 1 });
+    fail = true;
+    await makeStorage({ gm: quota, local }).set('s', { speed: 3 });
+    expect(await makeStorage({ gm: quota, local }).get('s')).toEqual({ speed: 3 });
+  });
+
+  it('a successful GM write touches localStorage only to remove an existing fallback copy', async () => {
+    const local = fakeLocal();
+    const removed: string[] = [];
+    const spy = { ...local, removeItem: (k: string) => (removed.push(k), local.removeItem(k)) };
+    await makeStorage({ gm: fakeGm(), local: spy }).set('s', 1);
+    expect(removed).toEqual([]);
+  });
+
   it('offers no onChange (one context per tab; no listener API in the GM intersection)', () => {
     expect(makeStorage({ gm: fakeGm(), local: null }).onChange).toBeUndefined();
   });
