@@ -94,6 +94,13 @@ export class BotController {
     };
     for (const e of recentErrors()) show(e);
     onNotedError(show);
+    // R-253: errors noted in the page's main world (bridge, simulator) – muted, with their own time stamp
+    this.reader.onPageErrors((errs) => {
+      for (const e of errs) {
+        this.log.log('debug', `handled (page): ${e.where} – ${e.msg}`, undefined, e.t);
+        this.runs.error(e, 'main');
+      }
+    });
   }
 
   async init(): Promise<void> {

@@ -116,6 +116,8 @@ export interface BridgeSnapshot {
   run: RunState | null;
   settings: Record<string, unknown> | null;
   typeChart: Record<string, Record<string, number>> | null;
+  /** how many distinct errors the page world has noted (R-253): the reader fetches new ones with 'errors' */
+  errSeq?: number;
 }
 
 export type ScreenKind =

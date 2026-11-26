@@ -10,10 +10,13 @@ export interface NotedError {
   msg: string;
   count: number;
   t: number;
+  /** running number of this distinct error in its world (the page bridge reports it, R-253) */
+  seq: number;
 }
 
 const MAX = 50;
 let buf: NotedError[] = [];
+let seq = 0;
 const subs = new Set<(e: NotedError) => void>();
 
 function message(err: unknown): string {
@@ -35,7 +38,7 @@ export function noteError(where: string, err: unknown): void {
     hit.t = Date.now();
     return;
   }
-  const entry: NotedError = { where, msg, count: 1, t: Date.now() };
+  const entry: NotedError = { where, msg, count: 1, t: Date.now(), seq: ++seq };
   buf.push(entry);
   if (buf.length > MAX) buf = buf.slice(buf.length - MAX);
   if (typeof console !== 'undefined') console.debug('[pkbot]', where, msg);
@@ -62,6 +65,16 @@ export function onNotedError(fn: (e: NotedError) => void): () => void {
 
 export function recentErrors(): readonly NotedError[] {
   return buf;
+}
+
+/** Number of distinct errors noted so far (monotonic, survives clearNotedErrors; a page reload starts at 0). */
+export function noteSeq(): number {
+  return seq;
+}
+
+/** The noted errors newer than `since` (by seq) – what the page bridge hands to the bot (R-253). */
+export function errorsSince(since: number): NotedError[] {
+  return buf.filter((e) => e.seq > since);
 }
 
 export function clearNotedErrors(): void {

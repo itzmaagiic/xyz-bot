@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearNotedErrors, noteError, noteRejection, onNotedError, recentErrors } from '../../src/core/log/note';
+import {
+  clearNotedErrors,
+  errorsSince,
+  noteError,
+  noteRejection,
+  noteSeq,
+  onNotedError,
+  recentErrors,
+} from '../../src/core/log/note';
 
 describe('noteError (R-199)', () => {
   beforeEach(() => clearNotedErrors());
@@ -17,6 +25,17 @@ describe('noteError (R-199)', () => {
     expect(list).toHaveLength(50);
     expect(list[0]!.msg).toBe('e10');
     expect(list[49]!.msg).toBe('e59');
+  });
+
+  it('numbers each distinct error (seq); a repeat only counts up; errorsSince returns the newer ones (R-253)', () => {
+    const s0 = noteSeq();
+    noteError('a', new Error('x'));
+    noteError('a', new Error('x'));
+    noteError('b', new Error('y'));
+    expect(noteSeq()).toBe(s0 + 2);
+    expect(recentErrors().map((e) => e.seq)).toEqual([s0 + 1, s0 + 2]);
+    expect(errorsSince(s0 + 1).map((e) => e.where)).toEqual(['b']);
+    expect(errorsSince(s0 + 2)).toEqual([]);
   });
 
   it('accepts non-Error values', () => {

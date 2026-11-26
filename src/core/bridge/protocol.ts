@@ -7,6 +7,8 @@ export const BRIDGE_VERSION = '1';
 export type BridgeCommand =
   | 'ping'
   | 'snapshot'
+  /** errors noted in the page's main world since a sequence number (R-253) */
+  | 'errors'
   | 'saveSettings'
   | 'simulateBoss'
   | 'simulateNodes'

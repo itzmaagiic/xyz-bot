@@ -80,7 +80,7 @@ const rid = (c: { now: () => number }) => {
 };
 const recorder = (c: ReturnType<typeof clock>, o: { maxRuns?: number; maxLines?: number } = {}) =>
   new RunRecorder({ context: ctx, now: c.now, rand: () => 0.5, botVersion: '0.1.0', ...o });
-const noted = (where: string, msg: string, count = 1): NotedError => ({ where, msg, count, t: 1 });
+const noted = (where: string, msg: string, count = 1): NotedError => ({ where, msg, count, t: 1, seq: 0 });
 
 describe('RunRecorder: D-005 lines (R-006)', () => {
   it('record opens a run lazily and writes a D-005 line', () => {

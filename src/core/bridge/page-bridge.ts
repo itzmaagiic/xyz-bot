@@ -27,7 +27,7 @@ import {
   type BridgeRequest,
   type BridgeResponse,
 } from './protocol';
-import { noteError, noteRejection } from '../log/note';
+import { errorsSince, noteError, noteRejection, noteSeq } from '../log/note';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare const state: any;
@@ -157,6 +157,7 @@ export function snapshot(includeTypeChart: boolean): BridgeSnapshot {
     typeChart: includeTypeChart
       ? g(() => (typeof TYPE_CHART !== 'undefined' ? JSON.parse(JSON.stringify(TYPE_CHART)) : null))
       : null,
+    errSeq: noteSeq(),
   };
 }
 
@@ -221,6 +222,8 @@ export async function handle(req: BridgeRequest): Promise<BridgeResponse> {
         return { id: req.id, ok: true, result: BRIDGE_VERSION };
       case 'snapshot':
         return { id: req.id, ok: true, result: snapshot(!!req.args?.typeChart) };
+      case 'errors':
+        return { id: req.id, ok: true, result: { seq: noteSeq(), errors: errorsSince(Number(req.args?.since) || 0) } };
       case 'speciesStats':
         return { id: req.id, ok: true, result: speciesStats((req.args?.ids as number[]) ?? []) };
       case 'openBagItem':
