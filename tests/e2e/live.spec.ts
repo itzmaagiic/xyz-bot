@@ -73,6 +73,56 @@ test('bot plays the real game without getting stuck', async () => {
       };
     });
   const first = await readState();
+  // recon (GAME_RECON §12.8, R-087/R-094/R-254): record every change of SKIP/CONTINUE in battles with time stamps –
+  // attributes, classes, computed pointer-events/opacity and a progress signal (HP texts). Read-only observation.
+  await page.evaluate(() => {
+    const w = window as unknown as { __pkBattleLog?: unknown[] };
+    w.__pkBattleLog = [];
+    const t0 = performance.now();
+    const snap = (why: string) => {
+      const b = (id: string) => {
+        const e = document.getElementById(id);
+        if (!e) return null;
+        const cs = getComputedStyle(e);
+        return {
+          disabled: (e as HTMLButtonElement).disabled,
+          aria: e.getAttribute('aria-disabled'),
+          cls: e.className,
+          style: e.getAttribute('style'),
+          display: cs.display,
+          pe: cs.pointerEvents,
+          op: cs.opacity,
+          text: (e.textContent ?? '').trim().slice(0, 20),
+        };
+      };
+      const active = document.querySelector('div.screen.active')?.id ?? null;
+      if (active !== 'battle-screen' && why !== 'screen') return;
+      const hp = Array.from(document.querySelectorAll('#battle-screen .hp-text'))
+        .map((e) => (e.textContent ?? '').trim())
+        .join('|');
+      w.__pkBattleLog!.push({
+        t: Math.round(performance.now() - t0),
+        why,
+        active,
+        skip: b('btn-auto-battle'),
+        cont: b('btn-continue-battle'),
+        hp,
+      });
+    };
+    const mo = new MutationObserver((recs) => {
+      for (const r of recs) {
+        const id = (r.target as Element).id;
+        if (id === 'btn-auto-battle' || id === 'btn-continue-battle') snap(`${id}:${r.attributeName ?? r.type}`);
+        else if ((r.target as Element).classList?.contains('screen')) snap('screen');
+      }
+    });
+    mo.observe(document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['class', 'style', 'disabled', 'aria-disabled'],
+    });
+    setInterval(() => snap('tick'), 1000);
+  });
   await page.locator('#pk-toggle').click();
 
   let last = first;
@@ -137,6 +187,8 @@ test('bot plays the real game without getting stuck', async () => {
     ),
   );
   writeFileSync(join(OUT, 'live-run.log'), log);
+  const battleLog = await page.evaluate(() => (window as unknown as { __pkBattleLog?: unknown[] }).__pkBattleLog ?? []);
+  writeFileSync(join(OUT, 'battle-buttons.json'), JSON.stringify(battleLog, null, 1));
   await page.screenshot({ path: join(OUT, 'live-run.png') });
   await ctx.close();
   // R-082/R-190: no progress, an error pause or a hang while running are failures (D-027: 0 hangs)

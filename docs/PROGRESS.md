@@ -5,7 +5,7 @@
 _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- Nichts. Phase 3 beginnt mit einem Superpowers-Plan (brainstorming → writing-plans).
+- **Phase 3, Inkrement P3a „Kämpfe ohne Hänger“:** Aufklärung läuft. Der Live-Test zeichnet jetzt jede Änderung von SKIP/WEITER im Kampf mit Zeitstempel auf (`battle-buttons.json`, nur lesend). Daraus folgt, wie das Spiel SKIP in Bosskämpfen sperrt und wie lange Kämpfe dauern (GAME_RECON §12.8, R-087, R-094, R-254). Danach Design, Plan und TDD.
 
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run):** Superpowers-Plan anlegen. Schwerpunkte, in dieser Reihenfolge:
