@@ -290,6 +290,22 @@ Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockier
 - **Muster:** In Bosskämpfen bleibt schon der erste SKIP-Klick ohne Wirkung. Kurze Bosskämpfe enden vor dem dritten Versuch, der lange Erika-Kampf nicht. Das Budget liegt bei etwa 15 s (`bot.ts:42-43, 496-509`).
 - **Wahrscheinliche Ursache:** `isShown` (`detector.ts:59-76`) prüft weder `disabled`, `aria-disabled` noch `pointer-events`. Die Engine klickt deshalb SKIP, statt zu warten (`engine.ts:183`). Die Kampfsignatur (`detector.ts:127-131`) enthält keinen Fortschritt wie KP oder Kampflog, deshalb gilt „läuft noch“ als „keine Wirkung“.
 - **Offen:** Sperrt das Spiel SKIP in Bosskämpfen generell? Hängt das an `autoSkipBattles` bzw. `autoSkipAllBattles` (§13 Nr. 4)?
+- **Geklärt am 2026-11-26 (Live-Aufklärung P3a, MutationObserver auf SKIP/WEITER, 35 Kämpfe, Story Classic Kanto):**
+  - **Ablauf jedes Kampfs:**
+    1. Etwa 20 ms nach Kampfbeginn wird `#btn-auto-battle` aktiv (`disabled=false`, Deckkraft 1).
+    2. Nach dem Klick (bei Tempo 300 ms etwa 0,5 bis 0,7 s) setzt das Spiel den Knopf auf **`disabled=true`** (Deckkraft 0,35, weiterhin `display:block`). **Der Klick wirkt also.**
+    3. Am Kampfende wird SKIP ausgeblendet und dann entweder `#btn-continue-battle` („Continue...“) eingeblendet oder der Bildschirm direkt gewechselt.
+  - **Dauer:**
+    - Normale Kämpfe nach dem Skip: 1,0 bis 7,4 s.
+    - Der Bosskampf gegen Erika (`n8_0`): **16,7 s**, obwohl SKIP schon nach 0,6 s gedrückt war.
+  - **Ursache des Hängers (Bot, nicht Spiel):** Der Bot wertet „SKIP noch sichtbar“ als „Klick ohne Wirkung“. `isShown` prüft `disabled` nicht, und die Kampfsignatur hat keinen Fortschritt. Deshalb klickt er den **gesperrten** Knopf noch zweimal und pausiert nach etwa 15 s, kurz vor dem Kampfende.
+  - **Folge für den Bot (P3a):**
+    - Unterscheiden zwischen „sichtbar“ und „bedienbar“ (`disabled`, `aria-disabled`, `pointer-events`).
+    - Ein Knopf, der nach dem Klick gesperrt wird, gilt als Wirkung.
+    - Ein laufender Kampf mit gesperrtem SKIP heißt warten.
+    - Kampffortschritt (KP-Texte) gehört in die Signatur.
+    - Für echte Hänger sorgt ein Watchdog.
+  - Die Rohdaten (`artifacts/live/battle-buttons.json`, gitignored) stammen aus dem Live-Test (`tests/e2e/live.spec.ts`, Beobachter nur lesend).
 
 ### 12.9 Manipulationsschutz `pk` (gelesen am 2026-11-25, Session 1, P2, nur lesend)
 - Das Spiel hat ein globales Objekt `pk` mit einem Speicher-Digest. `pk.keyClass` ordnet localStorage-Schlüssel ein: In den Digest gehen **nur Schlüssel mit Präfix `poke_`**, ausgenommen eine feste Ausnahmeliste und Schlüssel auf `_seen`. `pkrl_*` und fremde Präfixe zählen nicht.
@@ -303,7 +319,7 @@ Diese Liste ersetzt §7, §10.5 und §10.7 als Arbeitsliste. Erledigtes ist dort
 
 | # | Frage | Status | Wo gelöst |
 |---|---|---|---|
-| 1 | **Lange Bosskämpfe mit gesperrtem SKIP** (§12.8): Wie erkennt man „Kampf läuft noch“ (KP, Kampflog) gegenüber „Kampf vorbei“? Wie lange ist SKIP gesperrt, und hängt das an den Skip-Einstellungen? | offen, **blockiert vollständige Runs** | P3 (R-087, R-094, R-190) |
+| 1 | **Lange Bosskämpfe mit gesperrtem SKIP** (§12.8): Wie erkennt man „Kampf läuft noch“ (KP, Kampflog) gegenüber „Kampf vorbei“? Wie lange ist SKIP gesperrt, und hängt das an den Skip-Einstellungen? | **geklärt 2026-11-26** (§12.8): SKIP wird nach dem Klick `disabled`, der Kampf läuft bis zu 16,7 s weiter. Behebung im Bot in P3a | P3 (R-087, R-094, R-190) |
 | 2 | Fixtures fehlen für `transition`, `win`, `stat-buff`, `endless-stage-complete`, das Kampfende bei Niederlage, Shop/Mart (`shop-modal`, Mart-Knoten) und echte Modals (Entwicklung, `usable-item`, `eevee-choice`, `reset-run-modal`) | offen | P3 (R-075, R-224: erst Fixture, dann Logik) |
 | 3 | DE/EN-Paare gibt es nur für catch und starter. Weitere Bildschirme brauchen eine zweite Sprache | offen | P3 (R-212) |
 | 4 | Was bewirkt jede Spieleinstellung genau (`autoSkipBattles` vs. `autoSkipAllBattles`, `misclickProtection`, `skipTraitFx`)? | offen | P3 (R-073, R-074) |
