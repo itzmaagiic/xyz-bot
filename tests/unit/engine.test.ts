@@ -48,7 +48,10 @@ describe('DOM reader', () => {
     expect(cards.map((c) => c.types)).toEqual([['Grass', 'Poison'], ['Fire'], ['Water']]);
     expect(cards.map((c) => c.move?.type)).toEqual(['Grass', 'Fire', 'Water']);
     const doc = loadFixture('starter-de');
-    expect(decide(gs(doc), doc, DEFAULT_SETTINGS, newMemory())).toMatchObject({ kind: 'click', index: 0 });
+    expect(decide(gs(doc), doc, { ...DEFAULT_SETTINGS, mode: 'story' }, newMemory())).toMatchObject({
+      kind: 'click',
+      index: 0,
+    });
   });
   it('parses the shiny card', () => {
     const m = parsePokeCard(loadFixture('shiny').querySelector('#btn-take-shiny')!)!;
@@ -58,7 +61,25 @@ describe('DOM reader', () => {
 });
 
 describe('DecisionEngine on real snapshots', () => {
-  const s = { ...DEFAULT_SETTINGS };
+  // story flows stay tested although the bot is focused on challenges (D-040)
+  const s = { ...DEFAULT_SETTINGS, mode: 'story' as const };
+  it('challenge mode on the title screen with challenges still locked → pause with a plain reason (R-227)', () => {
+    const doc = loadFixture('title'); // fresh-profile snapshot: TAKE CHALLENGE is locked
+    expect(decide(gs(doc), doc, { ...DEFAULT_SETTINGS, mode: 'challenge' }, newMemory())).toMatchObject({
+      kind: 'pause',
+      cause: 'config',
+    });
+  });
+  it('challenge mode on the title screen → open the challenges', () => {
+    const doc = loadFixture('title');
+    const b = doc.querySelector('#btn-challenges-run')!;
+    b.removeAttribute('disabled');
+    b.classList.remove('title-mode-card--locked');
+    expect(decide(gs(doc), doc, { ...DEFAULT_SETTINGS, mode: 'challenge' }, newMemory())).toMatchObject({
+      kind: 'click',
+      selector: '#btn-challenges-run',
+    });
+  });
   it('title → start story (no resume visible)', () => {
     const d = decide(gs(loadFixture('title')), loadFixture('title'), s, newMemory());
     expect(d).toMatchObject({ kind: 'click', selector: '#btn-history-run' });
@@ -229,7 +250,7 @@ describe('settings', () => {
     const n = normalizeSettings({ region: 99, actionDelayMs: 1, mode: 'x', foo: 1, takeShiny: 'yes' });
     expect(n.region).toBe(6);
     expect(n.actionDelayMs).toBe(150);
-    expect(n.mode).toBe('story');
+    expect(n.mode).toBe('challenge'); // D-040: the mode is fixed to challenge
     expect(n.takeShiny).toBe(true);
     expect('foo' in n).toBe(false);
   });

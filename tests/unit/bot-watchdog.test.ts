@@ -68,7 +68,7 @@ describe('bot watchdog wiring (R-095)', () => {
     const btn = doc.querySelector<HTMLButtonElement>('#btn-history-run')!;
     btn.disabled = true; // the engine decides to click it, the bot must not
     const bot = new BotController(platform, null, doc);
-    bot.view.settings = { ...DEFAULT_SETTINGS, watchdogSec: 20 };
+    bot.view.settings = { ...DEFAULT_SETTINGS, mode: 'story', watchdogSec: 20 };
     bot.view.status = 'running';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const internals = bot as any;

@@ -189,7 +189,7 @@ describe('the engine attaches the trace to its decisions (R-006)', () => {
 
   it('starter: options per card, chosen = starter:<index>', () => {
     const doc = loadFixture('starter-de');
-    const t = trace(decide(gs(doc, null), doc, DEFAULT_SETTINGS, newMemory()))!;
+    const t = trace(decide(gs(doc, null), doc, { ...DEFAULT_SETTINGS, mode: 'story' }, newMemory()))!;
     expect(t.options.length).toBeGreaterThan(1);
     expect(t.chosen).toBe('starter:0');
   });

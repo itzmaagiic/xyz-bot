@@ -94,6 +94,13 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       if (s.mode === 'challenge') {
         if (s.resumeRuns && shown(doc, '#btn-continue-challenge'))
           return { kind: 'click', selector: '#btn-continue-challenge', why: 'resume challenge run' };
+        const btn = doc.querySelector('#btn-challenges-run');
+        if (btn && (btn.hasAttribute('disabled') || btn.classList.contains('title-mode-card--locked')))
+          return {
+            kind: 'pause',
+            why: 'Challenges sind in diesem Spielstand noch gesperrt – im Spiel erst freischalten (Story-Sieg)',
+            cause: 'config',
+          };
         return { kind: 'click', selector: '#btn-challenges-run', why: 'open challenges' };
       }
       if (s.mode === 'story') {

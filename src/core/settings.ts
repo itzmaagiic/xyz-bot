@@ -32,7 +32,7 @@ export interface BotSettings {
 }
 
 export const DEFAULT_SETTINGS: BotSettings = {
-  mode: 'story',
+  mode: 'challenge',
   chalKind: 'arena',
   chalLevel: null,
   storyVariant: 'classic',
@@ -66,7 +66,8 @@ export function normalizeSettings(raw: unknown): BotSettings {
     if (v === undefined) continue;
     if (d === null ? v === null || typeof v === 'number' || typeof v === 'string' : typeof v === typeof d) o[k] = v;
   }
-  if (out.mode !== 'story' && out.mode !== 'tower' && out.mode !== 'challenge') out.mode = 'story';
+  // D-040 (user, 2026-11-27): only the challenge mode is played for now – story and tower code stay, but rest
+  out.mode = 'challenge';
   if (!['arena', 'daily', 'weekly'].includes(out.chalKind)) out.chalKind = 'arena';
   if (out.chalLevel !== null) out.chalLevel = Math.min(7, Math.max(0, Math.round(Number(out.chalLevel) || 0)));
   if (out.storyVariant !== 'classic' && out.storyVariant !== 'nuzlocke') out.storyVariant = 'classic';

@@ -19,7 +19,12 @@ const platform: Platform = {
 function bot(fixture: string) {
   const doc = loadFixture(fixture);
   const b = new BotController(platform, null, doc);
-  b.view.settings = { ...DEFAULT_SETTINGS, reorderTeam: false, actionDelayMs: 0 };
+  b.view.settings = {
+    ...DEFAULT_SETTINGS,
+    mode: 'story', // the title screen is just a convenient click target here
+    reorderTeam: false,
+    actionDelayMs: 0,
+  };
   b.view.status = 'running';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const internals = b as any;

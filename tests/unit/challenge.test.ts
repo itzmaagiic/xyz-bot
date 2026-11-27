@@ -33,6 +33,8 @@ describe('challenge screens (real snapshots)', () => {
 
   it('title → challenges; challenge-select → arena / daily / weekly', () => {
     const title = loadFixture('title');
+    title.querySelector('#btn-challenges-run')!.removeAttribute('disabled'); // a save with challenges unlocked
+    title.querySelector('#btn-challenges-run')!.classList.remove('title-mode-card--locked');
     expect(decide(gs(title), title, s, newMemory())).toMatchObject({ selector: '#btn-challenges-run' });
     const doc = loadFixture('chal-select');
     expect(decide(gs(doc), doc, s, newMemory())).toMatchObject({ selector: '#chal-intro' });

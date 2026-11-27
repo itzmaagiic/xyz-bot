@@ -87,6 +87,14 @@ describe('Watchdog (R-095)', () => {
   });
 });
 
+describe('challenge focus (D-040)', () => {
+  it('the bot plays challenges: default and every stored mode become challenge', () => {
+    expect(DEFAULT_SETTINGS.mode).toBe('challenge');
+    expect(normalizeSettings({ mode: 'story' }).mode).toBe('challenge');
+    expect(normalizeSettings({ mode: 'tower' }).mode).toBe('challenge');
+  });
+});
+
 describe('watchdog settings and pause reason', () => {
   it('watchdogSec defaults to 60 and is clamped to 15–600', () => {
     expect(DEFAULT_SETTINGS.watchdogSec).toBe(60);
