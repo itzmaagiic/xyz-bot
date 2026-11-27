@@ -14,8 +14,7 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run), weitere Inkremente in dieser Reihenfolge:**
-   - ~~Hänger bei langen Bosskämpfen (P3a)~~ und ~~Run-Logs, Live-Urteil, MAIN-Welt-Fehler (P3b)~~ sind erledigt (D-037, D-038).
-   - **P3c (in Arbeit, D-039):** Not-Aus (R-011), Laufzeit-Handler für `unhandledrejection`/`error` (R-200, deckt die Lint-Lücken aus D-036), Speicherfehler sichtbar machen (R-259).
+   - ~~Hänger bei langen Bosskämpfen (P3a)~~, ~~Run-Logs, Live-Urteil, MAIN-Welt-Fehler (P3b)~~ und ~~Not-Aus, unerwartete Fehler, Speicherprobleme (P3c)~~ sind erledigt (D-037, D-038, D-039).
    - **P3d:** Neuladen mit Laufstatus und Run-Logs (R-109), doppelte Ausführung und Tab-Sperre (R-108, R-229), Eingriff des Nutzers (R-213), fremder Run nur nach Bestätigung (R-214).
    - Aufklärung der Restbildschirme (D-029, R-224).
    - In der ersten **frisch gebauten** Session R-015 und R-016 bestätigen (D-034).
