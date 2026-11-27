@@ -86,6 +86,19 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 - Vor jedem Top-4-Mitglied erscheint die Boss-Vorbereitung; die Reihenfolge-Simulation hob die Kettenchance dort
   z. B. von 3 % auf 65–78 %.
 
+## Challenge-Modus (Fokus seit D-040)
+
+### Baseline Arena-Challenge (2026-11-27, 30 min live, bereinigter Spielstand, `artifacts/chal1`)
+- **Übernommener Run aus dem Spielstand:** Niederlage gegen Pryce (Karte 6, 6 Orden).
+- **Neuer Run mit dem stärksten PC-Starter** (Mega-Mewtu Y, shiny, 50 Buff-Punkte): Alle 8 Arenaleiter wurden mit simulierten 100 % geschlagen, danach kam die **Niederlage gegen „Unova League +4“** (Top 4 und Champ am Stück). Team Lv 87–98, die Simulation sagte dort von Anfang an 0 %, und schon auf Karte 8 nur „~31 %“.
+- **Dritter Run:** Abbruch durch einen Bot-Fehler. Beim Attacken-Lehrer kennen alle die Attacke schon, der Bot hielt den Dialog für einen Item-Dialog. Behoben.
+- **Ursache der Liga-Niederlage:** Solange alle Bosse ~100 % zeigen, gibt die Simulation beim Fangen kein Signal. Gefangen wurden deshalb schwache Arten (Nuzleaf, Swadloon, Shellos, Maractus). Die Liga ist erst im letzten Gebiet vorausberechenbar (`endlessState.currentRegion.trainers` umfasst nur das aktuelle Gebiet), dann ist es zu spät.
+
+### Änderung 1 (2026-11-27)
+- Bei Gleichstand der Simulation (gesättigt) entscheidet die Summe der Basiswerte.
+- Mit vollem Team wird nur eine deutlich stärkere Art gefangen (≥ 15 % über dem schwächsten Mitglied), die das schwächste ersetzt.
+- Messung: `artifacts/chal2`, folgt.
+
 ## Run-Logs lesen (P3b, D-005, D-038)
 
 - **Woher:**
