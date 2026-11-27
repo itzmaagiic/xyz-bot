@@ -47,7 +47,12 @@ const HARMLESS = new Set([
 /** Known blocking overlays → kind. */
 const KNOWN_OVERLAYS: { match: (el: Element) => boolean; kind: Exclude<OverlayKind, null> }[] = [
   { match: (el) => el.id === 'tutorial-overlay', kind: 'tutorial' },
-  { match: (el) => el.id === 'item-equip-modal' && !!el.querySelector('[data-tutor]'), kind: 'move-tutor' },
+  // the move tutor shares the equip modal; when every member already knows the move there is no [data-tutor] button
+  // left, but its own skip button is still there (live finding, arena challenge 2026-11-27)
+  {
+    match: (el) => el.id === 'item-equip-modal' && !!el.querySelector('[data-tutor], #btn-skip-tutor'),
+    kind: 'move-tutor',
+  },
   { match: (el) => el.id === 'item-equip-modal', kind: 'item-equip' },
   { match: (el) => el.id === 'usable-item-modal', kind: 'usable-item' },
   { match: (el) => el.id === 'evo-overlay' || el.id === 'eevee-choice-overlay', kind: 'evolution' },

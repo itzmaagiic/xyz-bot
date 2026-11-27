@@ -87,6 +87,18 @@ describe('DecisionEngine on real snapshots', () => {
     expect(d.kind).toBe('click');
     expect((d as { selector: string }).selector).toMatch(/^#item-equip-modal button\[data-tutor="\d"\]$/);
   });
+  it('move tutor where every member already knows the move → skip it (live finding, arena challenge 2026-11-27)', () => {
+    const doc = loadFixture('map-move-tutor');
+    // the game renders "Bereits gemeistert!" rows instead of buttons – no [data-tutor] left in the dialog
+    for (const b of Array.from(doc.querySelectorAll('#item-equip-modal [data-tutor]'))) {
+      const row = doc.createElement('div');
+      row.className = 'equip-mon-row is-mastered';
+      row.textContent = 'Mewtu Lv43 – Bereits gemeistert!';
+      b.replaceWith(row);
+    }
+    expect(detectScreen(doc).overlay).toBe('move-tutor');
+    expect(decide(gs(doc), doc, s, newMemory())).toMatchObject({ kind: 'click', selector: '#btn-skip-tutor' });
+  });
   it('evolution overlay → Skip (evolve), never Stop', () => {
     const doc = loadFixture('map');
     const ov = doc.createElement('div');
