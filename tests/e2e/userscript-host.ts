@@ -32,15 +32,27 @@ const GM_THROWING = `
 })();
 `;
 
-/** which GM the emulated manager offers: the normal shim, none at all, or one whose writes fail (R-100, R-102) */
-export type GmMode = 'shim' | 'none' | 'throwing';
+/** private browsing on the iPhone, emulated: GM writes fail and localStorage refuses every write (R-259) */
+const VOLATILE =
+  GM_THROWING +
+  `
+(() => {
+  Storage.prototype.setItem = function () { throw new DOMException('The quota has been exceeded.', 'QuotaExceededError'); };
+})();
+`;
+
+/**
+ * which storage the emulated manager offers: the normal GM shim, none at all, one whose writes fail (R-100, R-102),
+ * or nothing that persists at all (R-259)
+ */
+export type GmMode = 'shim' | 'none' | 'throwing' | 'volatile';
 
 export async function injectUserscript(
   page: Page,
   browserName: string,
   gm: GmMode = 'shim',
 ): Promise<'isolated' | 'main'> {
-  const prelude = gm === 'shim' ? GM_SHIM : gm === 'throwing' ? GM_THROWING : '';
+  const prelude = { shim: GM_SHIM, throwing: GM_THROWING, volatile: VOLATILE, none: '' }[gm];
   const code = prelude + '\n' + readFileSync(USER_JS, 'utf8');
   if (browserName === 'chromium') {
     const cdp = await page.context().newCDPSession(page);

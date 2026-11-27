@@ -78,7 +78,7 @@ export function makeStorage(env: StorageEnv): PlatformStorage {
     async get<T>(key: string): Promise<T | undefined> {
       return parse<T>(await readRaw(key), key);
     },
-    async set(key: string, value: unknown): Promise<void> {
+    async set(key: string, value: unknown): Promise<void | 'volatile'> {
       const s = JSON.stringify(value);
       if (gm?.setValue) {
         try {
@@ -105,6 +105,7 @@ export function makeStorage(env: StorageEnv): PlatformStorage {
         }
       }
       mem.set(key, s);
+      return 'volatile'; // only in memory: the overlay tells the user (R-259)
     },
   };
 }

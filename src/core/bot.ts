@@ -18,6 +18,7 @@ import { type NotedError, noteError, noteRejection, onEveryNote, onNotedError, r
 import { errorPause, type PauseKind } from './pause-reason';
 import { Watchdog } from './watchdog';
 import { BOT_VERSION } from './version';
+import { storageProblemText } from './storage-problem';
 import { RunRecorder, type DecisionLine, type RecordableDecision, type RunContext } from './log/run-log';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
@@ -41,6 +42,8 @@ export interface BotView {
   versionWarning: string | null;
   stats: BotStats;
   settings: BotSettings;
+  /** plain-language text when settings or stats cannot be stored permanently (R-259), else null */
+  storageProblem: string | null;
   /** game settings the bot recommends turning on (requires explicit user confirmation) */
   speedSuggestions: WritableSetting[];
 }
@@ -78,6 +81,7 @@ export class BotController {
     versionWarning: null,
     stats: { runs: 0, wins: 0, losses: 0, actions: 0 },
     settings: { ...DEFAULT_SETTINGS },
+    storageProblem: null,
     speedSuggestions: [],
   };
 
@@ -142,8 +146,27 @@ export class BotController {
 
   async updateSettings(patch: Partial<BotSettings>): Promise<void> {
     this.view.settings = normalizeSettings({ ...this.view.settings, ...patch });
-    await this.platform.storage.set(SETTINGS_KEY, this.view.settings);
+    await this.persist(SETTINGS_KEY, this.view.settings);
     this.emit();
+  }
+
+  /**
+   * Stores settings/stats. A failing or memory-only storage never throws here: the value keeps working until the
+   * reload and the overlay shows what that means and what to do (R-259). A later successful write clears it.
+   */
+  private async persist(key: string, value: unknown): Promise<void> {
+    let problem: string | null = null;
+    try {
+      if ((await this.platform.storage.set(key, value)) === 'volatile') problem = storageProblemText('volatile');
+    } catch (e) {
+      noteError(`bot:persist:${key}`, e);
+      problem = storageProblemText(e);
+    }
+    if (problem !== this.view.storageProblem) {
+      this.view.storageProblem = problem;
+      if (problem) this.log.warn(`storage: ${problem}`);
+      this.emit();
+    }
   }
 
   /** Reads state without acting (used for the status display). */
@@ -534,7 +557,7 @@ export class BotController {
         s.runs++;
         if (d.result === 'win') s.wins++;
         if (d.result === 'loss') s.losses++;
-        await this.platform.storage.set(STATS_KEY, s);
+        await this.persist(STATS_KEY, s);
         this.log.info(`run finished: ${d.why}`, s);
         noteRejection('bot:notify', this.notify('Pokelike run finished', `${d.why} (W ${s.wins} / L ${s.losses})`));
         const cfg = this.view.settings;

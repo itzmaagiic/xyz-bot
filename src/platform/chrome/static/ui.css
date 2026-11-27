@@ -4,6 +4,7 @@
   --muted: #9aa4c2;
   --line: #34405f;
   --acc: #38d6e6;
+  --bad: #ff8a8a;
   color-scheme: dark light;
 }
 @media (prefers-color-scheme: light) {
@@ -13,6 +14,7 @@
     --muted: #5b6585;
     --line: #c9d0e4;
     --acc: #0b8fa0;
+    --bad: #b3261e;
   }
 }
 body {
@@ -102,4 +104,9 @@ input[type='number'] {
   border-radius: 6px;
   padding: 4px 6px;
   min-height: 30px;
+}
+/* R-259: a failed save on the options page is a problem, not a confirmation */
+#saved.bad {
+  color: var(--bad);
+  font-weight: 600;
 }

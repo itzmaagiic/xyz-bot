@@ -1,7 +1,8 @@
 /** Thin platform layer – everything else is shared. */
 export interface PlatformStorage {
   get<T>(key: string): Promise<T | undefined>;
-  set(key: string, value: unknown): Promise<void>;
+  /** 'volatile': the value could only be kept in memory and is lost on reload (R-259) */
+  set(key: string, value: unknown): Promise<void | 'volatile'>;
   /** called when another context (popup/options/other tab) changed the key */
   onChange?(key: string, cb: (value: unknown) => void): void;
 }

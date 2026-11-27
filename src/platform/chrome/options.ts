@@ -2,6 +2,7 @@
 import { normalizeSettings, SETTINGS_KEY, type BotSettings } from '../../core/settings';
 import { noteRejection } from '../../core/log/note';
 import { buildSettingsForm } from '../../ui/settings-form';
+import { reportSave } from '../../ui/storage-problem';
 
 const root = document.getElementById('form')!;
 const saved = document.getElementById('saved')!;
@@ -12,11 +13,11 @@ function render(): void {
   root.appendChild(
     buildSettingsForm(document, current, (patch) => {
       current = normalizeSettings({ ...current, ...patch });
+      // R-259: a failed save (e.g. "Extension context invalidated") is shown in plain words with the next step
       noteRejection(
         'options:save',
-        chrome.storage.local.set({ [SETTINGS_KEY]: current }).then(() => {
-          saved.textContent = 'Gespeichert ✓';
-          setTimeout(() => (saved.textContent = ''), 1500);
+        reportSave(chrome.storage.local.set({ [SETTINGS_KEY]: current }), saved, 'Gespeichert ✓').then(() => {
+          if (!saved.classList.contains('bad')) setTimeout(() => (saved.textContent = ''), 1500);
         }),
       );
     }),

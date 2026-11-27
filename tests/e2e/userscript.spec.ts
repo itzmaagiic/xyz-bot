@@ -110,6 +110,22 @@ test.describe('Userscript (GM shim)', () => {
     await expect(page.locator('#pkbot-toasts')).toContainText('Unerwarteter Fehler im Bot');
   });
 
+  test('settings that cannot be stored show a lasting hint with the next step (R-259)', async ({
+    page,
+    browserName,
+  }) => {
+    await serveFixture(page, 'title');
+    await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
+    await injectUserscript(page, browserName, 'volatile');
+    await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
+    await expect(page.locator('#pk-storage')).toHaveCount(0);
+    await page.locator('summary', { hasText: 'Einstellungen' }).click();
+    await page.locator('#pk-delay').fill('900');
+    await page.locator('#pk-delay').dispatchEvent('change');
+    await expect(page.locator('#pk-storage')).toContainText('nur bis zum Neuladen');
+    await expect(page.locator('#pk-storage')).toContainText('privates Surfen');
+  });
+
   test('keyboard shortcut Alt+Shift+O toggles the overlay', async ({ page, browserName, isMobile }) => {
     test.skip(isMobile, 'no hardware keyboard on the phone profile');
     await serveFixture(page, 'title');

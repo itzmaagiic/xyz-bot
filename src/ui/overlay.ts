@@ -149,6 +149,7 @@ export class Overlay {
           `⏸ ${v.pauseReason}`,
         ),
       );
+    if (v.storageProblem) body.appendChild(this.h('div', { class: 'warn bad', id: 'pk-storage' }, v.storageProblem));
     if (v.versionWarning) {
       const w = this.h('div', { class: 'warn bad', id: 'pk-version' }, v.versionWarning + ' ');
       const ack = this.h('button', { id: 'pk-ack-version' }, 'Version bestätigen');

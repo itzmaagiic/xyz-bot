@@ -151,4 +151,28 @@ describe('userscript storage (R-099, R-100, R-102)', () => {
   it('offers no onChange (one context per tab; no listener API in the GM intersection)', () => {
     expect(makeStorage({ gm: fakeGm(), local: null }).onChange).toBeUndefined();
   });
+
+  it("set returns 'volatile' when GM and localStorage both fail – the value only lives in memory (R-259)", async () => {
+    const local = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+      removeItem: () => undefined,
+    };
+    const gm = {
+      getValue: async () => undefined,
+      setValue: async () => {
+        throw new Error('quota exceeded');
+      },
+    };
+    const s = makeStorage({ gm, local });
+    expect(await s.set('pkbot.settings', { a: 1 })).toBe('volatile');
+    expect(await s.get('pkbot.settings')).toEqual({ a: 1 }); // still usable until the reload
+  });
+
+  it('set returns undefined when GM or localStorage persisted the value', async () => {
+    expect(await makeStorage({ gm: fakeGm(), local: fakeLocal() }).set('x', 1)).toBeUndefined();
+    expect(await makeStorage({ gm: null, local: fakeLocal() }).set('x', 1)).toBeUndefined();
+  });
 });
