@@ -1,6 +1,6 @@
 /** Pure decisions for challenge runs (Arena-Challenge, daily, weekly). */
 import { TYPES } from '../data/typechart';
-import type { Mon } from '../types';
+import type { DecisionOption, Mon } from '../types';
 import { noteError } from '../log/note';
 
 export interface PcCard {
@@ -46,8 +46,13 @@ export function choosePcStarter(
   cards: readonly PcCard[],
   stats: Record<number, SpeciesStats>,
   preferred?: number | null,
-): { index: number; why: string } {
-  if (!cards.length) return { index: -1, why: 'no PC Pokémon' };
+): { index: number; why: string; options?: DecisionOption[] } {
+  if (!cards.length) return { index: -1, why: 'no PC Pokémon', options: [] };
+  const options: DecisionOption[] = cards.map((c, i) => ({
+    id: `starter:${i}`,
+    label: `#${c.speciesId}`,
+    score: pcStarterScore(c, stats[c.speciesId]),
+  }));
   let best = -1;
   const better = (i: number) =>
     best < 0 ||
@@ -63,6 +68,7 @@ export function choosePcStarter(
   return {
     index: best,
     why: `${isPreferred ? 'chosen' : 'PC'} starter #${c.speciesId} (BST ${stats[c.speciesId]?.bst ?? '?'}${tags ? ', ' + tags : ''})`,
+    options,
   };
 }
 

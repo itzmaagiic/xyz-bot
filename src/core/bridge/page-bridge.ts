@@ -141,6 +141,15 @@ export function readRun(s: any): RunState | null {
     currentNodeId:
       cur && typeof cur === 'object' ? String(cur.id) : typeof s.currentNodeId === 'string' ? s.currentNodeId : null,
     catchOffer: sc && Array.isArray(sc.instances) ? (sc.instances.map(serializeMon).filter(Boolean) as Mon[]) : null,
+    relics: Array.isArray(s.passives) ? s.passives.map(itemId) : [],
+    challenge:
+      mode === 'challenge'
+        ? {
+            id: s.challengeId != null ? String(s.challengeId) : null,
+            badge:
+              Number.isFinite(Number(s.challengeBadge)) && s.challengeBadge != null ? Number(s.challengeBadge) : null,
+          }
+        : null,
   };
 }
 

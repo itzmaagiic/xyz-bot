@@ -34,9 +34,16 @@ export interface CompactState {
   gen: number;
   nuzlocke: boolean;
   nextBoss: string | null;
+  /** challenge relics and which challenge/badge level (D-040) */
+  relics: string[];
+  challenge: { id: string | null; badge: number | null } | null;
 }
 
-export type RunMode = RunContext['mode'] & { run: string | null; gen: number | null };
+export type RunMode = RunContext['mode'] & {
+  run: string | null;
+  gen: number | null;
+  challenge?: { id: string | null; badge: number | null } | null;
+};
 
 /** One line of decisions.jsonl – exactly the D-005 fields. */
 export interface DecisionLine {
@@ -362,7 +369,7 @@ export class RunRecorder {
     p.eliteIndex = Math.max(p.eliteIndex, run.eliteIndex);
     p.maxLevel = Math.max(p.maxLevel, ...run.team.map((m) => m.level));
     if (run.team.length) p.teamSize = run.team.length;
-    r.mode = { ...r.mode, run: run.mode, gen: run.gen };
+    r.mode = { ...r.mode, run: run.mode, gen: run.gen, challenge: run.challenge ?? null };
   }
 
   private summary(r: RunRecord): RunSummary {
@@ -453,5 +460,7 @@ function compact(st: GameState, nextBoss: string | null): CompactState | null {
     gen: run.gen,
     nuzlocke: run.nuzlocke,
     nextBoss: st.sim?.bossName ?? nextBoss,
+    relics: [...(run.relics ?? [])],
+    challenge: run.challenge ?? null,
   };
 }

@@ -175,7 +175,13 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         const cards = readPcCards(doc);
         const c = choosePcStarter(cards, state.pcStats ?? {}, s.chalStarter ?? s.preferredStarter);
         if (c.index < 0) return { kind: 'pause', why: c.why, cause: 'config' };
-        return { kind: 'click', selector: '#starter-choices .dex-card', index: c.index, why: c.why };
+        return {
+          kind: 'click',
+          selector: '#starter-choices .dex-card',
+          index: c.index,
+          why: c.why,
+          trace: trace(c.options, `starter:${c.index}`),
+        };
       }
       const cards = readCards(doc, '#starter-choices .poke-card');
       if (!cards.length) return { kind: 'wait', ms: 500, why: 'starters loading' };
@@ -290,6 +296,14 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         const rs = state.relicSim;
         if (rs?.replace.length && rs.replace.length === owned.length) {
           const bestI = rs.replace.reduce((b, v, i) => (v > rs.replace[b]! ? i : b), 0);
+          const options = [
+            ...rs.replace.map((v, i) => ({
+              id: `replace:${i}`,
+              label: `owned ${i + 1}${owned[i]?.types.length ? ` (${owned[i]!.types.join('/')})` : ''}`,
+              score: v,
+            })),
+            { id: 'relic:skip', label: 'keep all', score: rs.baseline },
+          ];
           if (rs.replace[bestI]! > rs.baseline + 0.02) {
             const ownedIdx = all.map((e, i) => (isNew(e) ? -1 : i)).filter((i) => i >= 0)[bestI]!;
             return {
@@ -297,6 +311,7 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
               selector: '#passive-choices .item-card.passive-card',
               index: ownedIdx,
               why: `sim: swap relic ${bestI + 1} for the new one (${rs.baseline.toFixed(2)} → ${rs.replace[bestI]!.toFixed(2)})`,
+              trace: trace(options, `replace:${bestI}`, rs.replace[bestI]!),
             };
           }
           if (rs.replace.some((v) => Math.abs(v - rs.baseline) > 1e-9))
@@ -304,6 +319,7 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
               kind: 'click',
               selector: '#btn-skip-passive',
               why: `sim: no swap improves the boss odds (${rs.baseline.toFixed(2)})`,
+              trace: trace(options, 'relic:skip', rs.baseline),
             };
         }
         const c = chooseRelicReplace(owned, incoming, run?.team ?? []);
@@ -319,15 +335,37 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         const team = run?.team ?? [];
         const score = (i: number) => rs.offers[i]!.value + 0.004 * relicScore(cards[i]!, team);
         const best = cards.map((_, i) => i).reduce((b, i) => (score(i) > score(b) ? i : b), 0);
+        const options = [
+          ...cards.map((c, i) => ({
+            id: `relic:${i}`,
+            label: rs.offers[i]!.id ?? (c.types.join('/') || `relic ${i + 1}`),
+            score: rs.offers[i]!.value,
+            factors: { synergy: relicScore(c, team) },
+          })),
+          { id: 'relic:skip', label: 'skip', score: rs.baseline },
+        ];
         return {
           kind: 'click',
           selector: '#passive-choices .item-card.passive-card',
           index: best,
           why: `sim: relic ${rs.offers[best]!.id ?? '?'} → boss odds ${rs.baseline.toFixed(2)} → ${rs.offers[best]!.value.toFixed(2)}`,
+          trace: trace(options, `relic:${best}`, rs.offers[best]!.value),
         };
       }
-      const c = chooseRelic(cards, run?.team ?? []);
-      return { kind: 'click', selector: '#passive-choices .item-card.passive-card', index: c.index, why: c.why };
+      const team = run?.team ?? [];
+      const c = chooseRelic(cards, team);
+      const options = cards.map((card, i) => ({
+        id: `relic:${i}`,
+        label: card.types.join('/') || `relic ${i + 1}`,
+        score: relicScore(card, team),
+      }));
+      return {
+        kind: 'click',
+        selector: '#passive-choices .item-card.passive-card',
+        index: c.index,
+        why: c.why,
+        trace: trace(options, `relic:${c.index}`),
+      };
     }
     case 'stage-complete': {
       // challenge level cleared (badge earned) or tower stage cleared

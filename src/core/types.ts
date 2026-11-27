@@ -106,6 +106,10 @@ export interface RunState {
   map: GameMap | null;
   currentNodeId: string | null;
   catchOffer: Mon[] | null;
+  /** challenge relics (state.passives), ids – empty outside challenges (D-040) */
+  relics?: string[];
+  /** which challenge and badge level is played (state.challengeId / challengeBadge); null outside challenges */
+  challenge?: { id: string | null; badge: number | null } | null;
 }
 
 /** Raw JSON delivered by the page bridge (main world). */

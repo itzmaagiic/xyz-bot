@@ -194,3 +194,42 @@ describe('the engine attaches the trace to its decisions (R-006)', () => {
     expect(t.chosen).toBe('starter:0');
   });
 });
+
+describe('challenge decisions carry their trace too (D-040, R-006)', () => {
+  const s = { ...DEFAULT_SETTINGS, mode: 'challenge' as const, reorderTeam: false };
+
+  it('relic pick with simulation: one option per offer plus skip, chosen = relic:<best>, confidence = its value', () => {
+    const doc = loadFixture('chal-relic-1');
+    const relicSim = {
+      baseline: 0.4,
+      offers: [
+        { id: 'sun_stone', value: 0.45, combat: true },
+        { id: 'fire_tera_shard', value: 0.62, combat: true },
+        { id: 'fire_gem', value: 0.5, combat: true },
+      ],
+      replace: [],
+    };
+    const d = decide(gs(doc, run({ mode: 'challenge' }), { relicSim }), doc, s, newMemory());
+    expect(d).toMatchObject({ kind: 'click', index: 1 });
+    const t = trace(d)!;
+    expect(t.options.map((o) => o.id)).toEqual(['relic:0', 'relic:1', 'relic:2', 'relic:skip']);
+    expect(t.options.find((o) => o.id === 'relic:skip')!.score).toBe(0.4);
+    expect(t.chosen).toBe('relic:1');
+    expect(t.confidence).toBeCloseTo(0.62, 5);
+  });
+
+  it('relic pick without simulation: options scored by team synergy', () => {
+    const doc = loadFixture('chal-relic-1');
+    const t = trace(decide(gs(doc, run({ mode: 'challenge' })), doc, s, newMemory()))!;
+    expect(t.options.length).toBeGreaterThanOrEqual(3);
+    expect(t.chosen).toMatch(/^relic:\d$/);
+  });
+
+  it('PC starter: one option per PC card with its score', () => {
+    const doc = loadFixture('chal-starter-pc');
+    const cards = doc.querySelectorAll('#starter-choices .dex-card').length;
+    const t = trace(decide(gs(doc, null), doc, s, newMemory()))!;
+    expect(t.options).toHaveLength(cards);
+    expect(t.chosen).toMatch(/^starter:\d+$/);
+  });
+});
