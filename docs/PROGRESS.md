@@ -5,9 +5,10 @@
 _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039): umgesetzt (T1 bis T3). Der Gesamt-Review läuft.**
+- **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039): umgesetzt, Gesamt-Review bestanden.**
+  - Review „mit Korrekturen“: 0 kritische und 2 wichtige Funde (Schritt plus Start handelte doppelt, eine Nutzerpause wurde zu `failing`), dazu 4 hochgestufte kleine Funde, alle behoben. Die restlichen kleinen Funde stehen unter „Vorbefunde aus dem Gesamt-Review P3c“.
   - Not-Aus (R-011), globale Fehler-Handler (R-200) und Speicherhinweise (R-259) sind mit Unit- und E2E-Tests belegt, die E2E-Tests zusätzlich mit Mutationsproben.
-  - 431 Unit-Tests, 52 E2E-Tests bestanden, 3 gewollt übersprungen.
+  - 439 Unit-Tests, 52 E2E-Tests bestanden, 3 gewollt übersprungen.
   - Spec `docs/superpowers/specs/2026-11-27-p3c-not-aus-fehler-speicher-design.md`, Plan `docs/superpowers/plans/2026-11-27-p3c-not-aus-fehler-speicher.md`.
 - **P3a** (Kämpfe ohne Hänger, D-037) und **P3b** (Run-Logs, Live-Urteil, MAIN-Welt-Fehler, D-038) sind abgeschlossen, live belegt und haben ihren Gesamt-Review bestanden (siehe „Erledigt“). 411 Unit-Tests grün, 44 E2E-Tests bestanden, 3 gewollt übersprungen.
 
@@ -60,6 +61,18 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 11. Inhalt läuft waagrecht über, die Pfeile der Select-Felder sind abgeschnitten, die Tastenzeile ist unten abgeschnitten.
 12. Die Einstellungen sind standardmäßig aufgeklappt und belegen ≈48 % des Panels.
 13. Sprachen gemischt (Deutsch und Englisch), interne Optionsnamen im Hinweis. Der Live-Viewport ist 1280 statt 1440 breit.
+
+## Vorbefunde aus dem Gesamt-Review P3c (2026-11-27, zurückgestellt)
+1. **Fehler in einer Schleife:** `reportUnexpected` schreibt jedes Auftreten ins Overlay-Log (500 Zeilen), das verdrängt alles andere. Fix: Wiederholungen zusammenfassen („×n“). Das Run-Log zählt ohnehin jedes Auftreten.
+2. **Optionsseite:**
+   - Der 1,5-s-Timer kann eine spätere Fehlermeldung löschen.
+   - Wirft `chrome.storage.local.set` synchron, bekommt `reportSave` das nicht mit.
+   - „Statistik zurückgesetzt“ behält die rote Klasse, und ein gescheitertes Zurücksetzen wird nicht gemeldet.
+3. **Chrome-Adapter:** Er könnte selbst „Extension context invalidated“ werfen, wenn `chrome.runtime.id` fehlt (sonst erscheint ein allgemeiner Text). Nicht verifiziert.
+4. **Feinschliff:**
+   - `reportUnexpected` zeigt bei Gründen, die kein Error sind, „[object Object]“.
+   - Bei DOMException steht die volle Meldung statt eines kurzen Grunds.
+   - `pointercancel` statt einen begonnenen Druck zu Ende zu führen.
 
 ## Vorbefunde aus dem Gesamt-Review P3b (2026-11-26, zurückgestellt)
 1. **Neustart der Bridge:** Er wird nur an einem kleineren Zähler erkannt. Eine Seiten-Nonce im Snapshot wäre wasserdicht. In der Praxis laden Bot und Bridge immer gemeinsam neu.
