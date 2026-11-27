@@ -119,13 +119,17 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 - Die Liga-Simulation beginnt beim aktuellen Gegner (`state._erGauntlet.idx`).
 - Die Reihenfolge vor jedem Liga-Kampf richtet sich nach Siegchance + 0,25 × Fortschritt. Ist kein Gesamtsieg in Sicht, entscheidet also, wie weit das Team kommt.
 - Die Vorschau heißt jetzt „~N % of the fights“, denn sie war nie eine Siegchance.
-- Messung: `artifacts/chal4`, folgt.
+- Messung `artifacts/chal4` (30 min live):
+  - Übernommener Run aus dem Spielstand: wieder Niederlage gegen Pryce (zählt nicht). Diesmal hat der Bot vorher umgestellt, simulierte Chance 0 % → 45 %.
+  - **Erster neuer Run: Sieg.** Erster Challenge-Sieg des Bots, Stufe 3. Das Team aus Legendären (Rayquaza, Dialga, Arceus, Shaymin, Victini) kam über viele Legendären-Knoten zusammen, die Liga lag in der Simulation bei 98–100 %.
+  - **Danach wählte das Spiel automatisch Stufe 4** (nächste Ordensstufe). Die 5 weiteren Runs sind deshalb nicht mit `chal3` vergleichbar: 2× Niederlage in der Liga, 2× gegen den 7. Arenaleiter, 1× gegen den 4.
+  - Folge für Messungen: Der Live-Test kann die Stufe jetzt festlegen (`LIVE_LEVEL`, z. B. `2` = Stufe 3).
 
 ### Änderung 3 (2026-11-27, D-044)
 - Die Liga steht ab dem Start des Runs fest (`endlessState.wtGauntletPick`) und ist mit Lv 106–140 viel stärker als jede Arena.
 - Fang- und Relikt-Simulation bewerten deshalb zusätzlich, welchen Anteil der Liga-Kämpfe das Team gewinnen würde. Das Team wird dafür auf das typische Ankunftslevel projiziert (Arena 8 minus 6).
 - Gewicht 0,25: Bei Arena-Risiko zählt die Arena, sind die Arenen sicher, entscheidet die Liga.
-- Messung: `artifacts/chal5`, folgt.
+- Messung: `artifacts/chal5` mit fester Stufe 3 (`LIVE_LEVEL=2`), läuft.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
 

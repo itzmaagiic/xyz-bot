@@ -1,6 +1,7 @@
 /**
  * LIVE run against the real https://pokelike.xyz with the unpacked extension loaded.
  *   LIVE=1 [LIVE_MINUTES=5] [LIVE_SAVE_RUNS=1] [PKBOT_SAVE=/path/to/sanitized-save.json] npx playwright test
+ *   [LIVE_CHAL=arena|daily|weekly] [LIVE_LEVEL=0..7 (badge level, 0 = Stufe 1)]
  * The run logs are exported through the overlay ("Runs exportieren") into PKBOT_OUT/runs-export.json; with
  * LIVE_SAVE_RUNS=1 they also go to runs/ after the secret scan (R-007, R-148, R-210).
  * PKBOT_SAVE (optional) is a localStorage export WITHOUT cloud tokens; it is only loaded into this throwaway
@@ -50,6 +51,8 @@ test('bot plays the real game without getting stuck', async () => {
   await page.locator('#pk-delay').dispatchEvent('change');
   // the mode is fixed to challenge (D-040); LIVE_MODE is ignored
   if (process.env.LIVE_CHAL) await page.locator('#pk-chalkind').selectOption(process.env.LIVE_CHAL);
+  // a fixed badge level keeps measurements comparable: after a win the game preselects the next, harder level
+  if (process.env.LIVE_LEVEL) await page.locator('#pk-challevel').selectOption(process.env.LIVE_LEVEL);
 
   const screens = new Map<string, number>();
   const saveChangesByScreen = new Map<string, number>();
