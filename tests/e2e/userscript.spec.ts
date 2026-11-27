@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { serveFixture } from './game-stub';
-import { injectUserscript } from './userscript-host';
+import { evaluateInUserscriptWorld, injectUserscript } from './userscript-host';
 
 test.describe('Userscript (GM shim)', () => {
   test('overlay + bridge via injected <script> element', async ({ page, browserName }) => {
@@ -82,6 +82,32 @@ test.describe('Userscript (GM shim)', () => {
     await page.locator('#pk-step').click(); // unknown dialog: first read only notes it
     await page.locator('#pk-step').click(); // second read confirms → pause
     await expect(page.locator('#pk-pause')).toHaveAttribute('data-kind', 'unsupported');
+  });
+
+  test('an unhandled rejection from a ternary async handler shows up in the overlay log (R-200)', async ({
+    page,
+    browserName,
+  }) => {
+    await serveFixture(page, 'title');
+    await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
+    await injectUserscript(page, browserName);
+    await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
+    // the lint gap of D-036, for real: a real button, a real click, a real unhandled rejection in the bot's world
+    await evaluateInUserscriptWorld(
+      page,
+      `(() => {
+        const b = document.createElement('button');
+        const flag = document.body.childElementCount > 0;
+        b.addEventListener('click', flag ? async () => { throw new Error('ternary handler rejection'); } : null);
+        document.body.appendChild(b);
+        b.click();
+        b.remove();
+      })()`,
+    );
+    const log = () =>
+      page.locator('#pkbot-root').evaluate((h) => h.shadowRoot?.getElementById('pk-log')?.textContent ?? '');
+    await expect.poll(log, { timeout: 5000 }).toContain('unexpected: ternary handler rejection');
+    await expect(page.locator('#pkbot-toasts')).toContainText('Unerwarteter Fehler im Bot');
   });
 
   test('keyboard shortcut Alt+Shift+O toggles the overlay', async ({ page, browserName, isMobile }) => {

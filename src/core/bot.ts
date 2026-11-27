@@ -91,7 +91,10 @@ export class BotController {
     // R-199: handled errors are visible in the overlay log and the log export – also those noted before start-up
     // muted level: a handled error is information, not an alarm (UI review P2); real problems stay warn/error
     // the log shows each distinct error once, with its own time stamp; the run log counts every occurrence (R-253)
-    const show = (e: NotedError) => this.log.log('debug', `handled: ${e.where} – ${e.msg}`, undefined, e.t);
+    const show = (e: NotedError) => {
+      if (e.where.startsWith('global:')) return; // reportUnexpected already wrote an error line for it
+      this.log.log('debug', `handled: ${e.where} – ${e.msg}`, undefined, e.t);
+    };
     for (const e of recentErrors()) {
       show(e);
       this.rec(() => this.runs.error(e, 'bot'));
@@ -254,6 +257,23 @@ export class BotController {
     }
     this.log.error(what, String(e));
     this.pause(errorPause('internal', String(e)), true, 'internal');
+  }
+
+  /** set by the app: shows a toast (R-200) */
+  onUnexpectedToast: ((text: string) => void) | null = null;
+  private toastedUnexpected = new Set<string>();
+
+  /**
+   * Something no code handled (global error/unhandledrejection of the bot's world, R-200): noted for the run log, an
+   * error line in the overlay log every time, and a toast the first time per message – never a toast storm.
+   */
+  reportUnexpected(where: string, err: unknown): void {
+    noteError(where, err);
+    const msg = err instanceof Error ? err.message || err.name : String(err);
+    this.log.error(`unexpected: ${msg}`);
+    if (this.toastedUnexpected.has(msg)) return;
+    this.toastedUnexpected.add(msg);
+    this.onUnexpectedToast?.('Unerwarteter Fehler im Bot – Details im Log');
   }
 
   /** strategy-relevant settings (profile) and the requested mode for the run logs */

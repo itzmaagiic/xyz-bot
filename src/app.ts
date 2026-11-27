@@ -1,6 +1,7 @@
 /** Shared bootstrap used by both targets. */
 import { BotController } from './core/bot';
 import { BridgeClient } from './core/bridge/client';
+import { installGlobalErrorHandlers } from './core/log/global-errors';
 import { noteError, noteRejection } from './core/log/note';
 import type { Platform } from './platform/types';
 import { Overlay } from './ui/overlay';
@@ -52,6 +53,9 @@ export async function startApp(platform: Platform, doc: Document = document): Pr
       ready ? client : null,
       doc,
     );
+    // R-200: whatever no code handled in the bot's world is logged and reported (game errors are left alone)
+    bot.onUnexpectedToast = (t) => toast(t, 6000, doc);
+    if (w) installGlobalErrorHandlers(w, (where, e) => bot.reportUnexpected(where, e));
     const overlay = new Overlay(bot, platform, doc);
     overlay.mount();
     await bot.init();

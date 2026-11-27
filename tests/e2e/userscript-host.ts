@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Page } from '@playwright/test';
+import type { CDPSession, Page } from '@playwright/test';
 
 const USER_JS = join(import.meta.dirname, '..', '..', 'dist', 'pokelike-bot.user.js');
 
@@ -52,8 +52,22 @@ export async function injectUserscript(
     });
     const r = await cdp.send('Runtime.evaluate', { expression: code, contextId: executionContextId });
     if (r.exceptionDetails) throw new Error('userscript threw: ' + JSON.stringify(r.exceptionDetails).slice(0, 500));
+    worlds.set(page, { cdp, contextId: executionContextId });
     return 'isolated';
   }
   await page.evaluate(code);
   return 'main';
+}
+
+const worlds = new WeakMap<Page, { cdp: CDPSession; contextId: number }>();
+
+/** Runs code in the world the userscript runs in (Chromium: its isolated world, WebKit: the main world). */
+export async function evaluateInUserscriptWorld(page: Page, code: string): Promise<void> {
+  const w = worlds.get(page);
+  if (!w) {
+    await page.evaluate(code);
+    return;
+  }
+  const r = await w.cdp.send('Runtime.evaluate', { expression: code, contextId: w.contextId });
+  if (r.exceptionDetails) throw new Error('evaluate threw: ' + JSON.stringify(r.exceptionDetails).slice(0, 300));
 }
