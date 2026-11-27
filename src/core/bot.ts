@@ -11,7 +11,7 @@ import { StateReader } from './state/reader';
 import { decide, newMemory, type EngineMemory } from './strategy/engine';
 import { enumeratePaths, evaluatePath } from './strategy/sim-route';
 import { FLAGS } from './flags';
-import { readPcCards } from './strategy/challenge';
+import { isPokeMart, readPcCards } from './strategy/challenge';
 import type { Decision, GameState } from './types';
 import type { Platform } from '../platform/types';
 import { type NotedError, noteError, noteRejection, onEveryNote, onNotedError, recentErrors } from './log/note';
@@ -498,7 +498,7 @@ export class BotController {
         }
         st.sim = this.simCache;
       }
-      if (st.screen.kind === 'passive') {
+      if (st.screen.kind === 'passive' && !isPokeMart(run)) {
         const all = Array.from(this.doc.querySelectorAll('#passive-choices .item-card.passive-card'));
         const icons = all.map((c) => c.querySelector('img')?.getAttribute('src') ?? '');
         const replace = !!this.doc.querySelector('#passive-choices.is-replace-grid');

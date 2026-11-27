@@ -70,7 +70,7 @@ export type NodeType =
   | 'boss'
   | 'legendary'
   | 'shiny'
-  | 'poke_mart'
+  | 'pokemart'
   | string;
 
 export interface MapNode {

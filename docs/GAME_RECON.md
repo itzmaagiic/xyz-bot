@@ -73,7 +73,8 @@ Erkennung: Element am Bildschirmmittelpunkt, das nicht zum aktiven Screen gehör
 - `state.team[]`: `{_uid, speciesId, name, nickname, level, currentHp, maxHp, isShiny, types[], baseStats{hp,atk,def,speed,special,spdef}, heldItem, megaStone, moveTier}` – Reihenfolge = Kampfreihenfolge.
 - `state.items[]`, `state.badges`, `state.maxTeamSize` (**Achtung:** größte bisher erreichte Teamgröße, beginnt bei 1 – nicht die Grenze; die Grenze ist 6, danach kommt `swap-screen`), `state.currentMap`, `state.eliteIndex`, `state.nuzlockeMode`, `state.gen2Mode…gen6Mode`, `state.isEndlessMode`.
 - `state.map = {nodes{id→{id,type,layer,col,visited,accessible,revealed,trainerSprite?}}, edges[{from,to}], layers[][], mapIndex}`, `state.currentNode`.
-- Knotentypen beobachtet: `start, catch, battle, trainer, question, item, trade, pokecenter, move_tutor, boss` (+ weitere laut Code: legendary, shiny, poke_mart …).
+- Knotentypen beobachtet: `start, catch, battle, trainer, question, item, trade, pokecenter, move_tutor, boss` (+ weitere laut Code: legendary, shiny, pokemart …).
+  - **Nachtrag 2026-11-27 (Spielcode v3.8, `NODE_TYPES`):** `start, battle, catch, item, question, boss, pokecenter, trainer, legendary, move_tutor, trade, pokemart, mutation, evilteam, silver, moonstone, levelup, magma, aqua, rival_n, sycamore, korrina, masterball, lysandre, underground, distortion, reward` und weitere. Der Mart heißt `pokemart` (nicht `poke_mart`, D-042). In den Arena-Challenge-Messungen kamen nur `trainer, battle, boss, question, item, move_tutor, pokecenter, catch, legendary, trade` vor.
 - `state.savedCatch = {nodeId, instances[], rerollPool, level}` – die angebotenen Fänge.
 - Angriff: `getBestMove(types, baseStats, moveTier)` → `{name, power, type, isSpecial}`.
 - Typen: `TYPE_CHART[atk][def]` (18 Typen inkl. Fee), `getTypeEffectiveness(atkType, defTypes[])`.
@@ -276,6 +277,7 @@ Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockier
 ### 12.5 Pokédollar, Shop und Vitamine (R-136, R-137, R-237)
 - `buyVitamin` bezahlt mit **dauerhaften Pokédollar** und speichert dauerhaft (siehe §10.1). Kauft der Bot Vitamine, braucht das immer die Freigabe nach R-237.
 - `doPokeMartNode` (Knoten im Run, Endless/ER) tauscht Items aus dem Team-Inventar (ohne Rare Candy) gegen einen Candy-Wert (`erMartCandyValue`). Nach dem Codeausschnitt werden dabei **keine** dauerhaften Pokédollar ausgegeben, live noch zu bestätigen. `openShopModal` (Poké Mart in der oberen Leiste) gehört zum dauerhaften Shop.
+  - **Nachtrag 2026-11-27 (Code entschlüsselt, D-042):** Der Mart-Knoten nutzt `#passive-screen` mit. Die Taschen-Items (ohne Sonderbonbon) erscheinen als `#passive-choices .item-card.passive-card` ohne `.passive-band`. Ein Klick verkauft das Item für 1 Sonderbonbon (`ER_MART_CANDY_PER_ITEM`) und baut die Liste neu auf. „Verlassen“ ist `#btn-skip-passive` in `.choice-skip-row`. Es fließen keine Pokédollar. Vorkommen: nur mit `state.challengeEndless2` (Endlos-Challenge), Knotengewicht 1 ab Karte 31 (`ER_NODE_BANDS`). Erkennbar am Knoten `state.currentNode.type === 'pokemart'`. Live noch nicht gesehen.
 
 ### 12.6 Speichern und Fairness (R-069, R-194, R-239)
 - `saveRun()` schreibt `{...state, currentNodeId, currentNode: null, rngSeed: getRngSeed()}` in den Run-Slot `poke_current_run`, sofern `runWritesAllowed()` gilt. **Der Spielstand enthält damit den echten Zufalls-Seed (`rngSeed`) und `runSeed`.** Das ist verborgenes Wissen: Der Bot darf beides nie für Entscheidungen nutzen (R-239, `sim-seed.ts` ignoriert sie). **Wann gespeichert wird**, haben die Live-Läufe 1 und 2 gemessen (`saveChangesByScreen` in `tests/e2e/live.spec.ts`). Der Spielstand ändert sich bei fast jedem Bildschirmwechsel, Lauf 2 zählte: Karte 66×, Kampf 48×, Item 7×, Elite-Prep 4×, Game Over 2×, Fang 1×. Ein Reload ist also außer im Kampf (§1) nahezu ohne Verlust fortsetzbar (R-194, R-241).
@@ -329,7 +331,7 @@ Diese Liste ersetzt §7, §10.5 und §10.7 als Arbeitsliste. Erledigtes ist dort
 | 4 | Was bewirkt jede Spieleinstellung genau (`autoSkipBattles` vs. `autoSkipAllBattles`, `misclickProtection`, `skipTraitFx`)? | offen | P3 (R-073, R-074) |
 | 5 | Nuzlocke: Wie setzt das Spiel „ein Fang pro Zone“ und Permadeath um? | offen | P4 (R-062) |
 | 6 | Ace-Regel (Wiki): Behält im Kanto-Story-Kampf nur das höchstlevelige Gegner-Mitglied sein Item? | offen | P4 (R-090) |
-| 7 | Mart-Knoten (`doPokeMartNode`): Tausch von Items gegen Candy ohne Pokédollar? Live bestätigen | offen | P3/P4 (R-055, R-136) |
+| 7 | Mart-Knoten (`doPokeMartNode`): Tausch von Items gegen Candy ohne Pokédollar? Live bestätigen | **im Code bestätigt (D-042)**, live offen (nur Endlos-Challenge) | P3/P4 (R-055, R-136) |
 | 8 | Tower-Start: Kommt der Starter aus dem PC? Welche Regeln haben Normal und Hardcore? | offen | P4 (R-040) |
 | 9 | Darstellung der Boss-Vorschau im DOM | offen | P4 (R-121) |
 | 10 | Stapelregeln für Items und Relikte (laut Wiki „not established“) | offen | P4 (R-221) |

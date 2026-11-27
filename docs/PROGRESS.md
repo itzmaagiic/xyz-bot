@@ -6,17 +6,9 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 
 ## In Arbeit
 - **Fokus Challenge-Modus (D-040, Vorgabe des Nutzers vom 2026-11-27):** Nur noch Challenges, zuerst die Arena-Challenge. Story, Tower, Pokésort und P3d ruhen.
-  - **Baseline** (siehe STRATEGY.md „Challenge-Modus“): Alle 8 Arenen mit simulierten 100 %, dann Niederlage in der Liga am Ende, weil das Team zu schwach war. Bot-Fehler beim Attacken-Lehrer behoben.
-  - **Änderung 1:** Fänge nach der Stärke der Art, wenn die Simulation gesättigt ist. Die Vergleichsmessung läuft (`artifacts/chal2`).
-  - Run-Logs enthalten jetzt Relikte, Challenge-Art und Ordensstufe, dazu den Trace für die Relikt- und Starterwahl.
-  - **Overlay und Einstellungen auf die Challenge zugeschnitten (D-041):** Run-Karte mit Etappen-Leiste, Boss und Chance, nur Challenge-Einstellungen, iPhone unten angedockt. 463 Unit- und 52 E2E-Tests grün.
-  - Live-Funde behoben: Attacken-Lehrer ohne lernfähiges Mitglied, Bildschirm „Neues Pokémon!“ (Legendären-Knoten). Die Vergleichsmessung läuft noch (`artifacts/chal3`).
-- **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039): umgesetzt, Gesamt-Review bestanden.**
-  - Review „mit Korrekturen“: 0 kritische und 2 wichtige Funde (Schritt plus Start handelte doppelt, eine Nutzerpause wurde zu `failing`), dazu 4 hochgestufte kleine Funde, alle behoben. Die restlichen kleinen Funde stehen unter „Vorbefunde aus dem Gesamt-Review P3c“.
-  - Not-Aus (R-011), globale Fehler-Handler (R-200) und Speicherhinweise (R-259) sind mit Unit- und E2E-Tests belegt, die E2E-Tests zusätzlich mit Mutationsproben.
-  - 439 Unit-Tests, 52 E2E-Tests bestanden, 3 gewollt übersprungen.
-  - Spec `docs/superpowers/specs/2026-11-27-p3c-not-aus-fehler-speicher-design.md`, Plan `docs/superpowers/plans/2026-11-27-p3c-not-aus-fehler-speicher.md`.
-- **P3a** (Kämpfe ohne Hänger, D-037) und **P3b** (Run-Logs, Live-Urteil, MAIN-Welt-Fehler, D-038) sind abgeschlossen, live belegt und haben ihren Gesamt-Review bestanden (siehe „Erledigt“). 411 Unit-Tests grün, 44 E2E-Tests bestanden, 3 gewollt übersprungen.
+  - **Stand der Spielstärke** (STRATEGY.md „Challenge-Modus“): Der Bot schafft die 8 Arenen sicher und verliert dann in der Liga. In der Messung `chal3` kamen 5 von 5 neuen Runs bis zur Liga, alle verloren dort. Die Vorschau auf die Liga ist viel zu optimistisch (~60–93 % statt 0 %).
+  - **Jetzt:** Änderung 2, also Liga verstehen sowie Vorschau und Vorbereitung darauf ausrichten.
+  - P3a, P3b, P3c, Overlay (D-041) und Mart-Fund (D-042) sind erledigt, siehe „Erledigt“.
 
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run), weitere Inkremente in dieser Reihenfolge:**
@@ -134,6 +126,16 @@ Die kleinen Funde mit Fix-Idee kommen in ein späteres P3-Inkrement bzw. nach P5
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-27 · Challenge-Fokus (D-040 bis D-042):
+  - Baseline `chal1`: 8 Arenen mit simulierten 100 %, dann Niederlage in der Liga. Änderung 1 (Fänge nach Stärke der Art bei gesättigter Simulation), gemessen in `chal3`: stärkere Teams, Ergebnis unverändert (Liga).
+  - Run-Logs enthalten Relikte, Challenge-Art und Ordensstufe sowie den Trace für die Relikt- und Starterwahl.
+  - Overlay und Einstellungen auf die Challenge zugeschnitten (D-041): Run-Karte mit Etappen-Leiste, Boss und Chance, nur Challenge-Einstellungen, iPhone unten angedockt. 463 Unit- und 52 E2E-Tests grün.
+  - Live-Funde behoben: Attacken-Lehrer ohne lernfähiges Mitglied, Bildschirm „Neues Pokémon!“ (Legendären-Knoten).
+  - Altes Strategist-Skript v0.27 geprüft (vom Nutzer, nicht eingecheckt): Fund D-042 (Poké-Mart-Knoten verkauft Items, falscher Typname) behoben. Die Exploit-Teile (Zufall sichern und zurücksetzen, Neuwürfeln, Reset-Tricks) verstoßen gegen R-145, R-147 und R-239 und werden nicht übernommen. Item-Träger nach physisch/speziell und Trait-Zählung deckt der Bot schon ab (`items.ts`, `computeTraitTiers`).
+- 2026-11-27 · P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039): umgesetzt, Gesamt-Review bestanden.
+  - Review „mit Korrekturen“: 0 kritische und 2 wichtige Funde (Schritt plus Start handelte doppelt, eine Nutzerpause wurde zu `failing`), dazu 4 hochgestufte kleine Funde, alle behoben. Die restlichen kleinen Funde stehen unter „Vorbefunde aus dem Gesamt-Review P3c“.
+  - Not-Aus (R-011), globale Fehler-Handler (R-200) und Speicherhinweise (R-259) sind mit Unit- und E2E-Tests belegt, die E2E-Tests zusätzlich mit Mutationsproben. 439 Unit-Tests, 52 E2E-Tests bestanden, 3 gewollt übersprungen.
+  - Spec `docs/superpowers/specs/2026-11-27-p3c-not-aus-fehler-speicher-design.md`, Plan `docs/superpowers/plans/2026-11-27-p3c-not-aus-fehler-speicher.md`.
 - 2026-11-26 · Session 1, P3a und P3b:
   - **P3a „Kämpfe ohne Hänger“: umgesetzt und live belegt.**
     - Ergebnis: Der Bot klickt nur noch bedienbare Ziele, die Kampfsignatur enthält den KP-Fortschritt, dazu kommt ein Watchdog.

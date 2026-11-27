@@ -5,6 +5,7 @@ import {
   choosePcStarter,
   chooseRelic,
   chooseRelicReplace,
+  isPokeMart,
   readPcCards,
   readPcRoster,
   readRelicCards,
@@ -151,5 +152,58 @@ describe('relic choice by simulation', () => {
     const h = decide(gs(doc, { relicSim: { baseline: 0.5, offers: flat, replace: [] } }), doc, s, newMemory());
     expect(h.kind).toBe('click');
     expect(h.why).not.toMatch(/^sim/);
+  });
+});
+
+describe('Poké Mart node (pokemart): same screen as a relic choice, but the cards SELL bag items', () => {
+  // v3.8 doPokeMartNode renders bag items as '#passive-choices .item-card.passive-card' on #passive-screen and a
+  // "Leave" button with the relic skip id '#btn-skip-passive'. Clicking a card sells that item for a rare candy.
+  const martRun = (type: string) => ({
+    team: [mon({ speciesId: 150, types: ['Psychic'] })],
+    items: ['leftovers'],
+    bag: [{ id: 'leftovers', usable: false }],
+    badges: 0,
+    maxTeamSize: 6,
+    currentMap: 31,
+    eliteIndex: 0,
+    nuzlocke: false,
+    mode: 'challenge' as const,
+    gen: 1,
+    map: {
+      nodes: { n2_1: { id: 'n2_1', type, layer: 2, col: 1, visited: false, accessible: true } },
+      edges: [],
+      mapIndex: 31,
+    },
+    currentNodeId: 'n2_1',
+    catchOffer: null,
+  });
+
+  it('leaves the Mart without selling anything, even with a relic simulation at hand', () => {
+    const doc = loadFixture('chal-relic-0');
+    const n = readRelicCards(doc).length;
+    const offers = Array.from({ length: n }, (_, i) => ({ id: `r${i}`, value: 0.9, combat: true }));
+    const d = decide(
+      gs(doc, { run: martRun('pokemart'), relicSim: { baseline: 0.5, offers, replace: [] } }),
+      doc,
+      s,
+      newMemory(),
+    );
+    expect(d).toMatchObject({ kind: 'click', selector: '#btn-skip-passive' });
+    expect(d.why).toMatch(/Poké Mart/);
+  });
+
+  it('a real relic screen after a boss is still a relic choice', () => {
+    const doc = loadFixture('chal-relic-0');
+    expect(decide(gs(doc, { run: martRun('boss') }), doc, s, newMemory())).toMatchObject({
+      kind: 'click',
+      selector: '#passive-choices .item-card.passive-card',
+    });
+  });
+
+  it('isPokeMart reads the node the game is resolving (state.currentNode), not the screen', () => {
+    expect(isPokeMart(martRun('pokemart'))).toBe(true);
+    expect(isPokeMart(martRun('boss'))).toBe(false);
+    expect(isPokeMart(null)).toBe(false);
+    expect(isPokeMart({ ...martRun('pokemart'), currentNodeId: null })).toBe(false);
   });
 });

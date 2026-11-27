@@ -1,6 +1,6 @@
 /** Pure decisions for challenge runs (Arena-Challenge, daily, weekly). */
 import { TYPES } from '../data/typechart';
-import type { DecisionOption, Mon } from '../types';
+import type { DecisionOption, Mon, RunState } from '../types';
 import { noteError } from '../log/note';
 
 export interface PcCard {
@@ -116,6 +116,17 @@ export function readPcRoster(get: (key: string) => string | null): PcRosterEntry
     });
   }
   return out.sort((a, b) => b.bst - a.bst || a.name.localeCompare(b.name));
+}
+
+/**
+ * The Poké Mart node (`pokemart`, v3.8 `doPokeMartNode`) reuses the relic screen: bag items appear as
+ * `#passive-choices .item-card.passive-card` and clicking one SELLS it for a rare candy; `#btn-skip-passive` is
+ * "Leave". The screen alone cannot tell the two apart, the node the game is resolving can (`state.currentNode`,
+ * set by `onNodeClick` before the node runs; a "?" never resolves to a Mart). D-042.
+ */
+export function isPokeMart(run: RunState | null | undefined): boolean {
+  if (!run?.currentNodeId || !run.map) return false;
+  return run.map.nodes[run.currentNodeId]?.type === 'pokemart';
 }
 
 export interface RelicCard {

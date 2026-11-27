@@ -97,7 +97,21 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 ### Änderung 1 (2026-11-27)
 - Bei Gleichstand der Simulation (gesättigt) entscheidet die Summe der Basiswerte.
 - Mit vollem Team wird nur eine deutlich stärkere Art gefangen (≥ 15 % über dem schwächsten Mitglied), die das schwächste ersetzt.
-- Messung: `artifacts/chal2`, folgt.
+- Messung: `artifacts/chal2` brach am Bildschirm „Neues Pokémon!“ ab (Bot-Fehler, behoben). Gültig ist `artifacts/chal3` (30 min live, 2026-11-27).
+
+### Messung nach Änderung 1 (`artifacts/chal3`)
+| | Baseline (`chal1`) | Änderung 1 (`chal3`) |
+|---|---|---|
+| Neue Runs bis zum Ende | 1 | 5 |
+| Siege | 0 | 0 |
+| Bis zur Liga (Etappe 9) gekommen | 1 von 1 | 5 von 5 |
+| Ende | Niederlage „Unova League +4“ | 5× Niederlage in der Liga (Sinnoh, Hoenn 2×, Kanto, Unova) |
+| Team in der Liga | Lv 87–98, schwache Arten (Shiftry, Leavanny, Gastrodon …) | Lv 85–109, viele Legendäre (Latios, Articuno, Celebi, Deoxys, Kyurem, Azelf, Moltres …) |
+
+- Der übernommene Run aus dem Spielstand verlor wie in der Baseline gegen Pryce. Er zählt nicht, weil sein Team nicht vom Bot stammt.
+- **Änderung 1 wirkt bei den Fängen:** Die Teams bestehen jetzt aus deutlich stärkeren Arten. Am Ergebnis ändert das nichts, denn die 8 Arenen schafft der Bot ohnehin, und an der Liga scheitert er weiter.
+- **Die Liga ist der Engpass.** Auf der letzten Karte sagte die Simulation jedes Mal 0 % (einmal 11 % bzw. 19 %). Auf den Karten davor schätzte die Vorschau „dann Liga ~60–93 %“. Diese Vorschau ist viel zu optimistisch, deshalb bereitet sich der Bot nicht vor.
+- Nächster Schritt: verstehen, was „League +4“ im Spiel ist und warum die Vorschau so weit danebenliegt. Danach Vorschau und Vorbereitung auf die Liga ausrichten (Änderung 2).
 
 ## Run-Logs lesen (P3b, D-005, D-038)
 

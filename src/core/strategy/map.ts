@@ -62,8 +62,8 @@ export function nodeValue(
       return lowHp ? (ctx.nuzlocke ? -6 : 0) : (ctx.nuzlocke ? 3 : 4) * xp;
     case 'trade':
       return 1.5;
-    case 'poke_mart':
-      return 2.5;
+    case 'pokemart':
+      return 0; // D-042: the bot leaves the Mart without selling, the node is a wasted step
     case 'boss':
     case 'start':
       return 0;

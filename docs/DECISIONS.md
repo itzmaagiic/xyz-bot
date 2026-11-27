@@ -334,3 +334,15 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Der Knopftext bleibt exakt „Start“/„Pause“, weil der Live-Test ihn liest (Unit-Test sichert das).
   - Die Tests warten auf `#pk-toggle` statt auf `#pk-bridge`, das jetzt unter „Mehr“ liegt.
   - Die ui-reviewer-Runden nach UI.md folgen am Review-Tor. Die Pille verdeckt am unteren Rand noch Teile der Spielnavigation, sie lässt sich aber verschieben (R-002, P5).
+
+**D-042 – Poké-Mart-Knoten: verlassen, nichts verkaufen** (2026-11-27, Fund beim Abgleich mit dem alten Strategist-Skript)
+- Befund im Spielcode v3.8 (entschlüsselt, nur lesend):
+  - Der Knotentyp heißt `pokemart`, nicht `poke_mart`. Unsere Tabellen kannten nur den falschen Namen.
+  - `doPokeMartNode` nutzt den Relikt-Bildschirm mit. Die Taschen-Items stehen als `#passive-choices .item-card.passive-card` da, „Verlassen“ ist `#btn-skip-passive`. Ein Klick auf eine Karte **verkauft** das Item gegen ein Sonderbonbon, und der Bildschirm baut sich mit dem Rest neu auf. Die Relikt-Logik hätte so ein Item nach dem anderen verkauft.
+  - Es fließen keine Pokédollar (R-237 bleibt unberührt). Mart-Knoten gibt es nur in der Endlos-Challenge (`challengeEndless2`) ab Karte 31. Arena-, Tages- und Wochen-Challenge haben keine, und in den Messungen kam keiner vor.
+- Entscheidung:
+  - Erkannt wird der Mart am Knoten, den das Spiel gerade ausführt (`state.currentNode`, das `onNodeClick` vor dem Knoten setzt), nicht am Bildschirm. Ein „?“-Knoten wird nie zum Mart (`resolveQuestionMark`).
+  - Dort klickt der Bot „Verlassen“ und verkauft nichts. Die Relikt-Simulation entfällt.
+  - Auf der Karte ist der Knoten 0 wert (ein verschenkter Schritt).
+- Begründung: Ob ein Item in der Tasche wirklich nutzlos ist, kann der Bot noch nicht sicher beurteilen. Nichts verkaufen ist der Weg ohne Verlust. Gezieltes Verkaufen kommt erst, wenn die Endlos-Challenge dran ist.
+- Ohne Bridge-Daten fehlt das Signal, und der Bot würde den Mart wie eine Relikt-Wahl behandeln. Das ist hingenommen, weil der Knoten nur im nicht gewählten Endlos-Modus vorkommt und Bridge-lose Runs ohnehin eingeschränkt sind.

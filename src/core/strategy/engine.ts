@@ -22,7 +22,15 @@ import { effectiveness } from '../data/typechart';
 import { chooseRoute, xpNeed } from './map';
 import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
 import { chooseBagUse, chooseEquipHolder, chooseUsableTarget } from './items';
-import { choosePcStarter, chooseRelic, chooseRelicReplace, readPcCards, readRelicCards, relicScore } from './challenge';
+import {
+  choosePcStarter,
+  chooseRelic,
+  chooseRelicReplace,
+  isPokeMart,
+  readPcCards,
+  readRelicCards,
+  relicScore,
+} from './challenge';
 import { normalizeItemId } from './choices';
 import { FLAGS } from '../flags';
 
@@ -291,6 +299,11 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       }
       return { kind: 'click', selector: '#btn-win-home', why: 'back to menu for the next run' };
     case 'passive': {
+      // D-042: the Poké Mart looks like a relic choice, but its cards sell bag items – leave, sell nothing
+      if (isPokeMart(run))
+        return shown(doc, '#btn-skip-passive')
+          ? { kind: 'click', selector: '#btn-skip-passive', why: 'Poké Mart: leave without selling items (D-042)' }
+          : { kind: 'wait', ms: 500, why: 'Poké Mart loading' };
       if (doc.querySelector('#passive-choices.is-replace-grid')) {
         // owned relics are clickable cards, the new one is the non-clickable card before the skip button
         const all = Array.from(doc.querySelectorAll('#passive-choices .item-card.passive-card'));

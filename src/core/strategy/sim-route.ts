@@ -72,7 +72,7 @@ const BONUS: Partial<Record<NodeType, number>> = {
   question: 2,
   shiny: 6,
   legendary: 6,
-  poke_mart: 2,
+  pokemart: 0, // D-042: the bot leaves the Mart without selling
   trade: 0.5,
 };
 /** Each extra member that joins on the way roughly halves the chance that a lost exchange ends the run. */
