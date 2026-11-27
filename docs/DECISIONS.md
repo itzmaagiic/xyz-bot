@@ -383,3 +383,17 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Ohne Entwicklungen wird ein frischer Fang auf Ankunftslevel unterschätzt, wenn er sich noch stark entwickelt. Das gleicht der Basiswert-Vergleich aus Änderung 1 nur teilweise aus.
   - Die Liga-Level hängen an Konstanten des Spiels. Ändert ein Update sie, rechnet der Bot falsch, bis die Version geprüft ist (R-077).
 - Prüfung: `tests/unit/league.test.ts` (Level-Rechnung, Lesen des Spielzustands ohne Änderung, Entscheidung bei Gleichstand), danach Live-Messung gegen `chal4`.
+
+**D-045 – Mega-Steine schützen, gehaltene Items nur gegen deutlich bessere tauschen** (2026-11-27, Live-Fund `chal5`)
+- Befund:
+  - Beim Ausrüsten eines gefundenen Items nahm der Bot, wenn niemand eine freie Hand hatte, einfach das erste bzw. stärkste Mitglied. So ersetzte er den Mega-Stein des PC-Starters (Mega-Mewtu Y) schon auf Karte 1 durch einen Experten-Gürtel, danach durch ein Wahlband. Den ganzen Run lang kämpfte Mewtu ohne Mega-Form. In `chal3` und `chal4` ist das in fast jedem Run zu sehen („Mega Mewtwo Y“ wird zu „Mewtwo“).
+  - Außerdem gab er ein Kangaskhanit an Elevoltek. Ein Mega-Stein wirkt nur bei seiner eigenen Art.
+  - Ein Run verlor deshalb schon gegen die erste Arenaleiterin, mit Mewtu ohne Mega-Form als einzigem Mitglied.
+- Entscheidung (`chooseEquipHolder`):
+  - Einen gehaltenen Mega-Stein ersetzt der Bot nie. Erkannt wird er an `heldItem.isMegaStone` (neu `Mon.heldMega` aus der Bridge), ersatzweise an der Endung „-ite“ (außer `eviolite`).
+  - Mega-Steine gehen nur an die passende Art: gemeinsamer Namensanfang von mindestens 5 Buchstaben, etwa `abomasite` und Abomasnow.
+  - Ein vorhandenes Item wird nur gegen ein klar besseres getauscht (Wert mindestens 1 höher). Sonst kommt das neue Item in die Tasche (`#btn-equip-to-bag`).
+  - Die Tasche öffnet der Bot nur, wenn es wirklich einen Träger gibt. Sonst gäbe es eine Schleife aus Öffnen und Zurücklegen.
+- Begründung: Der Mega-Stein ist die größte Einzelstärke des PC-Starters. Ihn gegen ein Allzweck-Item zu tauschen, schwächt den ganzen Run.
+- Grenze: Die Zuordnung eines Steins zur Art läuft über den Namen. Spätere Formen derselben Linie (Taubsi zu Tauboss) passen deshalb auch. Das schadet nicht, der Stein wirkt nach der Entwicklung.
+- Prüfung: `tests/unit/items.test.ts` („held items never cost a Mega Stone“), `tests/unit/engine.test.ts` („equip dialog … to the bag“), dann Messung `chal6`.

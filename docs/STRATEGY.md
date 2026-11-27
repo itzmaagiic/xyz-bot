@@ -129,7 +129,20 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 - Die Liga steht ab dem Start des Runs fest (`endlessState.wtGauntletPick`) und ist mit Lv 106–140 viel stärker als jede Arena.
 - Fang- und Relikt-Simulation bewerten deshalb zusätzlich, welchen Anteil der Liga-Kämpfe das Team gewinnen würde. Das Team wird dafür auf das typische Ankunftslevel projiziert (Arena 8 minus 6).
 - Gewicht 0,25: Bei Arena-Risiko zählt die Arena, sind die Arenen sicher, entscheidet die Liga.
-- Messung: `artifacts/chal5` mit fester Stufe 3 (`LIVE_LEVEL=2`), läuft.
+- Messung `artifacts/chal5` (30 min, feste Stufe 3, Änderungen 1–3):
+  | | `chal3` (Änderung 1) | `chal5` (Änderungen 1–3) |
+  |---|---|---|
+  | Abgeschlossene neue Runs | 5 | 5 (+1 bei Messende in der Liga) |
+  | Siege | 0 | **1** |
+  | Niederlagen in der Liga | 5 | 3 (nach 3–5 Liga-Kämpfen) |
+  | Frühe Niederlage | 0 | 1 (Viola, Arena 1) |
+  - Die frühe Niederlage hat eine andere Ursache als die Änderungen: Der Bot hatte den Mega-Stein des Starters durch ein Item ersetzt (D-045). Mewtu kämpfte allein und ohne Mega-Form, und auf Karte 1 lag kein Fang auf der gewählten Route.
+  - Die Begründungen zeigen den Liga-Anteil, etwa „st_psychic_tera … (Johto League: 0 % → 27 % of the fights)“.
+  - Die Stichprobe ist klein. Ein Sieg in 5 Runs ist ein Hinweis, noch kein Beleg.
+
+### Änderung 4 (2026-11-27, D-045)
+- Mega-Steine werden nie ersetzt und gehen nur an die passende Art. Gehaltene Items tauscht der Bot nur gegen klar bessere.
+- Messung: `artifacts/chal6`, folgt.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
 

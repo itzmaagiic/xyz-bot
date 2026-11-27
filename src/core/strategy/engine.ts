@@ -613,6 +613,9 @@ function decideEquip(doc: Document, run: RunState | null, kind: 'move-tutor' | '
       if (c) {
         pick = c.index;
         why = `equip: ${c.why}`;
+      } else if (shown(doc, skip)) {
+        // nobody should hold it (a Mega Stone would be lost, or nothing better than what they hold): keep it
+        return { kind: 'click', selector: skip, why: `equip: ${itemId ?? 'item'} into the bag – no fitting holder` };
       }
     }
   }

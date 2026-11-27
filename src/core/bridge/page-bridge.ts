@@ -89,6 +89,7 @@ export function serializeMon(m: any): Mon | null {
         : typeof m.heldItem === 'string'
           ? m.heldItem
           : String(m.heldItem.id ?? m.heldItem.name ?? 'item'),
+    heldMega: !!(m.heldItem && typeof m.heldItem === 'object' && m.heldItem.isMegaStone),
     moveTier,
     move,
     isStarter: !!m._isStarter,

@@ -1,6 +1,6 @@
 /** Pure item logic: when to use bag items, who gets them, who should hold what. Ids = game ids (underscores). */
 import type { Mon } from '../types';
-import { normalizeItemId, TYPE_BOOST_ITEMS } from './choices';
+import { itemValue, normalizeItemId, TYPE_BOOST_ITEMS } from './choices';
 import { bulk, effStats, monScore, moveOf, offense } from './evaluate';
 
 export interface BagEntry {
@@ -38,7 +38,15 @@ export function chooseBagUse(
         return { index: i, itemId: id, why: `use ${id} now` };
       continue; // unknown usable item: keep it
     }
-    if (team.some((m) => !m.heldItem)) return { index: i, itemId: id, why: `equip ${id} from the bag` };
+    // only open a held item when someone should really hold it – otherwise the equip dialog would put it back
+    if (
+      chooseEquipHolder(
+        id,
+        team,
+        team.map((_, k) => k),
+      )
+    )
+      return { index: i, itemId: id, why: `equip ${id} from the bag` };
   }
   return null;
 }
@@ -75,15 +83,55 @@ export function chooseUsableTarget(
   return { index: idx, why: `${id} → ${team[idx]!.name}` };
 }
 
-/** Best holder for a held item among eligible team indices. */
+/** Mega Stones by id (`charizardite_x`, `kangaskhanite` …); `eviolite` is the one ordinary item with that ending. */
+export function isMegaStoneId(itemId: string): boolean {
+  const id = normalizeItemId(itemId);
+  return id !== 'eviolite' && /ite(_[xyz])?$/.test(id);
+}
+
+const letters = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/^mega\s+/, '')
+    .replace(/[^a-z]/g, '');
+
+/**
+ * Does the stone belong to this species? Stone ids are the species name plus "ite"/"inite"/"onite" (abomasite →
+ * Abomasnow, sablenite → Sableye), so a common prefix of at least 5 letters identifies the species.
+ */
+export function megaStoneFits(stoneId: string, m: Mon): boolean {
+  const a = letters(normalizeItemId(stoneId).replace(/_[xyz]$/, ''));
+  const b = letters(m.name);
+  let n = 0;
+  while (n < a.length && n < b.length && a[n] === b[n]) n++;
+  return n >= Math.min(5, b.length);
+}
+
+const holdsMega = (m: Mon) => !!m.heldMega || (!!m.heldItem && isMegaStoneId(m.heldItem));
+
+/** A held item is only given up for a clearly better one (and a Mega Stone never). */
+const REPLACE_MARGIN = 1;
+
+/**
+ * Best holder for a held item among eligible team indices, or null = keep it in the bag.
+ * Live finding (chal5, 2026-11-27): the bot swapped the PC starter's Mega Stone for an Expert Belt and gave a
+ * Kangaskhanite to Electivire – the starter lost its Mega form for the whole run.
+ */
 export function chooseEquipHolder(
   itemId: string,
   team: readonly Mon[],
   eligible: readonly number[],
 ): { index: number; why: string } | null {
   const id = normalizeItemId(itemId);
-  const free = eligible.filter((i) => team[i] && !team[i]!.heldItem);
-  const cands = free.length ? free : eligible.filter((i) => team[i]);
+  const stone = isMegaStoneId(id);
+  const fits = eligible.filter((i) => team[i] && !holdsMega(team[i]!) && (!stone || megaStoneFits(id, team[i]!)));
+  const free = fits.filter((i) => !team[i]!.heldItem);
+  const worth = itemValue(id, team);
+  const cands = free.length
+    ? free
+    : stone
+      ? fits
+      : fits.filter((i) => worth > itemValue(team[i]!.heldItem!, team) + REPLACE_MARGIN);
   if (!cands.length) return null;
   const by = (f: (m: Mon) => number) => cands.reduce((a, b) => (f(team[b]!) > f(team[a]!) ? b : a));
   const boostType = TYPE_BOOST_ITEMS[id];

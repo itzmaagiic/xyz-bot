@@ -151,6 +151,20 @@ describe('DecisionEngine on real snapshots', () => {
       selector: '#usable-item-modal .equip-pokemon-row[data-idx="1"]',
     });
   });
+  it('equip dialog: nobody should hold it (Mega Stone held) → to the bag, never onto the first member', () => {
+    const doc = loadFixture('map');
+    const m = doc.createElement('div');
+    m.id = 'item-equip-modal';
+    m.className = 'item-equip-overlay';
+    m.innerHTML =
+      '<div class="item-equip-box"><div class="equip-item-header"><span class="equip-item-icon"><img src="img/sprites/items/expert-belt.png"></span></div>' +
+      '<button data-idx="0">Mewtwo</button><button id="btn-equip-to-bag">Bag</button></div>';
+    doc.body.appendChild(m);
+    const team = [mon({ speciesId: 150, name: 'Mega Mewtwo Y', heldItem: 'mewtwonite_y', heldMega: true })];
+    const st = gs(doc, baseRun({ team }));
+    expect(st.screen.overlay).toBe('item-equip');
+    expect(decide(st, doc, s, newMemory())).toMatchObject({ kind: 'click', selector: '#btn-equip-to-bag' });
+  });
   it('trade (flag): only a far-behind member is traded, otherwise skip', () => {
     FLAGS.trade = true;
     const doc = loadFixture('trade');

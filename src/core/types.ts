@@ -49,6 +49,8 @@ export interface Mon {
   types: string[];
   baseStats: BaseStats;
   heldItem: string | null;
+  /** the held item is a Mega Stone (bridge: heldItem.isMegaStone) – never swapped away */
+  heldMega?: boolean;
   moveTier: number;
   /** best move as computed by the game itself (bridge) – optional in DOM fallback */
   move?: Move | null;
