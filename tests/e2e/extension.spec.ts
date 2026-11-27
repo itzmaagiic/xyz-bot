@@ -38,7 +38,7 @@ test.describe('Chrome extension (MV3, unpacked)', () => {
     await page.locator('#pk-step').click();
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
-      .toEqual(['btn-history-run']);
+      .toEqual(['btn-challenges-run']);
     await expect(page.locator('#pk-screen')).toHaveText('trainer', { timeout: 5000 });
   });
 
@@ -49,10 +49,11 @@ test.describe('Chrome extension (MV3, unpacked)', () => {
     await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
     await page.locator('#pk-step').click();
     await expect(page.locator('#pk-screen')).toHaveText('trainer', { timeout: 5000 });
+    await page.locator('summary', { hasText: 'Mehr' }).click();
     const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('#pk-export-runs').click()]);
     const json = JSON.parse(readFileSync(await dl.path(), 'utf8'));
     expect(json).toMatchObject({ format: 'pkbot-runs/1' });
-    expect(json.runs[0].decisions[0]).toMatchObject({ chosen: 'click #btn-history-run[0]', outcome: 'ok' });
+    expect(json.runs[0].decisions[0]).toMatchObject({ chosen: 'click #btn-challenges-run[0]', outcome: 'ok' });
     expect(json.bot_version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
@@ -95,10 +96,10 @@ test.describe('Chrome extension (MV3, unpacked)', () => {
     await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
     const opts = await ctx.newPage();
     await opts.goto(`chrome-extension://${extId}/options.html`);
-    await opts.locator('#pk-region').selectOption('3');
+    await opts.locator('#pk-chalkind').selectOption('weekly');
     await expect(opts.locator('#saved')).toHaveText(/Gespeichert/);
     await page.locator('summary', { hasText: 'Einstellungen' }).click();
-    await expect(page.locator('#pk-region')).toHaveValue('3');
+    await expect(page.locator('#pk-chalkind')).toHaveValue('weekly');
   });
 
   test('popup renders and offers to open the game', async () => {

@@ -20,7 +20,7 @@ describe('challenge state (D-040)', () => {
     const r = readRun(raw)!;
     expect(r.mode).toBe('challenge');
     expect(r.relics).toEqual(['life_orb', 'expert_belt']);
-    expect(r.challenge).toEqual({ id: 'intro', badge: 3 });
+    expect(r.challenge).toEqual({ id: 'intro', badge: 3, stage: null }); // stage needs the game's endlessState
   });
 
   it('a story run has no challenge and no relics', () => {

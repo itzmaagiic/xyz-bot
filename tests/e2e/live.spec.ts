@@ -44,10 +44,11 @@ test('bot plays the real game without getting stuck', async () => {
 
   // bot settings through the overlay itself
   await page.locator('summary', { hasText: 'Einstellungen' }).click();
+  await page.locator('#pk-restart').check();
+  await page.locator('summary', { hasText: 'Erweitert' }).click();
   await page.locator('#pk-delay').fill('300');
   await page.locator('#pk-delay').dispatchEvent('change');
-  await page.locator('#pk-restart').check();
-  if (process.env.LIVE_MODE) await page.locator('#pk-mode').selectOption(process.env.LIVE_MODE);
+  // the mode is fixed to challenge (D-040); LIVE_MODE is ignored
   if (process.env.LIVE_CHAL) await page.locator('#pk-chalkind').selectOption(process.env.LIVE_CHAL);
 
   const screens = new Map<string, number>();
@@ -229,6 +230,7 @@ test('bot plays the real game without getting stuck', async () => {
   const battleLog = await page.evaluate(() => (window as unknown as { __pkBattleLog?: unknown[] }).__pkBattleLog ?? []);
   writeFileSync(join(OUT, 'battle-buttons.json'), JSON.stringify(battleLog, null, 1));
   // R-006/R-007: the structured run logs through the overlay's own export (the same path a user takes)
+  await page.locator('summary', { hasText: 'Mehr' }).click();
   const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('#pk-export-runs').click()]);
   const bundle = JSON.parse(readFileSync(await dl.path(), 'utf8'));
   writeFileSync(join(OUT, 'runs-export.json'), JSON.stringify(bundle));

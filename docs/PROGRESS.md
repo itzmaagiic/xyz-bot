@@ -9,6 +9,8 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
   - **Baseline** (siehe STRATEGY.md „Challenge-Modus“): Alle 8 Arenen mit simulierten 100 %, dann Niederlage in der Liga am Ende, weil das Team zu schwach war. Bot-Fehler beim Attacken-Lehrer behoben.
   - **Änderung 1:** Fänge nach der Stärke der Art, wenn die Simulation gesättigt ist. Die Vergleichsmessung läuft (`artifacts/chal2`).
   - Run-Logs enthalten jetzt Relikte, Challenge-Art und Ordensstufe, dazu den Trace für die Relikt- und Starterwahl.
+  - **Overlay und Einstellungen auf die Challenge zugeschnitten (D-041):** Run-Karte mit Etappen-Leiste, Boss und Chance, nur Challenge-Einstellungen, iPhone unten angedockt. 463 Unit- und 52 E2E-Tests grün.
+  - Live-Funde behoben: Attacken-Lehrer ohne lernfähiges Mitglied, Bildschirm „Neues Pokémon!“ (Legendären-Knoten). Die Vergleichsmessung läuft noch (`artifacts/chal3`).
 - **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039): umgesetzt, Gesamt-Review bestanden.**
   - Review „mit Korrekturen“: 0 kritische und 2 wichtige Funde (Schritt plus Start handelte doppelt, eine Nutzerpause wurde zu `failing`), dazu 4 hochgestufte kleine Funde, alle behoben. Die restlichen kleinen Funde stehen unter „Vorbefunde aus dem Gesamt-Review P3c“.
   - Not-Aus (R-011), globale Fehler-Handler (R-200) und Speicherhinweise (R-259) sind mit Unit- und E2E-Tests belegt, die E2E-Tests zusätzlich mit Mutationsproben.

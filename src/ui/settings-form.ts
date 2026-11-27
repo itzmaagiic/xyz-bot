@@ -3,15 +3,26 @@ import type { BotSettings } from '../core/settings';
 import { readPcRoster } from '../core/strategy/challenge';
 import { noteError } from '../core/log/note';
 
-export const REGIONS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos'];
-
 export function buildSettingsForm(
   doc: Document,
   s: BotSettings,
   onChange: (patch: Partial<BotSettings>) => void,
 ): HTMLElement {
-  const g = doc.createElement('div');
-  g.className = 'grid';
+  // D-040: only what a challenge needs in front; everything else under "Erweitert" (collapsed). Story-only fields
+  // (mode, variant, region, character) are gone from the form – the mode is fixed to challenge.
+  const root = doc.createElement('div');
+  root.className = 'form';
+  const main = doc.createElement('div');
+  main.className = 'grid';
+  const advBox = doc.createElement('details');
+  advBox.className = 'adv';
+  const advSum = doc.createElement('summary');
+  advSum.textContent = 'Erweitert';
+  const adv = doc.createElement('div');
+  adv.className = 'grid';
+  advBox.append(advSum, adv);
+  root.append(main, advBox);
+  let g = main;
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string>, text?: string) => {
     const e = doc.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
@@ -24,7 +35,7 @@ export function buildSettingsForm(
     value: string,
     opts: [string, string][],
     on: (v: string) => Partial<BotSettings>,
-  ) => {
+  ): HTMLSelectElement => {
     const e = el('select', { id });
     for (const [v, t] of opts) {
       const o = el('option', { value: v }, t);
@@ -33,9 +44,10 @@ export function buildSettingsForm(
     }
     e.onchange = () => onChange(on(e.value));
     g.append(el('label', { for: id }, label), e);
+    return e;
   };
   const chk = (id: string, label: string, value: boolean, key: keyof BotSettings) => {
-    const l = el('label', {});
+    const l = el('label', { class: 'check' });
     const e = el('input', { id, type: 'checkbox' });
     e.checked = value;
     e.onchange = () => onChange({ [key]: e.checked } as Partial<BotSettings>);
@@ -54,6 +66,7 @@ export function buildSettingsForm(
     const e = el('input', {
       id,
       type: 'number',
+      inputmode: 'numeric',
       min: String(min),
       max: String(max),
       step: String(step),
@@ -62,40 +75,32 @@ export function buildSettingsForm(
     e.onchange = () => onChange({ [key]: Number(e.value) } as Partial<BotSettings>);
     g.append(el('label', { for: id }, label), e);
   };
-  sel(
-    'pk-mode',
-    'Modus',
-    s.mode,
-    [
-      ['story', 'Story'],
-      ['tower', 'Battle Tower (exp.)'],
-      ['challenge', 'Challenge'],
-    ],
-    (v) => ({ mode: v as BotSettings['mode'] }),
-  );
+
+  // --- in front: the challenge ---
   sel(
     'pk-chalkind',
     'Challenge',
     s.chalKind,
     [
       ['arena', 'Arena-Challenge'],
-      ['daily', 'Täglich'],
-      ['weekly', 'Wöchentlich'],
+      ['daily', 'Tages-Challenge'],
+      ['weekly', 'Wochen-Challenge'],
     ],
     (v) => ({ chalKind: v as BotSettings['chalKind'] }),
   );
-  sel(
+  const level = sel(
     'pk-challevel',
     'Orden-Stufe',
     s.chalLevel == null ? 'auto' : String(s.chalLevel),
     [
-      ['auto', 'Auto (nächster Orden)'],
+      ['auto', 'Automatisch'],
       ...Array.from({ length: 8 }, (_, i) => [String(i), `Stufe ${i + 1}`] as [string, string]),
     ],
     (v) => ({ chalLevel: v === 'auto' ? null : Number(v) }),
   );
-  // Challenge starter: the PC list is read (never written) from the game's save when the form lives on the game
-  // page; the Chrome options page has no access to it and falls back to a dex number.
+  level.disabled = s.chalKind !== 'arena'; // only the arena challenge has badge levels
+  // Starter from the PC: the list is read (never written) from the game's save when the form lives on the game page;
+  // the Chrome options page has no access to it and falls back to a dex number.
   let roster: ReturnType<typeof readPcRoster> = [];
   try {
     const ls = doc.defaultView?.localStorage;
@@ -105,63 +110,38 @@ export function buildSettingsForm(
     roster = [];
   }
   if (roster.length) {
-    const opts: [string, string][] = [['auto', 'Auto (stärkster)']];
+    const opts: [string, string][] = [['auto', 'Stärkster (automatisch)']];
     if (s.chalStarter != null && !roster.some((r) => r.id === s.chalStarter))
       opts.push([String(s.chalStarter), `#${s.chalStarter}`]);
     for (const r of roster)
       opts.push([String(r.id), `${r.name}${r.shiny ? ' ★' : ''}${r.aurora ? ' ✦' : ''} (BST ${r.bst || '?'})`]);
-    sel('pk-chalstarter', 'Challenge-Starter', s.chalStarter == null ? 'auto' : String(s.chalStarter), opts, (v) => ({
+    sel('pk-chalstarter', 'Starter', s.chalStarter == null ? 'auto' : String(s.chalStarter), opts, (v) => ({
       chalStarter: v === 'auto' ? null : Number(v),
     }));
   } else {
     const e = el('input', {
       id: 'pk-chalstarter',
       type: 'number',
+      inputmode: 'numeric',
       min: '0',
       max: '1100',
       step: '1',
-      placeholder: 'Dex-Nr., leer = auto',
+      placeholder: 'leer = stärkster',
       value: s.chalStarter == null ? '' : String(s.chalStarter),
     });
     e.onchange = () => onChange({ chalStarter: Number(e.value) > 0 ? Number(e.value) : null });
-    g.append(el('label', { for: 'pk-chalstarter' }, 'Challenge-Starter'), e);
+    g.append(el('label', { for: 'pk-chalstarter' }, 'Starter (Dex-Nr.)'), e);
   }
-  sel(
-    'pk-variant',
-    'Variante',
-    s.storyVariant,
-    [
-      ['classic', 'Classic'],
-      ['nuzlocke', 'Nuzlocke'],
-    ],
-    (v) => ({
-      storyVariant: v as BotSettings['storyVariant'],
-    }),
-  );
-  sel(
-    'pk-region',
-    'Region',
-    String(s.region),
-    REGIONS.map((r, i) => [String(i + 1), r]),
-    (v) => ({ region: Number(v) }),
-  );
-  sel(
-    'pk-trainer',
-    'Charakter',
-    s.trainer,
-    [
-      ['boy', 'Junge'],
-      ['girl', 'Mädchen'],
-    ],
-    (v) => ({ trainer: v as BotSettings['trainer'] }),
-  );
-  num('pk-delay', 'Tempo (ms)', s.actionDelayMs, 'actionDelayMs', 150, 5000, 50);
-  num('pk-watchdog', 'Watchdog (s)', s.watchdogSec, 'watchdogSec', 15, 600, 5);
-  num('pk-maxruns', 'Max. Runs (0=∞)', s.maxRuns, 'maxRuns', 0, 999, 1);
-  chk('pk-resume', 'Runs fortsetzen', s.resumeRuns, 'resumeRuns');
-  chk('pk-restart', 'Auto-Neustart', s.autoRestart, 'autoRestart');
-  chk('pk-shiny', 'Shinys nehmen', s.takeShiny, 'takeShiny');
-  chk('pk-reorder', 'Reihenfolge optimieren', s.reorderTeam, 'reorderTeam');
+  chk('pk-restart', 'Danach neuen Run starten', s.autoRestart, 'autoRestart');
+  num('pk-maxruns', 'Anhalten nach … Runs (0 = nie)', s.maxRuns, 'maxRuns', 0, 999, 1);
+
+  // --- "Erweitert": rarely needed ---
+  g = adv;
+  num('pk-delay', 'Pause zwischen Aktionen (ms)', s.actionDelayMs, 'actionDelayMs', 150, 5000, 50);
+  num('pk-watchdog', 'Hänger erkennen nach (s)', s.watchdogSec, 'watchdogSec', 15, 600, 5);
+  chk('pk-resume', 'Angefangenen Run fortsetzen', s.resumeRuns, 'resumeRuns');
+  chk('pk-reorder', 'Team-Reihenfolge anpassen', s.reorderTeam, 'reorderTeam');
+  chk('pk-shiny', 'Shinys mitnehmen', s.takeShiny, 'takeShiny');
   chk('pk-notify', 'Benachrichtigungen', s.notifications, 'notifications');
-  return g;
+  return root;
 }

@@ -21,7 +21,7 @@ test.describe('Userscript (GM shim)', () => {
     await page.locator('#pk-step').click();
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
-      .toEqual(['btn-history-run']);
+      .toEqual(['btn-challenges-run']);
   });
 
   test('map node click on SVG', async ({ page, browserName }) => {
@@ -44,6 +44,7 @@ test.describe('Userscript (GM shim)', () => {
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __savedSettings?: number }).__savedSettings))
       .toBe(1);
+    await page.locator('summary', { hasText: 'Mehr' }).click();
     await page.locator('#pk-copy').click();
     await expect(page.locator('#pkbot-toasts')).toContainText('Log kopiert');
   });
@@ -60,16 +61,18 @@ test.describe('Userscript (GM shim)', () => {
     await page.locator('#pk-step').click();
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __clicks: string[] }).__clicks))
-      .toEqual(['btn-history-run']);
+      .toEqual(['btn-challenges-run']);
     if (isMobile) {
+      await page.locator('summary', { hasText: 'Mehr' }).click();
       await page.locator('#pk-export-runs').click(); // iOS: download sheet or the copy fallback
     } else {
+      await page.locator('summary', { hasText: 'Mehr' }).click();
       const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('#pk-export-runs').click()]);
       expect(dl.suggestedFilename()).toMatch(/^pkbot-runs-\d{8}-\d{6}\.json$/);
       const json = JSON.parse(readFileSync(await dl.path(), 'utf8'));
       expect(json.format).toBe('pkbot-runs/1');
       expect(json.runs).toHaveLength(1);
-      expect(json.runs[0].decisions[0].chosen).toBe('click #btn-history-run[0]');
+      expect(json.runs[0].decisions[0].chosen).toBe('click #btn-challenges-run[0]');
     }
     await expect(page.locator('#pkbot-toasts')).toContainText(/Runs (exportiert|kopiert)/);
   });
@@ -120,6 +123,7 @@ test.describe('Userscript (GM shim)', () => {
     await expect(page.locator('#pk-bridge')).toHaveText(/Bridge/, { timeout: 10_000 });
     await expect(page.locator('#pk-storage')).toHaveCount(0);
     await page.locator('summary', { hasText: 'Einstellungen' }).click();
+    await page.locator('summary', { hasText: 'Erweitert' }).click();
     await page.locator('#pk-delay').fill('900');
     await page.locator('#pk-delay').dispatchEvent('change');
     await expect(page.locator('#pk-storage')).toContainText('nur bis zum Neuladen');
@@ -131,16 +135,16 @@ test.describe('Userscript (GM shim)', () => {
     await serveFixture(page, 'title');
     await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
     await injectUserscript(page, browserName);
-    await expect(page.locator('#pk-bridge')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#pk-toggle')).toBeVisible({ timeout: 10_000 });
     await page.keyboard.press('Alt+Shift+KeyO');
-    await expect(page.locator('#pk-bridge')).toBeHidden();
+    await expect(page.locator('#pk-toggle')).toBeHidden();
   });
 
   test('overlay fits the viewport (phone width, no horizontal scroll)', async ({ page, browserName }) => {
     await serveFixture(page, 'title');
     await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
     await injectUserscript(page, browserName);
-    await expect(page.locator('#pk-bridge')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#pk-toggle')).toBeVisible({ timeout: 10_000 });
     const box = await page.locator('#pkbot-root').evaluate((h) => {
       const r = (h.shadowRoot!.querySelector('.panel') as HTMLElement).getBoundingClientRect();
       return { left: r.left, right: r.right, vw: window.innerWidth };
@@ -155,8 +159,9 @@ test.describe('Userscript (GM shim)', () => {
       await serveFixture(page, 'title');
       await page.goto('https://pokelike.xyz/', { waitUntil: 'domcontentloaded' });
       await injectUserscript(page, browserName, gm);
-      await expect(page.locator('#pk-bridge')).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator('#pk-toggle')).toBeVisible({ timeout: 10_000 });
       await page.locator('summary', { hasText: 'Einstellungen' }).click();
+      await page.locator('summary', { hasText: 'Erweitert' }).click();
       await page.locator('#pk-delay').fill('777');
       await page.locator('#pk-delay').dispatchEvent('change');
       await expect
@@ -166,8 +171,9 @@ test.describe('Userscript (GM shim)', () => {
 
       await page.reload({ waitUntil: 'domcontentloaded' });
       await injectUserscript(page, browserName, gm);
-      await expect(page.locator('#pk-bridge')).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator('#pk-toggle')).toBeVisible({ timeout: 10_000 });
       await page.locator('summary', { hasText: 'Einstellungen' }).click();
+      await page.locator('summary', { hasText: 'Erweitert' }).click();
       await expect(page.locator('#pk-delay')).toHaveValue('777');
     });
   }

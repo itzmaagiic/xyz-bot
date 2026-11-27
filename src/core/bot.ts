@@ -19,6 +19,7 @@ import { errorPause, type PauseKind } from './pause-reason';
 import { Watchdog } from './watchdog';
 import { BOT_VERSION } from './version';
 import { storageProblemText } from './storage-problem';
+import { runView, type RunView } from './run-view';
 import { RunRecorder, type DecisionLine, type RecordableDecision, type RunContext } from './log/run-log';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
@@ -47,6 +48,8 @@ export interface BotView {
   settings: BotSettings;
   /** plain-language text when settings or stats cannot be stored permanently (R-259), else null */
   storageProblem: string | null;
+  /** the current challenge run for the overlay (D-040), null without a run */
+  run: RunView | null;
   /** game settings the bot recommends turning on (requires explicit user confirmation) */
   speedSuggestions: WritableSetting[];
 }
@@ -86,6 +89,7 @@ export class BotController {
     stats: { runs: 0, wins: 0, losses: 0, actions: 0 },
     settings: { ...DEFAULT_SETTINGS },
     storageProblem: null,
+    run: null,
     speedSuggestions: [],
   };
 
@@ -191,6 +195,7 @@ export class BotController {
         : null;
     const gs = st.settings;
     this.view.speedSuggestions = gs ? SPEED_SETTINGS.filter((k) => gs[k] === false) : [];
+    this.trackRun(st, null);
     this.emit();
     return st;
   }
@@ -295,6 +300,22 @@ export class BotController {
   }
 
   private storageProblems = new Map<string, string>();
+
+  /** next boss and simulated odds for the overlay, from the latest map simulation (D-040) */
+  private simBoss: string | null = null;
+  private simOdds: number | null = null;
+
+  /** Keeps view.run current: boss/odds from the map simulation and its decision, team and stage from the state. */
+  private trackRun(st: GameState, d: Decision | null): void {
+    if (!st.run) {
+      this.simBoss = null;
+      this.simOdds = null;
+    }
+    if (st.sim?.bossName) this.simBoss = st.sim.bossName;
+    const conf = d && d.kind !== 'wait' ? d.trace?.confidence : undefined;
+    if (st.screen.kind === 'map' && typeof conf === 'number') this.simOdds = conf;
+    this.view.run = runView(st.run, this.view.settings, { boss: this.simBoss, odds: this.simOdds });
+  }
 
   /** set by the app: shows a toast (R-200) */
   onUnexpectedToast: ((text: string) => void) | null = null;
@@ -556,6 +577,7 @@ export class BotController {
     await this.attachSim(st, live);
     if (!live()) return paused; // a pause during a long simulation: no "last" action (R-011)
     const d = decide(st, this.doc, this.view.settings, this.mem);
+    this.trackRun(st, d);
     this.view.lastDecision = `${d.kind}: ${d.why}`;
     this.emit();
 

@@ -54,6 +54,17 @@ Eine Phase mit UI-Anteil gilt erst als abgeschlossen, wenn es keinen P0- und kei
 5. **Festhalten:** Wahl und Begründung kommen in DECISIONS.md, der Befund in PROGRESS.md, die finalen Screenshots nach `docs/screenshots/`.
 
 ## 6. Design-System (wird in Phase 5 ausgefüllt, R-177)
+
+**Stand 2026-11-27 (D-041, Challenge-Overlay):**
+- **Farben:** `--bg #141a33`, `--surface #1c2347`, `--line #2f3a6b`, `--fg #eef1fb`, `--muted #a8b1d6`.
+  - Akzent: `--gold #f4c542` mit Text `#231a00`.
+  - Status: `--run #4ade80`, `--pause #ffa94d`, `--bad #ff8a8a`.
+  - Durchgehend `color-scheme: dark`.
+- **Schrift:** System-UI in 12 / 14 / 18 px, auf dem iPhone ist der Fließtext 16 px.
+- **Form:** Panel mit 12 px Radius, Bedienelemente mit 8 px. Etappen-Felder sind fast eckig (2 px), passend zum Pixel-Look.
+- **Symbole:** Inline-SVG.
+- **Bewegung:** keine.
+
 Vorgaben aus dem Hauptauftrag, mit frontend-design auszuarbeiten:
 - **Farben:** Palette passend zum dunklen Spiel-Look mit **einer** Akzentfarbe. Statusfarben für läuft, pausiert und Fehler.
 - **Schrift:** höchstens 3–4 Schriftgrößen.

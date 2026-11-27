@@ -29,13 +29,15 @@ function getSettings() { return { ...__settings }; }
 function saveSettings(s) { __settings = { ...s }; window.__savedSettings = (window.__savedSettings || 0) + 1; }
 function getBestMove(types) { return { name: 'Vine Whip', power: 45, type: types[0], isSpecial: false }; }
 window._currentScreenId = document.querySelector('.screen.active') && document.querySelector('.screen.active').id;
+// the snapshot is from a fresh profile (challenges locked); the bot plays challenges (D-040) → unlock like a real save
+(() => { const b = document.getElementById('btn-challenges-run'); if (b) { b.removeAttribute('disabled'); b.classList.remove('title-mode-card--locked'); } })();
 window.__clicks = [];
 function __show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); window._currentScreenId = id; }
 document.addEventListener('click', (e) => {
   const t = e.target.closest && e.target.closest('button,[role=button],.map-node--clickable');
   if (!t) return;
   window.__clicks.push(t.id || t.getAttribute('data-node-id') || t.className);
-  if (t.id === 'btn-history-run') __show('trainer-screen');
+  if (t.id === 'btn-history-run' || t.id === 'btn-challenges-run') __show('trainer-screen'); // any new screen will do
   if (t.classList && t.classList.contains('map-node--clickable')) { t.classList.remove('map-node--clickable'); }
 });
 `;

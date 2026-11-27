@@ -4,6 +4,17 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Geändert (Challenge-Fokus, D-040, D-041)
+
+- **Der Bot spielt nur noch Challenges.** Sind Challenges im Spielstand gesperrt, pausiert er mit einem Hinweis.
+- **Neues Overlay:**
+  - Status in Wort und Farbe, ein großer Start/Pause-Knopf.
+  - Run-Karte mit Etappen-Leiste (9 Felder), nächstem Boss, simulierter Chance und Team.
+  - Auf dem iPhone unten angedockt, eingeklappt nur eine kleine Pille.
+- **Einstellungen nur noch für Challenges:** Challenge-Art, Orden-Stufe, Starter, Neustart und Anzahl der Runs. Seltenes liegt unter „Erweitert“.
+- **Spielstärke:** Bei sicheren Bossen fängt der Bot die stärkere Art statt einer schwachen.
+- **Live-Funde behoben:** Ist ein Attacken-Lehrer ohne lernfähiges Mitglied, überspringt der Bot ihn. Den Bildschirm „Neues Pokémon!“ (Legendären-Knoten) nimmt er an.
+
 ### Hinzugefügt (Phase 3, P3c)
 
 - **Not-Aus** (R-011): Pause wirkt sofort, auch während einer Simulation, beim Zielen eines Klicks und zwischen Tauschschritten. Nach der Pause klickt der Bot nicht mehr und drückt keine Taste mehr.

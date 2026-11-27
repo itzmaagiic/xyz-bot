@@ -317,3 +317,20 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Erstes Ziel: eine Baseline in der Arena-Challenge (Siegquote, Orden, Todesursachen aus den Run-Logs), danach gezielte Verbesserungen mit Messung vorher und nachher.
 - Begründung: Die früheren Anforderungen nennen „Challenges (Schwerpunkt)“ (R4.2). Ich habe trotzdem nach dem Story-Ziel des Hauptauftrags getestet und entwickelt. Das war ein Fehler: Die Livetests liefen im frischen Profil, in dem nur Story geht.
 - Folgen: Die Phasenfolge bleibt formal bestehen (P3 ist die aktuelle Phase), aber die Arbeit folgt diesem Fokus. Das Review-Tor P3 wird auf den Challenge-Modus bezogen.
+
+**D-041 – Overlay und Einstellungen für den Challenge-Modus** (2026-11-27, Wunsch des Nutzers)
+- Entscheidung:
+  - **Aufbau:** Status mit Farbe und Wort (Läuft / Pausiert / Bereit) → eine Hauptaktion Start/Pause (Orden-Gold) plus „Schritt“ → Hinweise (Pause mit deutscher Überschrift je Art, Speicher, Version, Tipp) → Run-Karte.
+  - **Run-Karte:** Challenge und Stufe, eine Etappen-Leiste mit 9 Feldern (8 Arenen und Liga) als einziges auffälliges Element, nächster Boss, simulierte Chance in Farbe und Prozent, Team mit Level und KP-Balken.
+  - **Darunter:** „Zuletzt“, Runs, die eingeklappten „Einstellungen“ (darin „Erweitert“) und „Mehr“ (Log kopieren, Runs exportieren, Technik, Log).
+  - **Einstellungen:** vorne nur Challenge-Art, Orden-Stufe (nur Arena), Starter aus dem PC, neu starten, Anhalten nach N Runs. Unter „Erweitert“: Tempo, Hänger-Erkennung, Fortsetzen, Team-Reihenfolge, Shinys, Benachrichtigungen. Modus, Variante, Region und Charakter entfallen (D-040).
+  - **Gestaltung:** Nachtblau passend zum Pixel-Himmel des Spiels, `color-scheme: dark` (behebt die unlesbaren nativen Selects aus dem UI-Vorbefund P2), Symbole als Inline-SVG, Touch-Ziele mindestens 44 px, Raster 4/8/12/16/24.
+  - **Auf dem iPhone (≤ 520 px):** unten angedockt mit Safe Area, höchstens 60 % Höhe, Schrift 16 px. Eingeklappt bleibt eine Pille mit Status und Start/Pause.
+- Begründung:
+  - Der Nutzer will Overlay und Einstellungen auf die Challenge zugeschnitten.
+  - UI.md §3a verlangt Status vor Details und eine primäre Aktion.
+  - Die Etappen-Leiste zeigt den Fortschritt einer Challenge ohne Lesen.
+- Folgen:
+  - Der Knopftext bleibt exakt „Start“/„Pause“, weil der Live-Test ihn liest (Unit-Test sichert das).
+  - Die Tests warten auf `#pk-toggle` statt auf `#pk-bridge`, das jetzt unter „Mehr“ liegt.
+  - Die ui-reviewer-Runden nach UI.md folgen am Review-Tor. Die Pille verdeckt am unteren Rand noch Teile der Spielnavigation, sie lässt sich aber verschieben (R-002, P5).

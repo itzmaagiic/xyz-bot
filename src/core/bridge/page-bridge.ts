@@ -33,6 +33,7 @@ import { errorsSince, noteError, noteRejection, noteSeq } from '../log/note';
 declare const state: any;
 declare const TYPE_CHART: any;
 declare const PATCH_NOTES: any;
+declare const endlessState: any;
 declare function getSettings(): any;
 declare function saveSettings(s: any): void;
 declare function getBestMove(types: string[], baseStats: any, tier: number): any;
@@ -116,6 +117,14 @@ function itemId(it: any): string {
   return String(it?.id ?? it?.key ?? it?.name ?? 'unknown');
 }
 
+/** 0-based stage of a challenge run: 3 maps per region (endlessState), null outside the game */
+function challengeStage(): number | null {
+  if (typeof endlessState === 'undefined' || !endlessState) return null;
+  const r = Number(endlessState.regionNumber);
+  const m = Number(endlessState.mapIndexInRegion);
+  return Number.isFinite(r) && Number.isFinite(m) ? (r - 1) * 3 + m : null;
+}
+
 export function readRun(s: any): RunState | null {
   if (!s || typeof s !== 'object') return null;
   const team = Array.isArray(s.team) ? (s.team.map(serializeMon).filter(Boolean) as Mon[]) : [];
@@ -148,6 +157,7 @@ export function readRun(s: any): RunState | null {
             id: s.challengeId != null ? String(s.challengeId) : null,
             badge:
               Number.isFinite(Number(s.challengeBadge)) && s.challengeBadge != null ? Number(s.challengeBadge) : null,
+            stage: challengeStage(),
           }
         : null,
   };
