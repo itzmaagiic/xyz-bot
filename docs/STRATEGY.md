@@ -121,6 +121,12 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 - Die Vorschau heißt jetzt „~N % of the fights“, denn sie war nie eine Siegchance.
 - Messung: `artifacts/chal4`, folgt.
 
+### Änderung 3 (2026-11-27, D-044)
+- Die Liga steht ab dem Start des Runs fest (`endlessState.wtGauntletPick`) und ist mit Lv 106–140 viel stärker als jede Arena.
+- Fang- und Relikt-Simulation bewerten deshalb zusätzlich, welchen Anteil der Liga-Kämpfe das Team gewinnen würde. Das Team wird dafür auf das typische Ankunftslevel projiziert (Arena 8 minus 6).
+- Gewicht 0,25: Bei Arena-Risiko zählt die Arena, sind die Arenen sicher, entscheidet die Liga.
+- Messung: `artifacts/chal5`, folgt.
+
 ## Run-Logs lesen (P3b, D-005, D-038)
 
 - **Woher:**

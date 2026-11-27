@@ -178,13 +178,16 @@ export interface GameState {
   /** simulated relic offers (challenge relic screen) */
   relicSim?: {
     baseline: number;
-    offers: { id: string | null; value: number; combat: boolean }[];
+    offers: { id: string | null; value: number; combat: boolean; league?: number | null }[];
     replace: number[];
+    /** share of the arena league won with the owned relics (D-044), null outside */
+    league?: number | null;
+    leagueName?: string | null;
   } | null;
   /** species stats for the PC starter grid (challenge starter screen) */
   pcStats?: Record<number, { bst: number; types: string[] }> | null;
   /** simulated value of each catch option (index -1 = skip) */
-  catchSim?: { index: number; current: number; next: number; value: number }[] | null;
+  catchSim?: { index: number; current: number; next: number; league?: number | null; value: number }[] | null;
 }
 
 /** One alternative the strategy weighed (run logs, D-005/R-006). */

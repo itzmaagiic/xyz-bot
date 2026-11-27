@@ -376,7 +376,11 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
           kind: 'click',
           selector: '#passive-choices .item-card.passive-card',
           index: best,
-          why: `sim: relic ${rs.offers[best]!.id ?? '?'} → boss odds ${rs.baseline.toFixed(2)} → ${rs.offers[best]!.value.toFixed(2)}`,
+          why:
+            `sim: relic ${rs.offers[best]!.id ?? '?'} → boss odds ${rs.baseline.toFixed(2)} → ${rs.offers[best]!.value.toFixed(2)}` +
+            (rs.offers[best]!.league != null
+              ? ` (${rs.leagueName ?? 'league'}: ${pct(rs.league ?? 0)} → ${pct(rs.offers[best]!.league!)} of the fights)`
+              : ''),
           trace: trace(options, `relic:${best}`, rs.offers[best]!.value),
         };
       }

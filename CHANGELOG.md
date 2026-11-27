@@ -15,6 +15,7 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 - **Spielstärke:** Bei sicheren Bossen fängt der Bot die stärkere Art statt einer schwachen.
 - **Live-Funde behoben:** Ist ein Attacken-Lehrer ohne lernfähiges Mitglied, überspringt der Bot ihn. Den Bildschirm „Neues Pokémon!“ (Legendären-Knoten) nimmt er an.
 - **Liga** (D-043): Vor jedem Liga-Kampf simuliert der Bot nur noch die verbleibenden Gegner. Er stellt das Team so um, dass es am weitesten kommt, statt ein angeschlagenes Mitglied vorne zu lassen.
+- **Liga als Ziel** (D-044): In der Arena-Challenge bewertet der Bot Fänge und Relikte auch danach, wie weit das Team in der Liga käme. Die Liga steht schon beim Start des Runs fest.
 - **Poké-Mart-Knoten** (D-042): Er sieht aus wie eine Relikt-Wahl, verkauft aber Items. Der Bot erkennt ihn am Kartenknoten und verlässt ihn, ohne etwas zu verkaufen. Den Knotentyp kannten wir bisher unter dem falschen Namen `poke_mart`.
 
 ### Hinzugefügt (Phase 3, P3c)

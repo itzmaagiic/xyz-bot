@@ -364,3 +364,22 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Der Spielcode ist eindeutig. Ein besiegter Gegner wird nicht erneut bekämpft (`for (YOg = idx; …)`), also darf ihn die Simulation auch nicht erneut zählen.
   - Der Fortschritt ist das glattere Signal, solange 40 Stichproben für einen Gesamtsieg nichts zeigen.
 - Prüfung: `tests/unit/league.test.ts`, danach eine Live-Messung `chal4` gegen `chal3`.
+
+**D-044 – Arena-Challenge: Relikte und Fänge auch gegen die echte Liga bewerten** (2026-11-27, Änderung 3)
+- Befund (Spielcode v3.8, GAME_RECON §9 „Liga der Arena-Challenge“):
+  - Die Liga steht ab dem Start des Runs fest (`endlessState.wtGauntletPick`). Mit Lv 106–124 für die Top 4 und Lv 135–140 für den Champion ist sie viel stärker als jede Arena (zuletzt Lv 102).
+  - Gegen die Arenen zeigt die Simulation fast immer 100 %. Fänge und Relikte wurden deshalb nach Basiswerten bzw. Typ-Heuristik gewählt („relic for Fighting, synergy −1“), ohne Blick auf das Ziel, an dem jeder Run scheitert.
+- Entscheidung:
+  - **Liga nachbauen:** `arenaLeagueSpecs` rechnet die Level genau wie `rollWorldTournamentRegion` (rein, getestet). `leagueSpecs` liest dafür nur den Spielzustand und ruft `buildWtTrainer` auf, das reine Daten liefert. Im letzten Gebiet nimmt der Bot die echte Liga der Karte.
+    - Den zweiten Champion (Ordensregel 7) würfelt der Bot nie selbst. Er zählt erst, wenn das Spiel ihn gewählt hat.
+  - **Team projizieren:** Die drei Stärksten werden auf das typische Ankunftslevel gebracht (Arena 8 minus 6), alle mit vollen KP. Entwicklungen werden nicht vorweggenommen.
+  - **Bewertung:** Fang- und Relikt-Simulation rechnen zusätzlich den Anteil der Liga-Kämpfe, die im Schnitt gewonnen werden. Er geht mit 0,25 in den Wert ein: Wert = Arena + 0,6 × nächste Arena + 0,25 × Liga.
+    - Bei echtem Risiko in einer Arena überwiegt die Arena.
+    - Sind die Arenen sicher, entscheidet die Liga. Das schlägt auch den Basiswert-Gleichstand aus Änderung 1, sobald der Unterschied über 0,03 liegt, also etwa einen halben Liga-Kampf.
+  - Der Liga-Teil läuft mit der halben Stichprobenzahl, um die Zeitgrenzen der Simulation einzuhalten.
+  - Die Begründungen im Log nennen den Liga-Anteil („league N % of the fights“).
+- Begründung: Jeder Run der Messungen `chal1` und `chal3` endete in der Liga. Ein Bewertungsziel, das alle Optionen gleich gut findet, liefert kein Signal. Die Liga ist das einzige Ziel, das sie unterscheidet, und sie ist schon beim Start bekannt.
+- Grenzen:
+  - Ohne Entwicklungen wird ein frischer Fang auf Ankunftslevel unterschätzt, wenn er sich noch stark entwickelt. Das gleicht der Basiswert-Vergleich aus Änderung 1 nur teilweise aus.
+  - Die Liga-Level hängen an Konstanten des Spiels. Ändert ein Update sie, rechnet der Bot falsch, bis die Version geprüft ist (R-077).
+- Prüfung: `tests/unit/league.test.ts` (Level-Rechnung, Lesen des Spielzustands ohne Änderung, Entscheidung bei Gleichstand), danach Live-Messung gegen `chal4`.

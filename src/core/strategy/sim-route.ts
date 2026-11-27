@@ -243,7 +243,7 @@ export function baseStatTotal(m: { baseStats?: object } | undefined): number {
 const UPGRADE = 1.15;
 
 export function chooseCatchSim(
-  options: readonly { index: number; current: number; next: number; value: number }[],
+  options: readonly { index: number; current: number; next: number; league?: number | null; value: number }[],
   offer: readonly Offer[],
   teamSize: number,
   maxTeamSize: number,
@@ -273,7 +273,8 @@ export function chooseCatchSim(
   });
   const o = near[0]!;
   const f = (x: number) => `${Math.round(x * 100)} %`;
+  const lg = o.league != null ? `, league ${f(o.league)} of the fights` : '';
   if (o.index < 0)
-    return { index: -1, why: `sim: no option improves the boss odds (${f(o.current)} / next ${f(o.next)})` };
-  return { index: o.index, why: `sim: ${offer[o.index]?.name} → boss ${f(o.current)}, next boss ${f(o.next)}` };
+    return { index: -1, why: `sim: no option improves the boss odds (${f(o.current)} / next ${f(o.next)}${lg})` };
+  return { index: o.index, why: `sim: ${offer[o.index]?.name} → boss ${f(o.current)}, next boss ${f(o.next)}${lg}` };
 }

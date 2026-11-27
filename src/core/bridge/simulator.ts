@@ -14,6 +14,7 @@
 import { FLAGS } from '../flags';
 import { simBase } from './sim-seed';
 import { noteError } from '../log/note';
+import { arenaLeagueSpecs } from './league';
 declare const state: any;
 declare function runBattle(p: any[], e: any[], items: any[], eItems: any[], log: any, cfg: any, passives: any[]): any;
 declare function getRngSeed(): number;
@@ -285,6 +286,113 @@ async function endlessBossChain(ahead: number): Promise<{ name: string; teams: a
   const name = String(sp.archetype?.name ?? 'Boss');
   return { name: teams.length > 1 ? `${name} +${teams.length - 1}` : name, teams, metas };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// The league of the arena challenge as a second target (D-044): fixed at the start of the run, much stronger than
+// any gym. While every gym looks safe, catches and relics are also judged by how far the team would get there.
+// ---------------------------------------------------------------------------------------------------------------
+declare const WT_GAUNTLETS: any[];
+declare const WT_BOSS_LEVELS: number[];
+declare function buildWtTrainer(def: any, level: number, moveTier: number, size?: number): any;
+declare function chalBadgeBossMult(): number;
+declare function treatBossLevelBonus(i: number): number;
+declare function treatGauntletBonus(i: number): number;
+
+type Chain = { name: string; teams: any[][]; metas: FightMeta[] };
+let leagueCache: { key: string; chain: Chain | null } | null = null;
+
+/** Specs of the league fights: the real ones once the last region is rolled, else rebuilt like the game does. */
+export function leagueSpecs(): { name: string; specs: any[] } | null {
+  const s = state;
+  const es = typeof endlessState !== 'undefined' ? endlessState : null;
+  if (!s?.isEndlessMode || !es || es.wtGauntletPick == null || !Array.isArray(es.wtTrainerPicks)) return null;
+  const real = es.regionNumber === 3 ? es.currentRegion?.trainers?.[2] : null;
+  if (real?.gauntlet?.length) return { name: String(real.archetype?.name ?? 'League'), specs: real.gauntlet };
+  if (typeof WT_GAUNTLETS === 'undefined' || typeof buildWtTrainer !== 'function') return null;
+  const g = WT_GAUNTLETS[es.wtGauntletPick];
+  if (!g?.members || !g.champion) return null;
+  const num = (f: () => number, d: number) => {
+    try {
+      const v = f();
+      return Number.isFinite(v) ? v : d;
+    } catch (e) {
+      noteError('simulator:league-param', e);
+      return d;
+    }
+  };
+  const rule7 = typeof chalBadgeRule === 'function' && num(() => (chalBadgeRule(7) ? 1 : 0), 0) === 1;
+  const second = rule7 && es.wtSecondChampPick != null ? WT_GAUNTLETS[es.wtSecondChampPick]?.champion : null;
+  const specs = arenaLeagueSpecs(g, {
+    bossLevels: typeof WT_BOSS_LEVELS !== 'undefined' ? WT_BOSS_LEVELS : [],
+    levelMult: Number(s.challengeLevelMult) || 1,
+    badgeMult: typeof chalBadgeBossMult === 'function' ? num(() => chalBadgeBossMult(), 1) : 1,
+    bossLevelBonus: typeof treatBossLevelBonus === 'function' ? num(() => treatBossLevelBonus(8), 0) : 0,
+    gauntletBonus: (i) => (typeof treatGauntletBonus === 'function' ? num(() => treatGauntletBonus(i), 0) : 0),
+    eliteMod: s.challengeId ? Number(s.challengeEliteLevelMod) || 0 : null,
+    secondChampion: second ?? null,
+  }).map((x) => buildWtTrainer(x.def, x.level, x.moveTier));
+  return { name: String(g.name ?? 'League'), specs };
+}
+
+async function arenaLeague(): Promise<Chain | null> {
+  const s = state;
+  const es = typeof endlessState !== 'undefined' ? endlessState : null;
+  if (!s?.isEndlessMode || !es) return null;
+  const key = [
+    s.runSeed,
+    es.wtGauntletPick,
+    es.wtSecondChampPick,
+    s.challengeLevelMult,
+    s.challengeBadge,
+    es.regionNumber === 3 ? 'real' : 'built',
+  ].join('|');
+  if (leagueCache?.key === key) return leagueCache.chain;
+  let chain: Chain | null = null;
+  const ls = leagueSpecs();
+  if (ls) {
+    const teams: any[][] = [];
+    const metas: FightMeta[] = [];
+    for (const spec of ls.specs) {
+      const b = await buildEndlessTrainer(spec);
+      if (!b) continue;
+      teams.push(b.team);
+      metas.push({ kind: 'boss', tiers: b.tiers });
+    }
+    if (teams.length) chain = { name: ls.name, teams, metas };
+  }
+  leagueCache = { key, chain };
+  return chain;
+}
+
+/** Level the team typically has when it reaches the league: a few below the last gym (chal3: Lv 91–100 vs 102). */
+function leagueArrivalLevel(): number {
+  const s = state;
+  const gym8 = typeof WT_BOSS_LEVELS !== 'undefined' ? (WT_BOSS_LEVELS[7] ?? 102) : 102;
+  return Math.round(gym8 * (Number(s?.challengeLevelMult) || 1)) - 6;
+}
+
+/** The team as it would look on arrival at the league: core (best three) at the arrival level, full HP. */
+function towardLeague(team: any[]): any[] {
+  const core = team
+    .map((m: any) => m.level)
+    .sort((a: number, b: number) => b - a)
+    .slice(0, 3);
+  const avg = core.reduce((a: number, b: number) => a + b, 0) / Math.max(1, core.length);
+  return projectTeam(team, Math.max(0, Math.round(leagueArrivalLevel() - avg)), true);
+}
+
+/** Average share of the league won (0..1) – smooth even when a full clear is out of reach. */
+function leagueProgress(sb: number, team: any[], league: Chain, n: number, salt: number): number {
+  let won = 0;
+  for (let k = 0; k < n; k++) {
+    seedRng((sb ^ Math.imul(k + salt, 0x85ebca6b)) >>> 0);
+    won += fightChainCount(clone(team), league.teams, league.metas);
+  }
+  return won / n / league.teams.length;
+}
+
+/** Weight of the league share next to the gym win rates: decides near-ties, never outweighs real gym risk. */
+const LEAGUE_WEIGHT = 0.25;
 
 function battleConfig(): any {
   const s = state;
@@ -567,8 +675,10 @@ export interface CatchSimRequest {
 }
 
 export interface CatchSimResult {
-  /** index -1 = skip; value = win(current boss) + 0.6·win(next boss) */
-  options: { index: number; current: number; next: number; value: number }[];
+  /** index -1 = skip; value = win(current boss) + 0.6·win(next boss) + 0.25·league share (D-044) */
+  options: { index: number; current: number; next: number; league?: number | null; value: number }[];
+  /** league of the arena challenge used as second target, null outside */
+  leagueName?: string | null;
   restored: boolean;
 }
 
@@ -600,6 +710,8 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
     const boost = req.boost ?? 4;
     const n = Math.max(4, Math.min(60, req.n ?? 20));
     const team: any[] = state.team ?? [];
+    const league = await arenaLeague(); // D-044
+    out.leagueName = league?.name ?? null;
     for (let c = -1; c < offer.length; c++) {
       let t = clone(team);
       if (c >= 0) {
@@ -614,8 +726,15 @@ export async function simulateCatch(req: CatchSimRequest): Promise<CatchSimResul
       }
       const curRate = chainRate(sb, projectTeam(t, boost, false), cur.teams, n, 11 + c, cur.metas);
       const nextRate = next ? chainRate(sb, projectTeam(t, boost + 8, true), next.teams, n, 101 + c, next.metas) : 0;
+      const lg = league ? leagueProgress(sb, towardLeague(t), league, Math.max(6, Math.round(n / 2)), 201 + c) : null;
       t = [];
-      out.options.push({ index: c, current: curRate, next: nextRate, value: curRate + 0.6 * nextRate });
+      out.options.push({
+        index: c,
+        current: curRate,
+        next: nextRate,
+        league: lg,
+        value: curRate + 0.6 * nextRate + LEAGUE_WEIGHT * (lg ?? 0),
+      });
     }
     return out;
   } finally {
@@ -987,8 +1106,11 @@ export interface RelicSimRequest {
 
 export interface RelicSimResult {
   baseline: number;
-  /** per offered card: id found in PASSIVE_ITEM_POOL and simulated value (current + 0.6·next boss chain) */
-  offers: { id: string | null; value: number; combat: boolean }[];
+  /** per offered card: id found in PASSIVE_ITEM_POOL and simulated value (current + 0.6·next + 0.25·league) */
+  offers: { id: string | null; value: number; combat: boolean; league?: number | null }[];
+  /** league share with the owned relics (D-044), null outside the arena challenge */
+  league?: number | null;
+  leagueName?: string | null;
   /** replace mode: value when dropping owned relic i for the (single) new one */
   replace: number[];
   restored: boolean;
@@ -1020,25 +1142,33 @@ export async function simulateRelics(req: RelicSimRequest): Promise<RelicSimResu
     const n = Math.max(6, Math.min(60, req.n ?? 24));
     const team: any[] = state.team ?? [];
     const own: any[] = state.passives ?? [];
+    // D-044: the league is the real test of a relic – judged with the team projected to its arrival level
+    const league = await arenaLeague();
+    const atLeague = league ? towardLeague(team) : null;
+    const nl = Math.max(6, Math.round(n / 2));
+    let lastLeague: number | null = null;
     const value = (passives: any[]): number => {
       passivesOverride = passives;
       try {
         const c = chainRate(sb, projectTeam(team, 2, false), cur.teams, n, 31, cur.metas);
         const x = next ? chainRate(sb, projectTeam(team, 8, true), next.teams, n, 131, next.metas) : 0;
-        return c + 0.6 * x;
+        lastLeague = league && atLeague ? leagueProgress(sb, atLeague, league, nl, 231) : null;
+        return c + 0.6 * x + LEAGUE_WEIGHT * (lastLeague ?? 0);
       } finally {
         passivesOverride = null;
       }
     };
     out.baseline = value(own);
+    out.league = lastLeague;
+    out.leagueName = league?.name ?? null;
     for (const icon of req.icons) {
       const r = relicByIcon(icon);
       if (!r) {
-        out.offers.push({ id: null, value: out.baseline, combat: false });
+        out.offers.push({ id: null, value: out.baseline, combat: false, league: out.league });
         continue;
       }
       const v = value([...own, clone(r)]);
-      out.offers.push({ id: r.id, value: v, combat: Math.abs(v - out.baseline) > 1e-9 });
+      out.offers.push({ id: r.id, value: v, combat: Math.abs(v - out.baseline) > 1e-9, league: lastLeague });
     }
     if (req.replace && req.icons.length) {
       const r = relicByIcon(req.icons[req.icons.length - 1]!);

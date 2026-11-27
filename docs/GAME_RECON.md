@@ -179,6 +179,27 @@ Mega-/Shiny-/Hidden-Slots, Talent-Vorgaben, ggf. `gauntlet`); `endlessState.wtOu
 
 Der Simulator bildet das alles nach, daher wirken Relikte und Talente in den simulierten Kämpfen wie in den echten.
 
+**Liga der Arena-Challenge** (Spielcode v3.8, `rollWorldTournamentRegion`, `initWorldTournamentTypes`, `buildWtTrainer`, entschlüsselt am 2026-11-27, nur gelesen):
+
+- **Die Liga steht ab dem Start des Runs fest.** `initWorldTournamentTypes()` wählt beim Start alle 8 Arenaleiter (`endlessState.wtTrainerPicks`) und die Liga (`endlessState.wtGauntletPick` → `WT_GAUNTLETS`). Die Liga steht also schon auf Karte 1 fest, nicht erst im letzten Gebiet (D-043).
+- **Ligen:**
+  - Kanto: Lorelei/Ice, Bruno/Fighting, Agatha/Ghost, Lance/Dragon, Champion Blue
+  - Johto: Will/Psychic, Koga/Poison, Bruno/Fighting, Karen/Dark, Champion Lance
+  - Hoenn: Sidney/Dark, Phoebe/Ghost, Glacia/Ice, Drake/Dragon, Champion Steven
+  - Sinnoh: Aaron/Bug, Bertha/Ground, Flint/Fire, Lucian/Psychic, Champion Cynthia
+  - Unova: Shauntal/Ghost, Grimsley/Dark, Caitlin/Psychic, Marshal/Fighting, Champion Alder
+  - Kalos: Malva/Fire, Siebold/Water, Wikstrom/Steel, Drasna/Dragon, Champion Diantha
+- **Level:**
+  - `WT_BOSS_LEVELS = [10, 18, 28, 40, 55, 70, 86, 102, 120]` (Karten 1–9), Teamgrößen `ENDLESS_TEAM_SIZES = [2, 2, 3, 3, 4, 4, 5, 5, 6]`.
+  - Champion: `round(120 × challengeLevelMult × chalBadgeBossMult())`, dazu bei `challengeId` noch `10 + challengeEliteLevelMod`. Die Top 4 liegen je Platz vor dem Champion 6 Level tiefer.
+  - Champion mit `levelBonus` 5, je Team-Platz +0 bis +5 Level.
+  - Ergebnis für die Arena-Challenge ohne Mod: Top 4 auf Lv 106/112/118/124 (+ Platz), Champion Lv 135–140. Unsere Teams lagen in `chal3` bei Lv 91–109.
+- **Ablauf:**
+  - Die 5 Kämpfe laufen am Stück ohne Heilung. Vor jedem gibt es einen Vorbereitungs-Bildschirm (`elite-prep-screen`).
+  - Der Stand steht in `state._erGauntlet = { nodeId: bossPrepKey('gauntlet'), idx }`.
+  - Ab Ordensregel 7 kommt ein zweiter Champion dazu (`wtSecondChampPick`, 6 Kämpfe).
+  - Eine Niederlage beendet den Run.
+
 ## 10. Ergänzungen aus der Einrichtungs-Session (2026-11-25)
 
 Dieser Abschnitt kam in der Einrichtungs-Session hinzu, als der Hauptauftrag zerlegt wurde. Die Abschnitte 1 bis 9 stammen aus dem Vorgänger-Branch (D-016) und wurden live geprüft.
