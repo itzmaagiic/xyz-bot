@@ -5,16 +5,14 @@
 _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- Gerade läuft kein Inkrement. **P3a** (Kämpfe ohne Hänger, D-037) und **P3b** (Run-Logs, Live-Urteil, MAIN-Welt-Fehler, D-038) sind abgeschlossen, live belegt und haben ihren Gesamt-Review bestanden (siehe „Erledigt“). 411 Unit-Tests grün, 44 E2E-Tests bestanden, 3 gewollt übersprungen.
+- **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039):** Spec `docs/superpowers/specs/2026-11-27-p3c-not-aus-fehler-speicher-design.md`, Plan `docs/superpowers/plans/2026-11-27-p3c-not-aus-fehler-speicher.md` (4 Tasks, inline mit TDD).
+- **P3a** (Kämpfe ohne Hänger, D-037) und **P3b** (Run-Logs, Live-Urteil, MAIN-Welt-Fehler, D-038) sind abgeschlossen, live belegt und haben ihren Gesamt-Review bestanden (siehe „Erledigt“). 411 Unit-Tests grün, 44 E2E-Tests bestanden, 3 gewollt übersprungen.
 
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run), weitere Inkremente in dieser Reihenfolge:**
    - ~~Hänger bei langen Bosskämpfen (P3a)~~ und ~~Run-Logs, Live-Urteil, MAIN-Welt-Fehler (P3b)~~ sind erledigt (D-037, D-038).
-   - **P3c:**
-     - Laufzeit-Handler für `unhandledrejection`/`error` (R-200, deckt die Lint-Lücken aus D-036).
-     - Speicherfehler sichtbar machen (R-259).
-     - Run-Logs sollen ein Neuladen überstehen (R-109).
-     - Pause und Stopp greifen sofort (R-011).
+   - **P3c (in Arbeit, D-039):** Not-Aus (R-011), Laufzeit-Handler für `unhandledrejection`/`error` (R-200, deckt die Lint-Lücken aus D-036), Speicherfehler sichtbar machen (R-259).
+   - **P3d:** Neuladen mit Laufstatus und Run-Logs (R-109), doppelte Ausführung und Tab-Sperre (R-108, R-229), Eingriff des Nutzers (R-213), fremder Run nur nach Bestätigung (R-214).
    - Aufklärung der Restbildschirme (D-029, R-224).
    - In der ersten **frisch gebauten** Session R-015 und R-016 bestätigen (D-034).
 2. Die Vorbefunde der Reviewer für P3 bis P5 stehen unten und in `docs/superpowers/audits/2026-11-26-p2-gate-ui-strategy.md`.

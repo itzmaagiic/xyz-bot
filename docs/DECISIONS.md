@@ -295,3 +295,17 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 - Freigabe nach D-006: eigenes Review. Keine Widersprüche zu R-145 und R-148: Der Recorder liest nie den localStorage, und `runs/` wird gescannt. R-146 bleibt unberührt: `errors` ist ein lokaler Bridge-Befehl ohne Netzwerk. R-237 bleibt unberührt.
 - Folgen: Persistenz der Run-Logs über ein Neuladen hinweg fehlt noch und folgt später mit R-109. `runs/` wächst mit jedem übernommenen Run (etwa 50 bis 150 KB je Run). Übernommen werden nur ausgewählte Läufe.
 - Ausführung: inline mit TDD (wie D-031 und D-037). Am Ende ein frischer Gesamt-Review und ein Live-Lauf mit `LIVE_SAVE_RUNS=1` als Nachweis.
+
+**D-039 – P3c: Not-Aus über eine Lebendigkeitsmarke, globale Fehler-Handler mit Spiel-Filter, Speicherprobleme als dauerhafter Hinweis; R-109 wird zu P3d** (2026-11-27)
+- Entscheidung: Das Design steht in `docs/superpowers/specs/2026-11-27-p3c-not-aus-fehler-speicher-design.md`.
+  - **Not-Aus:** `pause()` erhöht eine Epoche. Jede Aktion prüft vorher, ob ihr Tick noch lebt: nach `refresh` und `attachSim`, vor Klick, Taste und Bridge-Befehl, im Actor nach jeder Mikro-Pause. Eine abgebrochene Aktion zählt nicht als Fehlschlag (`outcome: 'aborted'`).
+  - **Globale `error`/`unhandledrejection`-Handler nur in der Welt des Bots.** Fehler aus Skripten von `pokelike.xyz` werden ignoriert. Unerwartetes wird vermerkt, steht als `error` im Log, und beim ersten Auftreten erscheint ein Toast. Der Bot pausiert dabei nicht.
+  - **Speicher:** `PlatformStorage.set` liefert `'volatile'`, wenn nur der Arbeitsspeicher bleibt. Fehler und `'volatile'` werden zu `view.storageProblem`, einem dauerhaften Hinweis `#pk-storage` mit nächstem Schritt. Die Chrome-Optionsseite zeigt denselben Text.
+  - **R-109 (Neuladen) kommt mit R-108, R-229, R-213 und R-214 in ein eigenes Inkrement P3d.**
+- Begründung:
+  - Ein AbortSignal durch alle Schichten brächte keinen praktischen Unterschied (nach jedem Schlaf folgt ohnehin die Prüfung), wäre aber ein viel größerer Eingriff.
+  - Ein Handler in der MAIN-Welt sähe vor allem Fehler des Spiels und könnte im Userscript die Inline-Bridge nicht vom Spiel unterscheiden.
+  - Ein Toast allein reicht bei Speicherproblemen nicht, denn der Zustand hält an.
+  - Persistente Run-Logs (R-109) brauchen ein Speicherkonzept: Der localStorage-Fallback teilt sich das Kontingent der Spielseite, und große Logs dürfen die Spielstände nie gefährden. R-214 braucht dieselbe Markierung „Run des Bots“.
+- Freigabe nach D-006: eigenes Review. Keine Widersprüche zu R-145 (es wird nur gelesen bzw. unter `pkbot.*` geschrieben), R-147 und R-241.
+- Ausführung: inline mit TDD (wie D-031, D-037, D-038). Am Ende ein frischer Gesamt-Review.
