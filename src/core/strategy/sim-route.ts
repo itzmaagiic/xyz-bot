@@ -232,20 +232,44 @@ export function starSwaps(current: readonly number[], target: readonly number[])
  * Catch choice from simulation (index -1 = skip). Near-ties (≤ 0.03) are broken towards catching while the team
  * has room (an extra member is a backup the boss simulation barely sees early on) and then by offer level.
  */
+type Offer = { name: string; level: number; baseStats?: object };
+
+/** species strength: sum of the base stats (0 when unknown, e.g. a DOM-only card) */
+export function baseStatTotal(m: { baseStats?: object } | undefined): number {
+  return m?.baseStats ? Object.values(m.baseStats).reduce((a, b) => a + (Number(b) || 0), 0) : 0;
+}
+
+/** with a full team, a catch must be clearly stronger than the weakest member to be worth the swap */
+const UPGRADE = 1.15;
+
 export function chooseCatchSim(
   options: readonly { index: number; current: number; next: number; value: number }[],
-  offer: readonly { name: string; level: number }[],
+  offer: readonly Offer[],
   teamSize: number,
   maxTeamSize: number,
+  team: readonly Offer[] = [],
 ): { index: number; why: string } {
   if (!options.length) return { index: -1, why: 'no simulation' };
   const best = Math.max(...options.map((o) => o.value));
   const near = options.filter((o) => o.value >= best - 0.03);
   const room = teamSize < maxTeamSize;
+  // live finding (arena challenge, 2026-11-27): when every boss is already ~100 %, the simulation gives no signal and
+  // weak species were caught – the team was far too weak for the final league. Near-ties go to the stronger species.
+  const weakest = team.length ? Math.min(...team.map(baseStatTotal)) : 0;
+  const upgrade = (i: number) => weakest > 0 && baseStatTotal(offer[i]) >= weakest * UPGRADE;
   near.sort((a, b) => {
-    if (room && a.index < 0 !== b.index < 0) return a.index < 0 ? 1 : -1;
-    if (!room && a.index < 0 !== b.index < 0) return a.index < 0 ? -1 : 1;
-    return b.value - a.value || (offer[b.index]?.level ?? 0) - (offer[a.index]?.level ?? 0);
+    const skipA = a.index < 0;
+    const skipB = b.index < 0;
+    if (skipA !== skipB) {
+      const take = skipA ? b.index : a.index;
+      const catchFirst = room || upgrade(take);
+      return skipA === catchFirst ? 1 : -1;
+    }
+    return (
+      baseStatTotal(offer[b.index]) - baseStatTotal(offer[a.index]) ||
+      b.value - a.value ||
+      (offer[b.index]?.level ?? 0) - (offer[a.index]?.level ?? 0)
+    );
   });
   const o = near[0]!;
   const f = (x: number) => `${Math.round(x * 100)} %`;

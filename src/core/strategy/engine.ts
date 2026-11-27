@@ -503,7 +503,7 @@ function decideCatch(state: GameState, doc: Document): Decision {
   const offer = bridgeMatches ? run!.catchOffer! : domCards;
   const sim = bridgeMatches ? state.catchSim : null;
   if (sim?.length && run) {
-    const pick = chooseCatchSim(sim, offer, run.team.length, run.maxTeamSize);
+    const pick = chooseCatchSim(sim, offer, run.team.length, run.maxTeamSize, run.team);
     const id = (i: number) => (i < 0 ? 'catch:skip' : `catch:${i}`);
     const options = sim.map((o) => ({
       id: id(o.index),

@@ -117,6 +117,39 @@ describe('catch by simulation', () => {
     );
     expect(r.index).toBe(0);
   });
+  // live finding, arena challenge 2026-11-27: every gym at 100 % → no signal → Nuzleaf/Swadloon/Shellos were caught and
+  // the team was far too weak for the final league. Saturated odds: the stronger species decides.
+  const stats = (bst: number) => ({
+    hp: bst / 6,
+    atk: bst / 6,
+    def: bst / 6,
+    speed: bst / 6,
+    special: bst / 6,
+    spdef: bst / 6,
+  });
+  const strong = { name: 'Luxray', level: 16, baseStats: stats(523) };
+  const weakMon = { name: 'Nuzleaf', level: 17, baseStats: stats(340) };
+
+  it('saturated odds: the strongest species by base stats is caught, not the higher-level weak one', () => {
+    const opts = [
+      { index: -1, current: 1, next: 1, value: 2 },
+      { index: 0, current: 1, next: 1, value: 2 },
+      { index: 1, current: 1, next: 1, value: 2 },
+    ];
+    expect(chooseCatchSim(opts, [weakMon, strong], 3, 6).index).toBe(1);
+  });
+
+  it('full team: a clearly stronger species (≥ 15 % base stats over the weakest member) is caught to replace it', () => {
+    const opts = [
+      { index: -1, current: 1, next: 1, value: 2 },
+      { index: 0, current: 1, next: 1, value: 2 },
+    ];
+    const team = [strong, strong, strong, strong, strong, weakMon];
+    expect(chooseCatchSim(opts, [strong], 6, 6, team).index).toBe(0);
+    const similar = { name: 'Linoone', level: 16, baseStats: stats(360) };
+    expect(chooseCatchSim(opts, [similar], 6, 6, team).index).toBe(-1);
+  });
+
   it('near-tie with room → catch (backup); full team near-tie → skip', () => {
     const opts = [
       { index: -1, current: 0.9, next: 0.5, value: 1.2 },
