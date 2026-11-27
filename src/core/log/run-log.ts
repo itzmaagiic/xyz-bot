@@ -237,7 +237,7 @@ export class RunRecorder {
     return line;
   }
 
-  setOutcome(line: DecisionLine, outcome: 'ok' | 'no-effect'): void {
+  setOutcome(line: DecisionLine, outcome: 'ok' | 'no-effect' | 'aborted'): void {
     line.outcome = outcome;
     const r = this.runs.find((x) => x.id === line.run_id);
     if (r && outcome === 'no-effect') r.counts.noEffect++;

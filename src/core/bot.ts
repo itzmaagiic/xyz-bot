@@ -55,6 +55,8 @@ export class BotController {
   /** structured run logs (R-006, R-009, D-005, D-038) – exported from the overlay */
   readonly runs = new RunRecorder({ context: () => this.runContext(), botVersion: BOT_VERSION ?? undefined });
   private readonly watchdog = new Watchdog();
+  /** Not-Aus (R-011, D-039): pause() starts a new epoch – an action of an older epoch is never carried out */
+  private epoch = 0;
   private reader: StateReader;
   private actor: Actor;
   private mem: EngineMemory = newMemory();
@@ -195,6 +197,7 @@ export class BotController {
 
   pause(reason: string | null = null, notify = false, kind: PauseKind = 'user'): void {
     const wasRunning = this.view.status === 'running';
+    this.epoch++;
     this.view.status = 'paused';
     this.watchdog.reset();
     this.view.pauseReason = reason;
@@ -459,7 +462,11 @@ export class BotController {
   }
 
   async tick(): Promise<Decision | null> {
+    const ep = this.epoch;
+    const live = () => this.epoch === ep;
+    const paused: Decision = { kind: 'wait', ms: 0, why: 'paused' };
     let st = await this.refresh();
+    if (!live()) return paused;
     this.rec(() => this.runs.observe(st));
     // R-095 watchdog (D-037): the signature includes battle progress, so only a real standstill trips it
     if (this.view.status === 'running') {
@@ -471,6 +478,7 @@ export class BotController {
         this.log.warn(`watchdog: no change for ${sec} s on ${st.screen.kind} – re-reading the game state`);
         this.rec(() => this.runs.count('watchdogRereads'));
         st = await this.refresh();
+        if (!live()) return paused;
         this.watchdog.observe(st.screen.signature, sec * 1000); // a changed state clears the alarm at once
       } else if (wd === 'stall') {
         const idle = Math.round(this.watchdog.idleMs() / 1000);
@@ -480,6 +488,7 @@ export class BotController {
       }
     }
     await this.attachSim(st);
+    if (!live()) return paused; // a pause during a long simulation: no "last" action (R-011)
     const d = decide(st, this.doc, this.view.settings, this.mem);
     this.view.lastDecision = `${d.kind}: ${d.why}`;
     this.emit();
@@ -514,22 +523,27 @@ export class BotController {
         return d;
       }
       case 'click':
-        await this.doClick(d, st);
+        await this.doClick(d, st, live);
         return d;
       case 'swapTeam':
-        await this.doSwap(d, st);
+        await this.doSwap(d, st, live);
         return d;
       case 'reorder':
-        await this.doReorder(d, st);
+        await this.doReorder(d, st, live);
         return d;
       case 'openBag':
-        await this.doOpenBag(d, st);
+        await this.doOpenBag(d, st, live);
         return d;
     }
     return d;
   }
 
-  private async doOpenBag(d: Extract<Decision, { kind: 'openBag' }>, st: GameState): Promise<void> {
+  private async doOpenBag(
+    d: Extract<Decision, { kind: 'openBag' }>,
+    st: GameState,
+    live: () => boolean,
+  ): Promise<void> {
+    if (!live()) return;
     this.decided(d, st, { bag: d.index, item: d.itemId });
     const block = (): void => {
       this.mem.bagBlocked.add(`${d.itemId}|${d.index}`);
@@ -551,18 +565,24 @@ export class BotController {
   }
 
   /** Realises a full battle order with the game's Shift+<slot> shortcut, verifying every single swap. */
-  private async doReorder(d: Extract<Decision, { kind: 'reorder' }>, st: GameState): Promise<void> {
+  private async doReorder(
+    d: Extract<Decision, { kind: 'reorder' }>,
+    st: GameState,
+    live: () => boolean,
+  ): Promise<void> {
+    if (!live()) return;
     this.decided(d, st, { swaps: d.swaps, target: d.target });
     (this.doc.activeElement as HTMLElement | null)?.blur?.();
     for (const k of d.swaps) {
       const before = this.teamOrder();
-      await this.actor.pressKey(this.doc, `Digit${k + 1}`, String(k + 1), { shift: true });
+      if (!(await this.actor.pressKey(this.doc, `Digit${k + 1}`, String(k + 1), { shift: true }, live))) return;
       let ok = false;
       for (let i = 0; i < 10 && !ok; i++) {
         await sleep(120);
         await this.reader.read();
         ok = this.teamOrder() !== before;
       }
+      if (!live()) return; // paused between two presses: no further key (R-011)
       if (!ok) {
         this.mem.reorderFailures++;
         this.log.warn(`reorder step Shift+${k + 1} had no effect – keeping current order`);
@@ -574,11 +594,11 @@ export class BotController {
     this.log.info('battle order set by simulation');
   }
 
-  private async doClick(d: Extract<Decision, { kind: 'click' }>, st: GameState): Promise<void> {
+  private async doClick(d: Extract<Decision, { kind: 'click' }>, st: GameState, live: () => boolean): Promise<void> {
     const key = `${st.screen.signature}::${d.selector}#${d.index ?? 0}`;
     const el = resolve(this.doc, d.selector, d.index ?? 0);
     const pre = clickPrecheck(el);
-    if (pre === 'missing') return this.failed(key, `target not found/visible: ${d.selector}[${d.index ?? 0}]`);
+    if (pre === 'missing') return this.failed(key, `target not found/visible: ${d.selector}[${d.index ?? 0}]`, live);
     if (pre === 'not-actionable' || !el) {
       // visible but disabled (e.g. SKIP after the click, §12.8): wait, never click it, never count a failure;
       // a target that stays disabled is caught by the watchdog (D-037)
@@ -587,7 +607,12 @@ export class BotController {
     }
     const line = this.decided(d, st, { click: d.selector, index: d.index ?? 0, screen: st.screen.kind });
     const before = st.screen.signature;
-    await this.actor.click(el);
+    if (!(await this.actor.click(el, live))) {
+      // paused while aiming: nothing was pressed – no failure, no effect check (R-011)
+      if (line) this.rec(() => this.runs.setOutcome(line, 'aborted'));
+      this.log.debug(`click abandoned (paused): ${d.selector}[${d.index ?? 0}]`);
+      return;
+    }
     this.view.stats.actions++;
     const changed = await waitForEffect(this.doc, el, before, () => detectScreen(this.doc).signature, VERIFY_TIMEOUT);
     if (line) this.rec(() => this.runs.setOutcome(line, changed ? 'ok' : 'no-effect'));
@@ -595,11 +620,11 @@ export class BotController {
       this.failCount = 0;
       this.failKey = null;
     } else {
-      await this.failed(key, `no effect after clicking ${d.selector}[${d.index ?? 0}]`);
+      await this.failed(key, `no effect after clicking ${d.selector}[${d.index ?? 0}]`, live);
     }
   }
 
-  private async failed(key: string, why: string): Promise<void> {
+  private async failed(key: string, why: string, live: () => boolean = () => true): Promise<void> {
     if (this.failKey === key) this.failCount++;
     else {
       this.failKey = key;
@@ -612,7 +637,7 @@ export class BotController {
       this.pause(errorPause('failing', why), true, 'failing');
       return;
     }
-    await sleep(600 * 2 ** (this.failCount - 1)); // backoff
+    if (live()) await sleep(600 * 2 ** (this.failCount - 1)); // backoff – not after a pause (R-011)
   }
 
   private teamOrder(): string {
@@ -623,7 +648,8 @@ export class BotController {
    * Lead swap via the game's own keyboard shortcut Shift+<slot> (swapPartyLeadWith). Drag & drop cannot work with
    * synthetic events because the game calls setPointerCapture on pointerdown.
    */
-  private async doSwap(d: Extract<Decision, { kind: 'swapTeam' }>, st: GameState): Promise<void> {
+  private async doSwap(d: Extract<Decision, { kind: 'swapTeam' }>, st: GameState, live: () => boolean): Promise<void> {
+    if (!live()) return;
     this.decided(d, st, { swap: [d.from, d.to], where: d.where });
     if (d.to !== 0 || d.from < 1 || d.from > 8) {
       this.log.warn('only lead swaps are supported');
@@ -632,7 +658,7 @@ export class BotController {
     const before = this.teamOrder();
     // make sure no input inside our overlay has focus (the game ignores keys typed into inputs)
     (this.doc.activeElement as HTMLElement | null)?.blur?.();
-    await this.actor.pressKey(this.doc, `Digit${d.from + 1}`, String(d.from + 1), { shift: true });
+    if (!(await this.actor.pressKey(this.doc, `Digit${d.from + 1}`, String(d.from + 1), { shift: true }, live))) return;
     for (let i = 0; i < 10; i++) {
       await sleep(150);
       await this.reader.read();

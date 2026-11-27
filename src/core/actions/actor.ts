@@ -63,11 +63,18 @@ export class Actor {
     this.micro = opts.microDelay ?? 40;
   }
 
-  async click(el: Element): Promise<void> {
+  /**
+   * Human-like click. `live` is the Not-Aus (R-011, D-039): it is checked before the first event and after every
+   * pause up to the press. Once pointerdown has fired, the press is completed (≤ 2 × micro delay) – a half press
+   * would leave the game with a captured pointer. Returns false when the click was abandoned.
+   */
+  async click(el: Element, live: () => boolean = () => true): Promise<boolean> {
     assertAllowedTargets('click', el); // R-147: before anything happens (no scroll, no event)
+    if (!live()) return false;
     if ((el as HTMLElement).scrollIntoView && !inViewport(el)) {
       (el as HTMLElement).scrollIntoView({ block: 'center', inline: 'center' });
       await sleep(120);
+      if (!live()) return false;
     }
     const { x, y } = point(el, this.rng);
     const target = topmostAt(el, x, y);
@@ -77,6 +84,7 @@ export class Actor {
     fire(target, 'pointermove', x, y);
     fire(target, 'mousemove', x, y);
     await sleep(humanDelay(this.micro, this.rng));
+    if (!live()) return false;
     fire(target, 'pointerdown', x, y, { buttons: 1 });
     fire(target, 'mousedown', x, y, { buttons: 1 });
     if ((target as HTMLElement).focus) (target as HTMLElement).focus({ preventScroll: true });
@@ -84,6 +92,7 @@ export class Actor {
     fire(target, 'pointerup', x, y);
     fire(target, 'mouseup', x, y);
     fire(target, 'click', x, y);
+    return true;
   }
 
   /** Key press like a hardware keyboard: keydown → keyup on the focused element (or body). */
@@ -92,9 +101,11 @@ export class Actor {
     code: string,
     key: string,
     mods: { shift?: boolean; alt?: boolean } = {},
-  ): Promise<void> {
+    live: () => boolean = () => true,
+  ): Promise<boolean> {
     if (!isKeyAllowed(code, key, mods))
       throw new ForbiddenActionError(`key ${mods.shift ? 'Shift+' : ''}${code}`, 'key');
+    if (!live()) return false; // Not-Aus (R-011): a started keydown is always completed with its keyup
     const target = (
       doc.activeElement && doc.activeElement !== doc.documentElement ? doc.activeElement : doc.body
     ) as Element;
@@ -112,6 +123,7 @@ export class Actor {
     target.dispatchEvent(new view.KeyboardEvent('keydown', init));
     await sleep(humanDelay(this.micro * 2, this.rng));
     target.dispatchEvent(new view.KeyboardEvent('keyup', init));
+    return true;
   }
 
   /** Pointer drag from one element to another in small steps. */

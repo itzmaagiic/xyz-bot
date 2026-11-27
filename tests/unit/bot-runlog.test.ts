@@ -34,7 +34,7 @@ describe('bot → run log wiring (R-006, R-009)', () => {
 
   it('a click decision is recorded with outcome ok when the effect is seen', async () => {
     const { b, click } = bot('title');
-    click.mockImplementation(async (el: Element) => el.remove()); // the game reacts: the button goes away
+    click.mockImplementation(async (el: Element) => (el.remove(), true)); // the game reacts: the button goes away
     await b.tick();
     const [run] = b.runs.exportBundle().runs;
     expect(run!.decisions).toHaveLength(1);
@@ -45,7 +45,7 @@ describe('bot → run log wiring (R-006, R-009)', () => {
   it('a click without effect is recorded with outcome no-effect', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { b, click } = bot('title');
-    click.mockImplementation(async () => undefined); // nothing happens
+    click.mockImplementation(async () => true); // pressed, but nothing happens
     const p = b.tick();
     await vi.advanceTimersByTimeAsync(10_000);
     await p;
@@ -66,7 +66,7 @@ describe('bot → run log wiring (R-006, R-009)', () => {
 
   it('game over: the stop decision closes the run with result loss', async () => {
     const { b, doc, click } = bot('title');
-    click.mockImplementation(async (el: Element) => el.remove());
+    click.mockImplementation(async (el: Element) => (el.remove(), true));
     await b.tick(); // opens the run
     doc.documentElement.innerHTML = loadFixture('gameover').documentElement.innerHTML; // the run is lost
     await b.tick();
@@ -82,6 +82,7 @@ describe('bot → run log wiring (R-006, R-009)', () => {
     const { b, doc, click } = bot('title');
     click.mockImplementation(async (el: Element) => {
       (el as HTMLButtonElement).disabled = true; // effect seen, and from now on nothing is clickable
+      return true;
     });
     b.view.settings = { ...b.view.settings, watchdogSec: 20 };
     await b.tick(); // records the click → run open
@@ -116,6 +117,7 @@ describe('bot → run log wiring (R-006, R-009)', () => {
     const { b, click } = bot('title');
     click.mockImplementation(async (el: Element) => {
       (el as HTMLButtonElement).disabled = true;
+      return true;
     });
     await b.tick(); // run open, screen title observed at t = 0
     vi.setSystemTime(1_000);
@@ -129,7 +131,7 @@ describe('bot → run log wiring (R-006, R-009)', () => {
   it('a repeated bot-world error reaches the run it happens in (count per run)', async () => {
     clearNotedErrors();
     const { b, click } = bot('title');
-    click.mockImplementation(async (el: Element) => el.remove());
+    click.mockImplementation(async (el: Element) => (el.remove(), true));
     await b.tick(); // run 1 open
     noteError('sim:x', new Error('fallback'));
     b.runs.record({ kind: 'stop', why: 'game over', result: 'loss' }, await b.refresh());
@@ -143,7 +145,7 @@ describe('bot → run log wiring (R-006, R-009)', () => {
   it('a broken run recorder never stops the bot: the error is noted, the tick goes on', async () => {
     clearNotedErrors();
     const { b, click } = bot('title');
-    click.mockImplementation(async (el: Element) => el.remove());
+    click.mockImplementation(async (el: Element) => (el.remove(), true));
     vi.spyOn(b.runs, 'observe').mockImplementation(() => {
       throw new Error('recorder bug');
     });
