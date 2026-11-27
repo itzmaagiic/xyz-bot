@@ -538,6 +538,15 @@ function decideSwap(state: GameState, doc: Document): Decision {
   const incomingEl = doc.querySelector('#swap-incoming .poke-card');
   const incoming = incomingEl ? parsePokeCard(incomingEl) : null;
   const domTeam = readCards(doc, '#swap-choices .poke-card');
+  // "Neues Pokémon!" (legendary/gift node): with room in the team the game lists no team, only the newcomer and
+  // "Team behalten" – adding it is free (live finding, arena challenge 2026-11-27)
+  const room = !!state.run && state.run.team.length > 0 && state.run.team.length < state.run.maxTeamSize;
+  if (!domTeam.length && incomingEl && room && shown(doc, '#btn-cancel-swap'))
+    return {
+      kind: 'click',
+      selector: '#swap-incoming .poke-card',
+      why: `team has room: add ${incoming?.name ?? 'the new Pokémon'}`,
+    };
   if (!domTeam.length) return { kind: 'wait', ms: 500, why: 'swap screen loading' };
   const team = state.run && sameSpecies(state.run.team, domTeam) ? state.run.team : domTeam;
   const c = chooseRelease(incoming, team);

@@ -200,6 +200,16 @@ describe('DecisionEngine on real snapshots', () => {
     const doc = loadFixture('item');
     expect(decide(gs(doc, baseRun()), doc, s, newMemory())).toMatchObject({ kind: 'click', index: 0 });
   });
+  it('"Neues Pokémon!" with room in the team (legendary node): adds the newcomer instead of waiting forever', () => {
+    // live finding (arena challenge 2026-11-27): team < 6 → the game lists no team, only the new card + "Team behalten"
+    const doc = loadFixture('swap-de');
+    for (const c of Array.from(doc.querySelectorAll('#swap-choices .poke-card'))) c.remove();
+    const run = baseRun({ team: [mon({ speciesId: 150, level: 49 }), mon({ speciesId: 213, level: 47 })] });
+    expect(decide(gs(doc, run), doc, s, newMemory())).toMatchObject({
+      kind: 'click',
+      selector: '#swap-incoming .poke-card',
+    });
+  });
   it('swap → releases someone or keeps', () => {
     const doc = loadFixture('swap-de');
     const d = decide(gs(doc), doc, s, newMemory());
