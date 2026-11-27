@@ -11,16 +11,24 @@ interface ErrorLike {
   filename?: unknown;
   reason?: unknown;
   error?: unknown;
+  message?: unknown;
 }
 
-/** true for an error of the game itself: thrown in a script of the page origin */
+/**
+ * true for an error that is not the bot's: thrown in a script of the page origin (by file or by the top stack frame),
+ * or the browser's muted cross-origin "Script error." of third-party scripts (ads, consent manager)
+ */
 export function isGameError(win: Window, ev: ErrorLike): boolean {
+  if (ev.error == null && ev.reason === undefined && /^Script error\.?$/.test(String(ev.message ?? ''))) return true;
   const origin = win.location?.origin;
   if (!origin || origin === 'null') return false;
   if (typeof ev.filename === 'string' && ev.filename.startsWith(origin + '/')) return true;
   const err = ev.reason ?? ev.error;
   const stack = err && typeof err === 'object' ? (err as { stack?: unknown }).stack : undefined;
-  return typeof stack === 'string' && stack.includes(origin + '/');
+  if (typeof stack !== 'string') return false;
+  // the top frame with a URL decides: our error that passed through a game callback is still ours
+  const top = stack.split('\n').find((l) => /[a-z-]+:\/\//i.test(l));
+  return !!top && top.includes(origin + '/');
 }
 
 /** @returns false when the handlers are already installed in this world */

@@ -63,6 +63,19 @@ describe('bot shows storage problems (R-259)', () => {
     expect(bot.view.storageProblem).toBeNull();
   });
 
+  it('the hint stays while one key still fails, even if another key saves fine (review P3c M5)', async () => {
+    const bot = botWith({
+      get: async () => undefined,
+      set: async (key: string) => {
+        if (key === 'pkbot.settings') throw new Error('QuotaExceededError');
+      },
+    });
+    await bot.updateSettings({ actionDelayMs: 700 }); // settings fail
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (bot as any).persist('pkbot.stats', { runs: 1 }); // stats succeed
+    expect(bot.view.storageProblem).toMatch(/konnten nicht gespeichert werden/);
+  });
+
   it('saving the stats after a run end uses the same path', async () => {
     const bot = botWith({
       get: async () => undefined,

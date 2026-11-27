@@ -96,4 +96,19 @@ describe('global error handlers (R-200)', () => {
     // no extra muted "handled:" line for it – the error line already says it
     expect(bot.log.entries().some((e) => e.msg.startsWith('handled: global:'))).toBe(false);
   });
+
+  it('a muted cross-origin "Script error." (ads, consent manager) is not a bot error (review P3c M4)', () => {
+    const doc = loadFixture('title');
+    const win = doc.defaultView as unknown as Window;
+    expect(isGameError(win, { filename: '', error: null, message: 'Script error.' })).toBe(true);
+  });
+
+  it('only the top stack frame decides: our error that passed through a game callback is ours (review P3c M4)', () => {
+    const doc = loadFixture('title');
+    const win = doc.defaultView as unknown as Window;
+    const err = new Error('ours');
+    err.stack =
+      'Error: ours\n    at read (chrome-extension://abc/content.js:1:2)\n    at cb (https://pokelike.xyz/js/game.js:9:1)';
+    expect(isGameError(win, { reason: err })).toBe(false);
+  });
 });

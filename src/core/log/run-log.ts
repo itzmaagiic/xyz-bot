@@ -148,6 +148,7 @@ export class RunRecorder {
   private runs: RunRecord[] = [];
   private open: RunRecord | null = null;
   private pendingErrors: ErrorBook = newBook();
+  private clickLines = new WeakSet<DecisionLine>();
   private screen: string | null = null;
   private screenSince = 0;
   /** boss of the last map simulation – valid only for that map and eliteIndex (Top-4 chain, failed sims) */
@@ -224,7 +225,10 @@ export class RunRecorder {
     }
     r.counts.decisions++;
     r.endedOnPause = false;
-    if (d.kind === 'click') r.counts.clicks++;
+    if (d.kind === 'click') {
+      r.counts.clicks++;
+      this.clickLines.add(line);
+    }
     if (d.kind !== 'pause' && d.kind !== 'stop') {
       r.actions++;
       if (line.options.length) r.withOptions++;
@@ -241,6 +245,8 @@ export class RunRecorder {
     line.outcome = outcome;
     const r = this.runs.find((x) => x.id === line.run_id);
     if (r && outcome === 'no-effect') r.counts.noEffect++;
+    // an abandoned click was never pressed (R-011): it is no click in the statistics
+    if (r && outcome === 'aborted' && this.clickLines.delete(line)) r.counts.clicks--;
   }
 
   pause(kind: PauseKind, reason: string): void {

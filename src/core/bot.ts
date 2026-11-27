@@ -3,7 +3,7 @@ import { ForbiddenActionError } from './actions/guard';
 import { Actor, humanDelay, resolve, sleep } from './actions/actor';
 import { clickPrecheck, waitForEffect } from './actions/effect';
 import type { BridgeClient } from './bridge/client';
-import type { WritableSetting } from './bridge/protocol';
+import type { BridgeCommand, WritableSetting } from './bridge/protocol';
 import { Logger } from './log/logger';
 import { detectScreen } from './screens/detector';
 import { DEFAULT_SETTINGS, normalizeSettings, SETTINGS_KEY, type BotSettings } from './settings';
@@ -22,6 +22,9 @@ import { storageProblemText } from './storage-problem';
 import { RunRecorder, type DecisionLine, type RecordableDecision, type RunContext } from './log/run-log';
 
 export type BotStatus = 'idle' | 'running' | 'paused';
+
+/** thrown inside attachSim when the bot was paused: no further simulation request (R-011) */
+class PausedDuringSim extends Error {}
 
 export interface BotStats {
   runs: number;
@@ -60,6 +63,7 @@ export class BotController {
   private readonly watchdog = new Watchdog();
   /** Not-Aus (R-011, D-039): pause() starts a new epoch – an action of an older epoch is never carried out */
   private epoch = 0;
+  private stepping = false;
   private reader: StateReader;
   private actor: Actor;
   private mem: EngineMemory = newMemory();
@@ -155,13 +159,17 @@ export class BotController {
    * reload and the overlay shows what that means and what to do (R-259). A later successful write clears it.
    */
   private async persist(key: string, value: unknown): Promise<void> {
-    let problem: string | null = null;
+    let mine: string | null = null;
     try {
-      if ((await this.platform.storage.set(key, value)) === 'volatile') problem = storageProblemText('volatile');
+      if ((await this.platform.storage.set(key, value)) === 'volatile') mine = storageProblemText('volatile');
     } catch (e) {
       noteError(`bot:persist:${key}`, e);
-      problem = storageProblemText(e);
+      mine = storageProblemText(e);
     }
+    // per key: a stats write that works must not hide that the settings still cannot be stored
+    if (mine) this.storageProblems.set(key, mine);
+    else this.storageProblems.delete(key);
+    const problem = this.storageProblems.size ? [...this.storageProblems.values()][0]! : null;
     if (problem !== this.view.storageProblem) {
       this.view.storageProblem = problem;
       if (problem) this.log.warn(`storage: ${problem}`);
@@ -209,6 +217,7 @@ export class BotController {
 
   start(): void {
     if (this.view.status === 'running') return;
+    this.epoch++; // a manual step still in flight is abandoned: only the loop acts from now on (R-011)
     this.view.status = 'running';
     this.view.pauseReason = null;
     this.view.pauseKind = null;
@@ -244,12 +253,15 @@ export class BotController {
 
   /** One single tick (manual stepping). */
   async step(): Promise<void> {
-    if (this.view.status === 'running') return;
+    if (this.view.status === 'running' || this.stepping) return; // one step at a time, never next to the loop
+    this.stepping = true;
     try {
       await this.tick();
       await this.refresh();
     } catch (e) {
       this.crashed(e, 'step crashed'); // same handling as the loop – never a silent rejection (R-147, R-199)
+    } finally {
+      this.stepping = false;
     }
   }
 
@@ -281,6 +293,8 @@ export class BotController {
     this.log.error(what, String(e));
     this.pause(errorPause('internal', String(e)), true, 'internal');
   }
+
+  private storageProblems = new Map<string, string>();
 
   /** set by the app: shows a toast (R-200) */
   onUnexpectedToast: ((text: string) => void) | null = null;
@@ -349,13 +363,21 @@ export class BotController {
   private catchCache: GameState['catchSim'] = null;
 
   /** Adds simulation data (game's own battle engine, sampled enemies) for map and boss-prep decisions. */
-  private async attachSim(st: GameState): Promise<void> {
+  private async attachSim(st: GameState, live: () => boolean = () => true): Promise<void> {
     const run = st.run;
+    // after a pause no further simulation is sent – each one can keep the page busy for up to 30 s (R-011)
+    const ask = async <T>(cmd: BridgeCommand, args: Record<string, unknown>, timeoutMs: number): Promise<T> => {
+      if (!live()) throw new PausedDuringSim();
+      const r = await this.bridge!.request<T>(cmd, args, timeoutMs);
+      if (!live()) throw new PausedDuringSim();
+      return r;
+    };
     if (this.bridge && st.screen.kind === 'starter' && this.doc.querySelector('#starter-choices .dex-card')) {
       try {
         const ids = [...new Set(readPcCards(this.doc).map((c) => c.speciesId))];
-        st.pcStats = await this.bridge.request('speciesStats', { ids }, 5000);
+        st.pcStats = await ask('speciesStats', { ids }, 5000);
       } catch (e) {
+        if (e instanceof PausedDuringSim) return;
         this.log.warn('PC stats unavailable', String(e));
       }
     }
@@ -368,16 +390,16 @@ export class BotController {
           const nodes = Object.values(run.map.nodes)
             .filter((n) => !n.visited && (n.type === 'battle' || n.type === 'trainer' || n.type === 'question'))
             .map((n) => n.id);
-          const ns = await this.bridge.request<{ rates: Record<string, Record<number, number>> }>(
+          const ns = await ask<{ rates: Record<string, Record<number, number>> }>(
             'simulateNodes',
             { nodes, boosts: [0, 4, 8, 12], n: 14 },
             15000,
           );
           const boosts = [0, 2, 4, 6, 8, 10, 12, 14, 16];
           type BossRes = { boss: { name: string } | null; scenarios: { boost: number; winRate: number }[] };
-          const b0 = await this.bridge.request<BossRes>('simulateBoss', { boosts, n: 24 }, 15000);
-          const b1 = await this.bridge.request<BossRes>('simulateBoss', { boosts, n: 24, heal: true }, 15000);
-          const b2 = await this.bridge.request<BossRes>(
+          const b0 = await ask<BossRes>('simulateBoss', { boosts, n: 24 }, 15000);
+          const b1 = await ask<BossRes>('simulateBoss', { boosts, n: 24, heal: true }, 15000);
+          const b2 = await ask<BossRes>(
             'simulateBoss',
             { boosts: [0, 4, 8, 12, 16, 20, 24, 28], n: 16, heal: true, ahead: 1 },
             15000,
@@ -408,7 +430,7 @@ export class BotController {
           if (paths.length) {
             const n = Math.max(10, Math.min(30, Math.floor(960 / paths.length)));
             const t0 = Date.now();
-            const ps = await this.bridge.request<{
+            const ps = await ask<{
               results: {
                 path: string[];
                 success: number;
@@ -436,7 +458,7 @@ export class BotController {
             let bestVal = Math.max(...top.map(scoreOf(base)));
             for (const order of FLAGS.jointOrder ? alt.values() : []) {
               if (run.team.length < 2 || !top.length) break;
-              const r2 = await this.bridge.request<{
+              const r2 = await ask<{
                 results: { path: string[]; success: number; next: number; avgLevel: number }[];
               }>('simulatePaths', { paths: top, n: 20, nextGain: 6, order }, 30000);
               const sim2 = { ...base, pathSim: Object.fromEntries(r2.results.map((r) => [r.path.join('>'), r])) };
@@ -460,14 +482,14 @@ export class BotController {
         const icons = all.map((c) => c.querySelector('img')?.getAttribute('src') ?? '');
         const replace = !!this.doc.querySelector('#passive-choices.is-replace-grid');
         if (icons.length) {
-          st.relicSim = await this.bridge.request('simulateRelics', { icons, replace, n: 24 }, 30000);
+          st.relicSim = await ask('simulateRelics', { icons, replace, n: 24 }, 30000);
           this.log.debug('relic simulation', st.relicSim);
         }
       }
       if (st.screen.kind === 'catch' && run.catchOffer?.length) {
         const key = `catch|${run.currentMap}|${run.currentNodeId}|${teamSig}|${run.catchOffer.map((m) => m.speciesId).join(',')}`;
         if (key !== this.catchKey) {
-          const r = await this.bridge.request<{ options: NonNullable<GameState['catchSim']> }>(
+          const r = await ask<{ options: NonNullable<GameState['catchSim']> }>(
             'simulateCatch',
             { boost: 4, n: 20 },
             20000,
@@ -489,7 +511,7 @@ export class BotController {
           add([...ident].sort((a, b) => run.team[b]!.level - run.team[a]!.level));
           add([...ident].sort((a, b) => run.team[a]!.level - run.team[b]!.level));
           add([...ident].sort((a, b) => run.team[b]!.currentHp - run.team[a]!.currentHp));
-          const r = await this.bridge.request<{ scenarios: { order: number[]; winRate: number; avgAlive: number }[] }>(
+          const r = await ask<{ scenarios: { order: number[]; winRate: number; avgAlive: number }[] }>(
             'simulateBoss',
             { orders: [...cands.values()], n: 40 },
             20000,
@@ -500,6 +522,7 @@ export class BotController {
         st.orderSim = this.orderCache;
       }
     } catch (e) {
+      if (e instanceof PausedDuringSim) return;
       this.log.warn('simulation unavailable – using heuristics', String(e));
     }
   }
@@ -530,7 +553,7 @@ export class BotController {
         return { kind: 'pause', why, cause: 'stalled' };
       }
     }
-    await this.attachSim(st);
+    await this.attachSim(st, live);
     if (!live()) return paused; // a pause during a long simulation: no "last" action (R-011)
     const d = decide(st, this.doc, this.view.settings, this.mem);
     this.view.lastDecision = `${d.kind}: ${d.why}`;
@@ -614,18 +637,22 @@ export class BotController {
     live: () => boolean,
   ): Promise<void> {
     if (!live()) return;
-    this.decided(d, st, { swaps: d.swaps, target: d.target });
+    const line = this.decided(d, st, { swaps: d.swaps, target: d.target });
+    const aborted = () => {
+      if (line) this.rec(() => this.runs.setOutcome(line, 'aborted'));
+    };
     (this.doc.activeElement as HTMLElement | null)?.blur?.();
     for (const k of d.swaps) {
       const before = this.teamOrder();
-      if (!(await this.actor.pressKey(this.doc, `Digit${k + 1}`, String(k + 1), { shift: true }, live))) return;
+      if (!(await this.actor.pressKey(this.doc, `Digit${k + 1}`, String(k + 1), { shift: true }, live)))
+        return aborted();
       let ok = false;
       for (let i = 0; i < 10 && !ok; i++) {
         await sleep(120);
         await this.reader.read();
         ok = this.teamOrder() !== before;
       }
-      if (!live()) return; // paused between two presses: no further key (R-011)
+      if (!live()) return aborted(); // paused between two presses: no further key (R-011)
       if (!ok) {
         this.mem.reorderFailures++;
         this.log.warn(`reorder step Shift+${k + 1} had no effect – keeping current order`);
@@ -677,7 +704,8 @@ export class BotController {
     const limit = careful ? 1 : MAX_ATTEMPTS;
     this.log.warn(`${why} (attempt ${this.failCount}/${limit})`);
     if (this.failCount >= limit) {
-      this.pause(errorPause('failing', why), true, 'failing');
+      // the user paused while the bot waited for the effect: their pause stands, never turned into "failing"
+      if (live()) this.pause(errorPause('failing', why), true, 'failing');
       return;
     }
     if (live()) await sleep(600 * 2 ** (this.failCount - 1)); // backoff – not after a pause (R-011)
@@ -693,7 +721,7 @@ export class BotController {
    */
   private async doSwap(d: Extract<Decision, { kind: 'swapTeam' }>, st: GameState, live: () => boolean): Promise<void> {
     if (!live()) return;
-    this.decided(d, st, { swap: [d.from, d.to], where: d.where });
+    const line = this.decided(d, st, { swap: [d.from, d.to], where: d.where });
     if (d.to !== 0 || d.from < 1 || d.from > 8) {
       this.log.warn('only lead swaps are supported');
       return;
@@ -701,7 +729,10 @@ export class BotController {
     const before = this.teamOrder();
     // make sure no input inside our overlay has focus (the game ignores keys typed into inputs)
     (this.doc.activeElement as HTMLElement | null)?.blur?.();
-    if (!(await this.actor.pressKey(this.doc, `Digit${d.from + 1}`, String(d.from + 1), { shift: true }, live))) return;
+    if (!(await this.actor.pressKey(this.doc, `Digit${d.from + 1}`, String(d.from + 1), { shift: true }, live))) {
+      if (line) this.rec(() => this.runs.setOutcome(line, 'aborted'));
+      return;
+    }
     for (let i = 0; i < 10; i++) {
       await sleep(150);
       await this.reader.read();
