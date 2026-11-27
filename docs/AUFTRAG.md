@@ -155,6 +155,12 @@ _(leer)_
 
 ---
 
+## Vorgabe des Nutzers (2026-11-27, wörtlich)
+
+> Wieso liegt der Fokus auf Story? Ich sagte nur dem Challenge Modus machen. Alles andere ist erstmal egal..
+
+Einordnung: siehe D-040. Bezug: „R4.2 **Challenges (Schwerpunkt)**“ in den früheren Anforderungen unten.
+
 ## Frühere Anforderungen aus dem Vorgänger-Branch (wörtlich, `claude/pokelike-bot-extension-skalzp:docs/REQUIREMENTS.md`, Stand 2026-11-25)
 
 _Das ist kein Originaltext des Nutzers, sondern die Anforderungsliste früherer Sessions, abgeleitet aus Gesprächen mit dem Nutzer. Sie ist hier unverändert gesichert, damit nichts verloren geht. Die Zuordnung zu den R-IDs steht am Ende von REQUIREMENTS.md, die Konflikte mit dem Hauptauftrag regeln D-017 bis D-020._

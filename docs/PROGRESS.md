@@ -5,6 +5,7 @@
 _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
+- **Fokus Challenge-Modus (D-040, Vorgabe des Nutzers vom 2026-11-27):** Nur noch Challenges, zuerst die Arena-Challenge. Story, Tower, Pokésort und P3d ruhen. Gerade läuft eine Baseline-Messung: Arena-Challenge live, 30 min, bereinigter Spielstand.
 - **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039): umgesetzt, Gesamt-Review bestanden.**
   - Review „mit Korrekturen“: 0 kritische und 2 wichtige Funde (Schritt plus Start handelte doppelt, eine Nutzerpause wurde zu `failing`), dazu 4 hochgestufte kleine Funde, alle behoben. Die restlichen kleinen Funde stehen unter „Vorbefunde aus dem Gesamt-Review P3c“.
   - Not-Aus (R-011), globale Fehler-Handler (R-200) und Speicherhinweise (R-259) sind mit Unit- und E2E-Tests belegt, die E2E-Tests zusätzlich mit Mutationsproben.
@@ -15,7 +16,8 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run), weitere Inkremente in dieser Reihenfolge:**
    - ~~Hänger bei langen Bosskämpfen (P3a)~~, ~~Run-Logs, Live-Urteil, MAIN-Welt-Fehler (P3b)~~ und ~~Not-Aus, unerwartete Fehler, Speicherprobleme (P3c)~~ sind erledigt (D-037, D-038, D-039).
-   - **P3d:** Neuladen mit Laufstatus und Run-Logs (R-109), doppelte Ausführung und Tab-Sperre (R-108, R-229), Eingriff des Nutzers (R-213), fremder Run nur nach Bestätigung (R-214).
+   - **Jetzt (D-040): Challenge-Modus.** Baseline in der Arena-Challenge messen, dann Todesursachen aus den Run-Logs auswerten und die Spielstärke gezielt verbessern, mit Messung vorher und nachher.
+   - _Ruht (D-040):_ P3d, also Neuladen (R-109), doppelte Ausführung und Tab-Sperre (R-108, R-229), Eingriff des Nutzers (R-213), fremder Run (R-214).
    - Aufklärung der Restbildschirme (D-029, R-224).
    - In der ersten **frisch gebauten** Session R-015 und R-016 bestätigen (D-034).
 2. Die Vorbefunde der Reviewer für P3 bis P5 stehen unten und in `docs/superpowers/audits/2026-11-26-p2-gate-ui-strategy.md`.

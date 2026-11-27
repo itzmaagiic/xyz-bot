@@ -309,3 +309,11 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Persistente Run-Logs (R-109) brauchen ein Speicherkonzept: Der localStorage-Fallback teilt sich das Kontingent der Spielseite, und große Logs dürfen die Spielstände nie gefährden. R-214 braucht dieselbe Markierung „Run des Bots“.
 - Freigabe nach D-006: eigenes Review. Keine Widersprüche zu R-145 (es wird nur gelesen bzw. unter `pkbot.*` geschrieben), R-147 und R-241.
 - Ausführung: inline mit TDD (wie D-031, D-037, D-038). Am Ende ein frischer Gesamt-Review.
+
+**D-040 – Fokus Challenge-Modus, alles andere ruht** (2026-11-27)
+- Entscheidung: Auf Vorgabe des Nutzers (wörtlich in `docs/AUFTRAG.md`, 2026-11-27) gilt ab jetzt nur noch der Challenge-Modus. Vorrang hat die Arena-Challenge mit Orden-Stufe, danach kommen Tages- und Wochen-Challenge.
+  - Spielstärke in Challenges geht vor. Gemessen wird live mit dem bereinigten Spielstand (`tests/fixtures/private/`, nur im Wegwerf-Profil, Tokens entfernt, Cloud blockiert), denn im frischen Profil sind Challenges gesperrt (R-227).
+  - Ruhend sind Story (R-038 und alle Story-spezifischen Punkte), Battle Tower, Pokésort und das Inkrement P3d (R-109, R-108, R-229, R-213, R-214). Sie werden nicht gestrichen und kommen später wieder dran.
+  - Erstes Ziel: eine Baseline in der Arena-Challenge (Siegquote, Orden, Todesursachen aus den Run-Logs), danach gezielte Verbesserungen mit Messung vorher und nachher.
+- Begründung: Die früheren Anforderungen nennen „Challenges (Schwerpunkt)“ (R4.2). Ich habe trotzdem nach dem Story-Ziel des Hauptauftrags getestet und entwickelt. Das war ein Fehler: Die Livetests liefen im frischen Profil, in dem nur Story geht.
+- Folgen: Die Phasenfolge bleibt formal bestehen (P3 ist die aktuelle Phase), aber die Arbeit folgt diesem Fokus. Das Review-Tor P3 wird auf den Challenge-Modus bezogen.
