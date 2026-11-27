@@ -256,9 +256,12 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       if (s.reorderTeam && os?.length && run) {
         const ident = run.team.map((_, i) => i).join(',');
         const cur = os.find((o) => o.order.join(',') === ident);
-        const best = [...os].sort((a, b) => b.winRate - a.winRate || b.avgAlive - a.avgAlive)[0]!;
-        const key = `sim|${screen.signature}|${run.team.map((m) => `${m.speciesId}:${m.level}`).join(',')}`;
-        const gain = best.winRate - (cur?.winRate ?? 0);
+        // D-043: a full clear of the league is often out of reach – then the order that gets furthest still counts
+        // (winning more members keeps the run going longer and is what a full clear is made of)
+        const value = (o: (typeof os)[number]) => o.winRate + 0.25 * (o.progress ?? o.winRate);
+        const best = [...os].sort((a, b) => value(b) - value(a) || b.avgAlive - a.avgAlive)[0]!;
+        const key = `sim|${screen.signature}|${run.team.map((m) => `${m.speciesId}:${m.level}:${m.currentHp}`).join(',')}`;
+        const gain = value(best) - (cur ? value(cur) : 0);
         if (best.order.join(',') !== ident && gain >= 0.04 && !mem.reorderTried.has(key) && mem.reorderFailures < 2) {
           mem.reorderTried.add(key);
           const swaps = starSwaps(
@@ -273,8 +276,13 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
             why: `boss sim: ${pct(cur?.winRate ?? 0)} → ${pct(best.winRate)} with order ${names}`,
           };
         }
-        const wr = cur?.winRate ?? best.winRate;
-        return { kind: 'click', selector: '#btn-elite-prep-continue', why: `FIGHT! (simulated win chance ${pct(wr)})` };
+        const at = cur ?? best;
+        const prog = at.progress != null && at.progress < 1 ? `, ${pct(at.progress)} of the chain on average` : '';
+        return {
+          kind: 'click',
+          selector: '#btn-elite-prep-continue',
+          why: `FIGHT! (simulated win chance ${pct(at.winRate)}${prog})`,
+        };
       }
       const sw = s.reorderTeam && run && mem.reorderFailures < 2 ? leadSwap(run.team, vsTypes(run)) : null;
       const key = `${screen.signature}|${run?.team.map((m) => m.speciesId).join(',')}`;
@@ -476,7 +484,9 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
           (state.sim.pathSim
             ? `sim route ${types}: survive + beat ${state.sim.bossName ?? 'boss'} ${pct(r.boss)}, team Ø Lv ${r.boost.toFixed(0)}`
             : `sim route ${types}: survive ${pct(r.survive)}, ${state.sim.bossName ?? 'boss'} ${pct(r.boss)} at +${r.boost.toFixed(0)} lv`) +
-          (state.sim.nextBossName ? `, then ${state.sim.nextBossName} ~${pct(r.next)}` : ''),
+          (state.sim.nextBossName
+            ? `, then ${state.sim.nextBossName} ~${pct(r.next)}${/ \+\d+$/.test(state.sim.nextBossName) ? ' of the fights' : ''}`
+            : ''),
       };
     }
   }

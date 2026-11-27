@@ -532,12 +532,15 @@ export class BotController {
           add([...ident].sort((a, b) => run.team[b]!.level - run.team[a]!.level));
           add([...ident].sort((a, b) => run.team[a]!.level - run.team[b]!.level));
           add([...ident].sort((a, b) => run.team[b]!.currentHp - run.team[a]!.currentHp));
-          const r = await ask<{ scenarios: { order: number[]; winRate: number; avgAlive: number }[] }>(
-            'simulateBoss',
-            { orders: [...cands.values()], n: 40 },
-            20000,
-          );
-          this.orderCache = r.scenarios.map((x) => ({ order: x.order, winRate: x.winRate, avgAlive: x.avgAlive }));
+          const r = await ask<{
+            scenarios: { order: number[]; winRate: number; avgAlive: number; progress?: number }[];
+          }>('simulateBoss', { orders: [...cands.values()], n: 40 }, 20000);
+          this.orderCache = r.scenarios.map((x) => ({
+            order: x.order,
+            winRate: x.winRate,
+            avgAlive: x.avgAlive,
+            progress: x.progress,
+          }));
           this.orderKey = key;
         }
         st.orderSim = this.orderCache;

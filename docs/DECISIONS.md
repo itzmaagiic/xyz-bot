@@ -346,3 +346,21 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Auf der Karte ist der Knoten 0 wert (ein verschenkter Schritt).
 - Begründung: Ob ein Item in der Tasche wirklich nutzlos ist, kann der Bot noch nicht sicher beurteilen. Nichts verkaufen ist der Weg ohne Verlust. Gezieltes Verkaufen kommt erst, wenn die Endlos-Challenge dran ist.
 - Ohne Bridge-Daten fehlt das Signal, und der Bot würde den Mart wie eine Relikt-Wahl behandeln. Das ist hingenommen, weil der Knoten nur im nicht gewählten Endlos-Modus vorkommt und Bridge-lose Runs ohnehin eingeschränkt sind.
+
+**D-043 – Liga: nur die verbleibenden Gegner simulieren, Reihenfolge nach Siegchance und Fortschritt** (2026-11-27, Änderung 2)
+- Befund aus der Messung `chal3`:
+  - 5 von 5 neuen Runs erreichten die Liga, eine Kette aus 5 Trainern ohne Heilung. Sie schlugen jeweils 3 bis 4 davon.
+  - In allen Liga-Kämpfen griff nur das erste Mitglied an. Mewtu ging mit 11 % KP in den Champion-Kampf, die anderen fünf hatten volle KP.
+  - Ursache: `endlessBossChain` simulierte vor jedem Liga-Kampf **alle** 5 Gegner, auch die schon besiegten. Mit dem angeschlagenen Team ergab das immer 0 %, also brachte keine Reihenfolge einen Gewinn, und der Bot stellte nie um.
+  - Das Spiel merkt sich den Stand in `state._erGauntlet = { nodeId: bossPrepKey('gauntlet'), idx }` und setzt ihn vor jedem Kampf.
+  - Die Vorschau „dann Liga ~90 %“ war nie eine Siegchance, sondern der Anteil der geschlagenen Liga-Gegner.
+- Entscheidung:
+  - **Kette ab dem aktuellen Gegner:** `remainingGauntlet` beginnt bei `idx`, aber nur, wenn `nodeId` zum aktuellen Knoten passt. Für die Vorschau (`ahead > 0`) zählt immer die ganze Liga.
+  - **Reihenfolge:** `simulateBoss` liefert zusätzlich `progress`, den Anteil der Kette, der im Schnitt geschlagen wird. Bewertet wird mit Siegchance + 0,25 × Fortschritt, umgestellt wird ab einem Gewinn von 0,04.
+    - Die Siegchance bleibt vorn.
+    - Ist ein Gesamtsieg außer Reichweite, entscheidet, wie weit eine Reihenfolge kommt. Dann führt zum Beispiel ein gesundes Mitglied statt eines angeschlagenen.
+  - Texte: Die Vorschau heißt jetzt „~N % of the fights“, der Kampfstart nennt den Fortschritt mit.
+- Begründung:
+  - Der Spielcode ist eindeutig. Ein besiegter Gegner wird nicht erneut bekämpft (`for (YOg = idx; …)`), also darf ihn die Simulation auch nicht erneut zählen.
+  - Der Fortschritt ist das glattere Signal, solange 40 Stichproben für einen Gesamtsieg nichts zeigen.
+- Prüfung: `tests/unit/league.test.ts`, danach eine Live-Messung `chal4` gegen `chal3`.

@@ -7,7 +7,7 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 ## In Arbeit
 - **Fokus Challenge-Modus (D-040, Vorgabe des Nutzers vom 2026-11-27):** Nur noch Challenges, zuerst die Arena-Challenge. Story, Tower, Pokésort und P3d ruhen.
   - **Stand der Spielstärke** (STRATEGY.md „Challenge-Modus“): Der Bot schafft die 8 Arenen sicher und verliert dann in der Liga. In der Messung `chal3` kamen 5 von 5 neuen Runs bis zur Liga, alle verloren dort. Die Vorschau auf die Liga ist viel zu optimistisch (~60–93 % statt 0 %).
-  - **Jetzt:** Änderung 2, also Liga verstehen sowie Vorschau und Vorbereitung darauf ausrichten.
+  - **Änderung 2 (D-043):** Fehler gefunden. Vor jedem Liga-Kampf wurden alle 5 Gegner neu simuliert, also stellte der Bot nie um. Behoben, Messung `chal4` läuft.
   - P3a, P3b, P3c, Overlay (D-041) und Mart-Fund (D-042) sind erledigt, siehe „Erledigt“.
 
 ## Nächster Schritt

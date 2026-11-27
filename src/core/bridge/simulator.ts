@@ -57,7 +57,15 @@ export interface SimRequest {
 
 export interface SimResult {
   boss: BossInfo | null;
-  scenarios: { boost: number; order: number[]; heal: boolean; winRate: number; avgAlive: number }[];
+  scenarios: {
+    boost: number;
+    order: number[];
+    heal: boolean;
+    winRate: number;
+    avgAlive: number;
+    /** share of the boss chain won on average (0..1) */
+    progress?: number;
+  }[];
   /** proof that the simulation did not disturb the run */
   restored: boolean;
 }
@@ -234,11 +242,37 @@ async function buildEndlessTrainer(SE: any): Promise<{ team: any[]; tiers: Recor
 }
 
 /** Boss (or gauntlet) of the current/next challenge map from endlessState.currentRegion.trainers. */
+/**
+ * League members still to fight (D-043). The game plays a gauntlet member by member and stores its position in
+ * `state._erGauntlet = { nodeId: bossPrepKey('gauntlet'), idx }` right before each fight (also across reloads).
+ * Members already beaten are not fought again, so the simulation must not replay them either.
+ */
+export function remainingGauntlet<T>(list: readonly T[], erGauntlet: unknown, ahead: number, key: string | null): T[] {
+  if (ahead !== 0 || list.length <= 1 || !erGauntlet || typeof erGauntlet !== 'object') return [...list];
+  const g = erGauntlet as { nodeId?: unknown; idx?: unknown };
+  if (key != null && g.nodeId !== key) return [...list];
+  const idx = typeof g.idx === 'number' && Number.isInteger(g.idx) ? g.idx : 0;
+  return list.slice(Math.min(Math.max(0, idx), list.length - 1));
+}
+
+declare function bossPrepKey(suffix?: string): string;
+
+function gauntletKey(): string | null {
+  try {
+    return typeof bossPrepKey === 'function' ? bossPrepKey('gauntlet') : null;
+  } catch (e) {
+    noteError('simulator:gauntlet-key', e);
+    return null;
+  }
+}
+
 async function endlessBossChain(ahead: number): Promise<{ name: string; teams: any[][]; metas: FightMeta[] } | null> {
   const es = typeof endlessState !== 'undefined' ? endlessState : null;
   const sp = es?.currentRegion?.trainers?.[(es.mapIndexInRegion ?? 0) + ahead];
   if (!sp) return null;
-  const list: any[] = sp.gauntlet?.length ? sp.gauntlet : [sp];
+  const list: any[] = sp.gauntlet?.length
+    ? remainingGauntlet(sp.gauntlet, state?._erGauntlet ?? null, ahead, gauntletKey())
+    : [sp];
   const teams: any[][] = [];
   const metas: FightMeta[] = [];
   for (const spec of list) {
@@ -344,13 +378,24 @@ export async function simulateBoss(req: SimRequest): Promise<SimResult> {
         const ordered = order.map((i) => projected[i]).filter(Boolean);
         let wins = 0;
         let alive = 0;
+        let fights = 0;
         for (let k = 0; k < n; k++) {
           seedRng((sb ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0);
           const p = clone(ordered);
-          if (fightChain(p, chain.teams, chain.metas)) wins++;
+          const won = fightChainCount(p, chain.teams, chain.metas);
+          if (won === chain.teams.length) wins++;
+          fights += won;
           alive += p.filter((m: any) => m.currentHp > 0).length;
         }
-        out.scenarios.push({ boost, order, heal: !!req.heal, winRate: wins / n, avgAlive: alive / n });
+        out.scenarios.push({
+          boost,
+          order,
+          heal: !!req.heal,
+          winRate: wins / n,
+          avgAlive: alive / n,
+          // share of the chain won on average – separates orders when a full clear is out of reach (D-043)
+          progress: fights / n / chain.teams.length,
+        });
       }
     }
     return out;

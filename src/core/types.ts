@@ -173,7 +173,8 @@ export interface GameState {
   /** simulation results from the game's own battle engine (map screen) */
   sim?: import('./strategy/sim-route').SimData | null;
   /** evaluated battle orders for the upcoming boss (elite-prep screen) */
-  orderSim?: { order: number[]; winRate: number; avgAlive: number }[] | null;
+  /** lead orders tried at the boss prep: full-chain win rate, survivors, share of the chain won (D-043) */
+  orderSim?: { order: number[]; winRate: number; avgAlive: number; progress?: number }[] | null;
   /** simulated relic offers (challenge relic screen) */
   relicSim?: {
     baseline: number;

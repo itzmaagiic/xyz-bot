@@ -111,7 +111,15 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 - Der übernommene Run aus dem Spielstand verlor wie in der Baseline gegen Pryce. Er zählt nicht, weil sein Team nicht vom Bot stammt.
 - **Änderung 1 wirkt bei den Fängen:** Die Teams bestehen jetzt aus deutlich stärkeren Arten. Am Ergebnis ändert das nichts, denn die 8 Arenen schafft der Bot ohnehin, und an der Liga scheitert er weiter.
 - **Die Liga ist der Engpass.** Auf der letzten Karte sagte die Simulation jedes Mal 0 % (einmal 11 % bzw. 19 %). Auf den Karten davor schätzte die Vorschau „dann Liga ~60–93 %“. Diese Vorschau ist viel zu optimistisch, deshalb bereitet sich der Bot nicht vor.
-- Nächster Schritt: verstehen, was „League +4“ im Spiel ist und warum die Vorschau so weit danebenliegt. Danach Vorschau und Vorbereitung auf die Liga ausrichten (Änderung 2).
+- „League +4“ ist eine Kette aus 5 Trainern (Top 4 und Champion) ohne Heilung. Vor jedem Kampf gibt es einen Vorbereitungs-Bildschirm. Die Gegner werden der Reihe nach stärker (Stufe des Champions minus 6 pro Platz davor).
+- **Die Runs kamen weiter als gedacht:** Jeder neue Run schlug 3 bis 4 der 5 Liga-Gegner.
+- **Gefundener Fehler:** Nur das erste Mitglied kämpfte, die anderen standen mit vollen KP daneben. Mewtu ging mit 11 % KP in den Champion-Kampf. Grund: Die Simulation spielte vor jedem Liga-Kampf wieder alle 5 Gegner durch, ergab so immer 0 %, und der Bot stellte nie um. Details in D-043.
+
+### Änderung 2 (2026-11-27, D-043)
+- Die Liga-Simulation beginnt beim aktuellen Gegner (`state._erGauntlet.idx`).
+- Die Reihenfolge vor jedem Liga-Kampf richtet sich nach Siegchance + 0,25 × Fortschritt. Ist kein Gesamtsieg in Sicht, entscheidet also, wie weit das Team kommt.
+- Die Vorschau heißt jetzt „~N % of the fights“, denn sie war nie eine Siegchance.
+- Messung: `artifacts/chal4`, folgt.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
 
