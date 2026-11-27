@@ -4,6 +4,12 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Hinzugefügt (Phase 3, P3c)
+
+- **Not-Aus** (R-011): Pause wirkt sofort, auch während einer Simulation, beim Zielen eines Klicks und zwischen Tauschschritten. Nach der Pause klickt der Bot nicht mehr und drückt keine Taste mehr.
+- **Unerwartete Fehler** in der Welt des Bots erscheinen als rote Zeile im Log und beim ersten Auftreten als Hinweis. Fehler des Spiels selbst werden nicht gemeldet (R-200).
+- **Einstellungen, die nicht gespeichert werden können**, zeigen einen dauerhaften Hinweis mit dem nächsten Schritt im Overlay und auf der Optionsseite. Beispiele: nach einem Update der Erweiterung „Seite neu laden“, im privaten Surfen auf dem iPhone „gelten nur bis zum Neuladen“ (R-259).
+
 ### Hinzugefügt (Phase 3, P3b)
 
 - **Run-Logs nach D-005** (R-006, R-009):

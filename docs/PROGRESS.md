@@ -1,11 +1,14 @@
 # Fortschritt
 
-**Stand:** 2026-11-26
+**Stand:** 2026-11-27
 **Aktuelle Phase:** P3
 _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt Phase 3: Kern, Zustand, Bildschirme, Aktionen, Logs und Baseline-Run, siehe `docs/PLAN.md`.)_
 
 ## In Arbeit
-- **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039):** Spec `docs/superpowers/specs/2026-11-27-p3c-not-aus-fehler-speicher-design.md`, Plan `docs/superpowers/plans/2026-11-27-p3c-not-aus-fehler-speicher.md` (4 Tasks, inline mit TDD).
+- **P3c „Not-Aus, unerwartete Fehler, Speicherprobleme“ (D-039): umgesetzt (T1 bis T3). Der Gesamt-Review läuft.**
+  - Not-Aus (R-011), globale Fehler-Handler (R-200) und Speicherhinweise (R-259) sind mit Unit- und E2E-Tests belegt, die E2E-Tests zusätzlich mit Mutationsproben.
+  - 431 Unit-Tests, 52 E2E-Tests bestanden, 3 gewollt übersprungen.
+  - Spec `docs/superpowers/specs/2026-11-27-p3c-not-aus-fehler-speicher-design.md`, Plan `docs/superpowers/plans/2026-11-27-p3c-not-aus-fehler-speicher.md`.
 - **P3a** (Kämpfe ohne Hänger, D-037) und **P3b** (Run-Logs, Live-Urteil, MAIN-Welt-Fehler, D-038) sind abgeschlossen, live belegt und haben ihren Gesamt-Review bestanden (siehe „Erledigt“). 411 Unit-Tests grün, 44 E2E-Tests bestanden, 3 gewollt übersprungen.
 
 ## Nächster Schritt
