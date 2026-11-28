@@ -474,11 +474,12 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
           why: `sim: route odds better with order ${mo.map((i) => run.team[i]?.name).join(' → ')}`,
         };
     }
-  } else if (run && s.reorderTeam && !state.sim && mem.reorderFailures < 2) {
-    // on the map the overall strongest member leads (regular fights are not the boss type)
-    // D-049: a healthy carry stays in front – it is the one that wins the fights and gets the levels
-    const carryLeads = FLAGS.carry && carryIndex(run.team) === 0 && (run.team[0]?.currentHp ?? 0) > 0;
-    const sw = carryLeads ? null : leadSwap(run.team, []);
+  } else if (run && s.reorderTeam && (!state.sim || FLAGS.carry) && mem.reorderFailures < 2) {
+    // on the map the overall strongest member leads (regular fights are not the boss type).
+    // D-049 (chal10b): every member that is still standing gains the levels, so a carry that is not yet the
+    // strongest (Slakoth) is safer behind a stronger lead; once it is the strongest it leads. Also after a boss
+    // prep moved someone else to the front – before, nothing restored the order while simulations ran.
+    const sw = leadSwap(run.team, []);
     const key = `map|${run.currentNodeId}|${run.team.map((m) => m.speciesId).join(',')}`;
     if (sw && !mem.reorderTried.has(key)) {
       mem.reorderTried.add(key);

@@ -170,3 +170,40 @@ describe('carry build in the decisions (D-049)', () => {
     );
   });
 });
+
+describe('lead on the map with the carry build (D-049, chal10b)', () => {
+  const s = { ...DEFAULT_SETTINGS, reorderTeam: true };
+  const st = (team: RunState['team']): GameState => {
+    const doc = loadFixture('map');
+    return {
+      screen: detectScreen(doc),
+      run: { ...runOf(team), map: null },
+      version: '3.8',
+      settings: null,
+      bridge: true,
+      // a simulation is available – before, the lead was never corrected then
+      sim: { nodeRates: {}, bossNoHeal: {}, bossHeal: {}, bossName: 'X' },
+    };
+  };
+  const strong = mon({ speciesId: 178, name: 'Xatu', level: 40, types: ['Psychic', 'Flying'] });
+  const slakoth = mon({ speciesId: 287, name: 'Slakoth', level: 15, types: ['Normal'], isStarter: true });
+  it('a weak carry in front gets a stronger shield; the carry is not dragged to the front', () => {
+    const doc = loadFixture('map');
+    withCarry(true, () => {
+      expect(decide(st([slakoth, strong]), doc, s, newMemory())).toMatchObject({ kind: 'swapTeam', from: 1, to: 0 });
+      const d = decide(st([strong, slakoth]), doc, s, newMemory());
+      expect(d.kind === 'swapTeam' && d.from === 1).toBe(false);
+    });
+  });
+  it('a carry that is the strongest comes back to the front after a boss prep moved someone else there', () => {
+    const doc = loadFixture('map');
+    const weak = mon({ speciesId: 25, name: 'Pikachu', level: 30, types: ['Electric'] });
+    withCarry(true, () =>
+      expect(decide(st([weak, { ...mmy, level: 45 }]), doc, s, newMemory())).toMatchObject({
+        kind: 'swapTeam',
+        from: 1,
+        to: 0,
+      }),
+    );
+  });
+});

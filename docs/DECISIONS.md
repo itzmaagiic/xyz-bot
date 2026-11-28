@@ -446,6 +446,9 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - **Level und Stärke:** Sonderbonbon, Mondstein (erzwungene Entwicklung), TM, Glücks-Ei und der Attacken-Lehrer gehen an den Carry, wenn das Spiel es erlaubt.
   - **Fänge:** Bei Gleichstand bevorzugt der Bot den Typ des Carrys, weil das den Typbonus stapelt, etwa Normal für Slaking (+25 % KP je Stufe) oder Psycho für Mewtu (Flächenschaden).
   - **Reihenfolge:** Ein gesunder Carry vorne wird auf der Karte nicht nach hinten getauscht. Die Liga-Reihenfolge entscheidet weiter die Simulation (D-043).
+    - **Nachtrag (erste Minuten von `chal10b`):** Diese Regel war falsch. Nach jedem Sieg bekommt jedes Mitglied Level, das noch steht, egal wer gekämpft hat. Ein noch schwacher Carry (Slakoth) fiel vorne oft um und bekam dann keine Level. Außerdem holte nichts den Carry zurück, nachdem die Boss-Reihenfolge jemand anderen nach vorne gestellt hatte (Xatu). Die Führungsregel auf der Karte lief bisher nur ohne Simulation, also praktisch nie.
+    - Jetzt gilt auch mit Simulation: Auf der Karte führt das stärkste gesunde Mitglied (`leadSwap`, mindestens 15 % stärker). Ein schwacher Carry bleibt so geschützt hinten. Ein Carry, der der Stärkste ist (Mega-Mewtu), kommt nach vorne zurück.
+    - Die beiden ersten Messungen wurden nach etwa 10 Minuten abgebrochen und mit diesem Stand neu gestartet.
   - Legendär-Status kommt neu aus der Bridge (`LEGENDARY_ID_SET`, nur gelesen) für Legend Might und Legend Aegis.
 - Messung: zwei Messungen parallel mit je 60 Minuten, Stufe 3, Wartezeit 150 ms. A ist Mega-Mewtu Y (automatischer Starter), B ist Slakoth (`LIVE_STARTER=287`), die „Slaking carry“-Strategie aus dem Guide.
 - Prüfung: `tests/unit/carry.test.ts` mit Mutationsproben (Gewicht 0 bzw. Lehrer-Regel aus → Test rot).
