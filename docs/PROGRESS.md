@@ -11,7 +11,8 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
   - **Änderung 3 (D-044):** Fänge und Relikte werden auch gegen die echte Liga bewertet, die ab dem Start feststeht. Messung `chal5` (Stufe 3): 1 Sieg in 5 Runs, vorher 0 von 5.
   - **Änderung 4 (D-045):** Live-Fund. Der Bot ersetzte den Mega-Stein des Starters durch Items. Behoben. Messung `chal6`: Mega bleibt, aber der Bot fing kaum noch (Team von 1 bis Etappe 5).
   - **Änderung 5 (D-046):** Neue Mitglieder haben auf der Route einen eigenen Wert. Messung `chal7`: Team voll, aber zu niedrige Level in der Liga (Ø 69 statt 95), weil der Bot zu viele Kämpfe ausließ.
-  - **Änderung 6 (D-047):** Korrektur. Ein Fang ist etwa einen Kampf wert, und der Level-Wert zählt nur das Start-Team. Messung `chal8` folgt.
+  - **Änderung 6 (D-047):** Korrektur. Ein Fang ist etwa einen Kampf wert, und der Level-Wert zählt nur das Start-Team. Messung `chal8`: 1 Sieg in 4 Runs, Ø Lv 87 in der Liga.
+  - **Änderung 7 (D-048):** Die Liga-Bewertung war zu optimistisch, jetzt rechnet sie mit dem gemessenen Level-Fortschritt. Messung `chal9` folgt.
   - P3a, P3b, P3c, Overlay (D-041) und Mart-Fund (D-042) sind erledigt, siehe „Erledigt“.
 
 ## Nächster Schritt

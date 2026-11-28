@@ -14,7 +14,7 @@
 import { FLAGS } from '../flags';
 import { simBase } from './sim-seed';
 import { noteError } from '../log/note';
-import { arenaLeagueSpecs } from './league';
+import { arenaLeagueSpecs, leagueBoost } from './league';
 declare const state: any;
 declare function runBattle(p: any[], e: any[], items: any[], eItems: any[], log: any, cfg: any, passives: any[]): any;
 declare function getRngSeed(): number;
@@ -364,21 +364,18 @@ async function arenaLeague(): Promise<Chain | null> {
   return chain;
 }
 
-/** Level the team typically has when it reaches the league: a few below the last gym (chal3: Lv 91–100 vs 102). */
-function leagueArrivalLevel(): number {
-  const s = state;
-  const gym8 = typeof WT_BOSS_LEVELS !== 'undefined' ? (WT_BOSS_LEVELS[7] ?? 102) : 102;
-  return Math.round(gym8 * (Number(s?.challengeLevelMult) || 1)) - 6;
+/** 0-based stage of the challenge (3 maps per region), null outside – like the bridge's challengeStage(). */
+function stageNow(): number | null {
+  const es = typeof endlessState !== 'undefined' ? endlessState : null;
+  if (!es) return null;
+  const r = Number(es.regionNumber);
+  const m = Number(es.mapIndexInRegion);
+  return Number.isFinite(r) && Number.isFinite(m) ? (r - 1) * 3 + m : null;
 }
 
-/** The team as it would look on arrival at the league: core (best three) at the arrival level, full HP. */
+/** The team as it would look on arrival at the league: everyone the measured levels further, full HP (D-048). */
 function towardLeague(team: any[]): any[] {
-  const core = team
-    .map((m: any) => m.level)
-    .sort((a: number, b: number) => b - a)
-    .slice(0, 3);
-  const avg = core.reduce((a: number, b: number) => a + b, 0) / Math.max(1, core.length);
-  return projectTeam(team, Math.max(0, Math.round(leagueArrivalLevel() - avg)), true);
+  return projectTeam(team, leagueBoost(stageNow()), true);
 }
 
 /** Average share of the league won (0..1) – smooth even when a full clear is out of reach. */
@@ -431,6 +428,11 @@ async function bossChain(ahead = 0): Promise<{ name: string; teams: any[][]; met
   return { name: teams.length > 1 ? `${name} +${teams.length - 1}` : String(name), teams };
 }
 
+/** Level cap like the game's applyLevelGain: none in endless/challenge runs, 100 in the story. */
+function levelCap(): number {
+  return typeof state !== 'undefined' && state?.isEndlessMode ? Infinity : 100;
+}
+
 /** Team as it would look after `boost` more levels (only living members level up – like applyLevelGain). */
 export function projectTeam(team: any[], boost: number, heal: boolean): any[] {
   return clone(team).map((m: any) => {
@@ -438,7 +440,7 @@ export function projectTeam(team: any[], boost: number, heal: boolean): any[] {
     if (heal) m.currentHp = m.maxHp;
     if (boost > 0 && (alive || heal)) {
       const ratio = m.maxHp > 0 ? m.currentHp / m.maxHp : 1;
-      m.level = Math.min(100, m.level + boost);
+      m.level = Math.min(levelCap(), m.level + boost);
       const hpBuff = m.statBuffs?.hp ?? 0;
       const maxHp = Math.floor(calcHp(m.baseStats.hp, m.level) * (1 + 0.05 * hpBuff + mutPct(m)) * augMult(m));
       m.maxHp = maxHp;
@@ -774,7 +776,7 @@ function levelUp(m: any, by: number, participated = false): void {
   // applyLevelGain: living members AND everyone who was sent out (even if they fainted) gain the levels
   if ((m.currentHp <= 0 && !participated) || by <= 0) return;
   const oldMax = m.maxHp;
-  m.level = Math.min(100, m.level + by);
+  m.level = Math.min(levelCap(), m.level + by);
   const hpBuff = m.statBuffs?.hp ?? 0;
   const newMax = Math.floor(calcHp(m.baseStats.hp, m.level) * (1 + 0.05 * hpBuff + mutPct(m)) * augMult(m));
   m.maxHp = newMax;

@@ -48,3 +48,16 @@ export function arenaLeagueSpecs<T>(
     out.push({ def: p.secondChampion, level: champLevel + elite, moveTier: 3, champion: true });
   return out;
 }
+
+/**
+ * Levels the team still gains before the league boss, from its current stage (0-based, 8 = the league map).
+ * Measured (chal5, chal8): the team average rises by ~9.5 levels per map, and it reaches the league at about
+ * Lv 87–95. The former fixed arrival level (last gym − 6 = 96) was too optimistic – teams that lost the league
+ * were rated "80–100 % of the fights" (D-048).
+ */
+export const LEVELS_PER_MAP = 9.5;
+
+export function leagueBoost(stage: number | null): number {
+  if (stage == null || !Number.isFinite(stage)) return 0;
+  return Math.round(Math.max(0, 8.5 - stage) * LEVELS_PER_MAP);
+}

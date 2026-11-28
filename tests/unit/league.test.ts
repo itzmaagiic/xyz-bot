@@ -3,7 +3,7 @@
  * members still to fight and pick the lead order by expected progress when a full clear looks out of reach.
  */
 import { describe, expect, it } from 'vitest';
-import { arenaLeagueSpecs } from '../../src/core/bridge/league';
+import { arenaLeagueSpecs, leagueBoost } from '../../src/core/bridge/league';
 import { leagueSpecs, remainingGauntlet } from '../../src/core/bridge/simulator';
 import { detectScreen } from '../../src/core/screens/detector';
 import { DEFAULT_SETTINGS } from '../../src/core/settings';
@@ -255,5 +255,18 @@ describe('leagueSpecs: reads the game state like rollWorldTournamentRegion, with
     } finally {
       cleanup();
     }
+  });
+});
+
+describe('leagueBoost: levels the team still gains before the league (D-048, measured chal5/chal8)', () => {
+  it('about 9.5 levels per remaining map (counted from mid-map), from where the team really is', () => {
+    expect(leagueBoost(0)).toBe(81); // 8.5 maps of fights until the league boss
+    expect(leagueBoost(4)).toBe(43);
+    expect(leagueBoost(8)).toBe(5); // the league map: its own fights are still ahead
+    expect(leagueBoost(11)).toBe(0);
+  });
+  it('unknown stage → no projection beyond the current levels', () => {
+    expect(leagueBoost(null)).toBe(0);
+    expect(leagueBoost(Number.NaN)).toBe(0);
   });
 });

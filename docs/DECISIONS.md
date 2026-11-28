@@ -422,3 +422,14 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Ein neues Mitglied ist damit nur noch etwa einen Kampf wert: 6 für Mitglied 2–3, 3 für 4–6.
 - Begründung: Die Liga verlangt beides, ein volles Team und hohe Level. Mit Lv 106–140 bei den Gegnern wiegt jeder Kampf schwer. Ein Fang soll einen Kampf ersetzen dürfen, aber nicht mehrere.
 - Prüfung: `tests/unit/sim-route.test.ts` („team building“: Fang gegen einen Kampf ja, gegen zwei nein), danach Messung `chal8`.
+
+**D-048 – Liga-Bewertung mit gemessenem Level-Fortschritt statt fester Annahme, keine Level-Grenze im Endlos-Modus** (2026-11-28, Änderung 7, Messung `chal8`)
+- Befund aus `chal8` (Änderungen 1–6, Stufe 3): 1 Sieg in 4 abgeschlossenen Runs, 3× Niederlage in der Liga. Durchschnittslevel in der Liga 87 (`chal7`: 69, `chal5`: 95).
+  - Für die drei Teams, die später in der Liga verloren, zeigte die Liga-Bewertung bei den letzten Fängen 80–100 % der Kämpfe.
+  - Ursache: D-044 projizierte das Team auf ein festes Ankunftslevel (Arena 8 − 6 = 96). Die Teams kamen aber mit Ø 69–88 an. Bei so viel Optimismus lagen fast alle Optionen bei 80–100 %, und die Liga unterschied sie kaum noch.
+  - Außerdem deckelte die Simulation projizierte Level bei 100. Im Endlos- und Challenge-Modus hat das Spiel keine Grenze (`applyLevelGain(..., isEndlessMode ? Infinity : 100)`), Mega-Mewtu erreichte Lv 109.
+- Entscheidung:
+  - **Projektion aus dem aktuellen Stand:** `leagueBoost(stage)` ergibt rund 9,5 Level pro verbleibender Karte, gerechnet ab Kartenmitte (8,5 − Etappe). Gemessen wurden etwa +9,5 bis +10 Level pro Karte in `chal5` und `chal8`. Liegt ein Run unter der Kurve, sieht die Liga-Bewertung das jetzt.
+  - **Level-Grenze wie im Spiel:** keine im Endlos-Modus, 100 in der Story (`levelCap()`).
+- Begründung: Eine Bewertung, die schwache Teams für fast sicher hält, trifft keine Unterschiede. Gemessene Werte sind ehrlicher als eine Annahme.
+- Prüfung: `tests/unit/league.test.ts` („leagueBoost“), danach Messung `chal9`.

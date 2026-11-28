@@ -161,7 +161,25 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 
 ### Änderung 6 (2026-11-28, D-047)
 - Der Level-Wert einer Route zählt nur das Start-Team. Ein neues Mitglied ist etwa einen Kampf wert (6 bzw. 3).
-- Messung: `artifacts/chal8`, folgt.
+- Messung `artifacts/chal8` (30 min, Stufe 3, Änderungen 1–6): **1 Sieg** in 4 abgeschlossenen Runs, 3× Niederlage in der Liga.
+  - Durchschnittslevel am Ende der Etappen 1/3/5/7/9: 10 / 32 / 51 / 67 / 87. Das ist besser als `chal7` (69 in der Liga), liegt aber noch unter `chal5` (95). Die Teams sind ab Etappe 3 bis 6 voll.
+  - Ein Team kam mit Lv 97–103 in die Liga und verlor trotzdem. Es bestand aus schwächeren Arten (Ursaring, Crustle, Dunsparce, Bouffalant, Gogoat).
+  - **Die Liga-Bewertung war zu optimistisch:** „league 80–100 % of the fights“ bei Teams, die dann verloren (D-048).
+
+### Änderung 7 (2026-11-28, D-048)
+- Die Liga-Bewertung projiziert das Team mit dem gemessenen Fortschritt von rund 9,5 Level pro verbleibender Karte statt auf ein festes Ankunftslevel.
+- Im Endlos-Modus gibt es in der Simulation keine Level-Grenze mehr, wie im Spiel.
+- Messung: `artifacts/chal9`, folgt.
+
+### Zwischenstand Siege auf Stufe 3 (abgeschlossene neue Runs, je etwa 30 min)
+| Messung | Stand | Siege |
+|---|---|---|
+| `chal3` | Änderung 1 | 0 / 5 |
+| `chal5` | + 2, 3 | 1 / 5 |
+| `chal6` | + 4 | 0 / 4 |
+| `chal7` | + 5 | 0 / 5 |
+| `chal8` | + 6 | 1 / 4 |
+- Bei 4 bis 5 Runs pro Messung sind die Unterschiede noch Zufall. Belegt sind vor allem die gefundenen Fehler, jeweils aus den Run-Logs. Für eine belastbare Quote braucht es längere Messungen.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
 

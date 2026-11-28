@@ -15,6 +15,7 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 - **Spielstärke:** Bei sicheren Bossen fängt der Bot die stärkere Art statt einer schwachen.
 - **Live-Funde behoben:** Ist ein Attacken-Lehrer ohne lernfähiges Mitglied, überspringt der Bot ihn. Den Bildschirm „Neues Pokémon!“ (Legendären-Knoten) nimmt er an.
 - **Liga** (D-043): Vor jedem Liga-Kampf simuliert der Bot nur noch die verbleibenden Gegner. Er stellt das Team so um, dass es am weitesten kommt, statt ein angeschlagenes Mitglied vorne zu lassen.
+- **Liga-Bewertung realistischer** (D-048): Der Bot rechnet mit dem Level-Fortschritt, den seine Teams wirklich machen, statt mit einer festen Annahme. Im Endlos-Modus gibt es in der Simulation keine Level-Grenze von 100 mehr, wie im Spiel.
 - **Liga als Ziel** (D-044): In der Arena-Challenge bewertet der Bot Fänge und Relikte auch danach, wie weit das Team in der Liga käme. Die Liga steht schon beim Start des Runs fest.
 - **Teamaufbau** (D-046, korrigiert in D-047): Ein starker Starter allein reicht für die Liga nicht. Der Bot nimmt deshalb Fang- und Legendären-Knoten mit, solange das Team nicht voll ist. Ein Fang zählt dabei etwa so viel wie ein Kampf, damit das Team nicht zu wenige Level sammelt.
 - **Mega-Steine** (D-045): Der Bot ersetzt den Mega-Stein des Starters nicht mehr durch andere Items. Mega-Steine bekommt nur die passende Art, und gehaltene Items tauscht er nur gegen klar bessere.
