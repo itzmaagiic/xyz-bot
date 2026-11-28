@@ -233,9 +233,9 @@ describe('hopeless chains', () => {
 });
 
 describe('team building (live finding chal6, 2026-11-27)', () => {
-  // A strong lead (Mega Mewtwo Y) wins every simulated gym alone at 100 %. A fresh catch is lower than the lead and
-  // pulls the team's average level down, so without its own value the route never caught anything and the team
-  // reached the league with 2–3 members.
+  // A strong lead (Mega Mewtwo Y) wins every simulated gym alone at 100 %, so catch nodes need their own value or the
+  // team reaches the league with 2–3 members (chal6). The level term only counts the members the route starts with
+  // (D-047), so the catch route is one won fight (2 levels) behind – a new member is worth about that much early.
   const map: GameMap = {
     mapIndex: 2,
     nodes: {
@@ -255,7 +255,7 @@ describe('team building (live finding chal6, 2026-11-27)', () => {
     ...base,
     pathSim: {
       't>x': { success: 1, next: 1, avgLevel: 20 },
-      'c>x': { success: 1, next: 1, avgLevel: 15 },
+      'c>x': { success: 1, next: 1, avgLevel: 18 },
     },
   };
   it('a lone carry still takes the catch while the gyms are safe', () => {
@@ -268,11 +268,18 @@ describe('team building (live finding chal6, 2026-11-27)', () => {
     };
     expect(chooseRouteSim(map, ['t', 'l'], { teamSize: 2, maxTeamSize: 6, nuzlocke: false }, s2)!.nodeId).toBe('l');
   });
+  it('a new member is worth about one fight, not several: two fights more beat one catch (D-047, chal7)', () => {
+    const s3: SimData = {
+      ...base,
+      pathSim: { 't>x': { success: 1, next: 1, avgLevel: 22 }, 'c>x': { success: 1, next: 1, avgLevel: 18 } },
+    };
+    expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 2, maxTeamSize: 6, nuzlocke: false }, s3)!.nodeId).toBe('t');
+  });
   it('with a full team the catch has no extra value; a risky catch route does not beat a safe one', () => {
     expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 6, maxTeamSize: 6, nuzlocke: false }, sim)!.nodeId).toBe('t');
     const risky: SimData = {
       ...base,
-      pathSim: { 't>x': { success: 1, next: 1, avgLevel: 20 }, 'c>x': { success: 0.8, next: 0.8, avgLevel: 15 } },
+      pathSim: { 't>x': { success: 1, next: 1, avgLevel: 20 }, 'c>x': { success: 0.8, next: 0.8, avgLevel: 18 } },
     };
     expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 1, maxTeamSize: 6, nuzlocke: false }, risky)!.nodeId).toBe('t');
   });

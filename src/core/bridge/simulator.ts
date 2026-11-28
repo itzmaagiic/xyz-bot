@@ -991,6 +991,7 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
         seedRng((sb ^ Math.imul(k + 1, 0x27d4eb2f) ^ Math.imul(pi + 1, 0x165667b1)) >>> 0);
         const base: any[] = s.team ?? [];
         const team: any[] = clone(req.order?.length ? req.order.map((i) => base[i]).filter(Boolean) : base);
+        const startLen = team.length;
         let alive = true;
         for (const id of path) {
           const node = s.map.nodes[id];
@@ -1044,8 +1045,10 @@ export async function simulatePaths(req: PathSimRequest): Promise<PathSimResult>
         }
         if (!alive) continue;
         ok++;
-        // strength of the core: average level of the three strongest members (fresh low catches don't drag it down)
+        // strength of the core: levels of the members the route starts with – a fresh catch must not drag the
+        // average down (D-047, its value is the member itself, see teamBuildValue); top3 flag: only the best three
         const top = team
+          .slice(0, Math.max(1, startLen))
           .map((m) => m.level)
           .sort((a, b) => b - a)
           .slice(0, FLAGS.top3 ? 3 : team.length);

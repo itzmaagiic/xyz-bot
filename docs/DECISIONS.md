@@ -410,3 +410,15 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Die Liga besteht aus 5 Trainern mit je 6 Pokémon ohne Heilung. Ein Einzelkämpfer kann sie nicht schlagen, egal wie stark er ist.
   - 20 gleicht den typischen Level-Nachteil eines Fangs aus (rund 5 Level Durchschnitt, also 12,5). Gegen Arena-Risiko kommt er nicht an.
 - Prüfung: `tests/unit/sim-route.test.ts` („team building“), danach Messung `chal7`.
+
+**D-047 – Korrektur zu D-046: Ein neues Mitglied ist etwa einen Kampf wert, der Level-Wert zählt nur das Start-Team** (2026-11-28, Änderung 6, Messung `chal7`)
+- Befund aus `chal7` (Änderungen 1–5, Stufe 3): 0 Siege in 5 abgeschlossenen Runs. Das Team war zwar ab Etappe 2 bis 3 voll, kam aber viel schwächer in der Liga an.
+  - Durchschnittslevel in der Liga: `chal5` 95, `chal6` 85, `chal7` 69.
+  - Kämpfe (Wild und Trainer) pro Run: `chal5` etwa 34, `chal7` etwa 28. Jeder ausgelassene Kampf kostet jedes lebende Mitglied 2 Level (`applyLevelGain`).
+  - D-046 hatte ein neues Mitglied so hoch bewertet wie vier gewonnene Kämpfe (20 bzw. 12 gegen 5 je Kampf).
+  - Dazu kommt Flächenschaden auf die wartenden Mitglieder (Spread, Wetter). Er besiegt schwache Mitglieder nach und nach, und besiegte Pokémon bekommen keine Level. In einem Run lag Mega-Mewtu bei Lv 86, der Rest bei Lv 33–48.
+- Entscheidung:
+  - Die eigentliche Ursache aus D-046 wird an der Wurzel behoben. Das Durchschnittslevel einer Route zählt nur die Mitglieder, mit denen die Route beginnt. Ein frischer Fang drückt es also nicht mehr (`simulatePaths`).
+  - Ein neues Mitglied ist damit nur noch etwa einen Kampf wert: 6 für Mitglied 2–3, 3 für 4–6.
+- Begründung: Die Liga verlangt beides, ein volles Team und hohe Level. Mit Lv 106–140 bei den Gegnern wiegt jeder Kampf schwer. Ein Fang soll einen Kampf ersetzen dürfen, aber nicht mehrere.
+- Prüfung: `tests/unit/sim-route.test.ts` („team building“: Fang gegen einen Kampf ja, gegen zwei nein), danach Messung `chal8`.

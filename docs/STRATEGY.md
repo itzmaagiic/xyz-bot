@@ -149,7 +149,19 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 
 ### Änderung 5 (2026-11-28, D-046)
 - Fang-, Legendären- und Shiny-Knoten zählen auf der Route, solange das Team nicht voll ist: je 20 für Mitglied 2–3, je 12 für 4–6, gewichtet mit der Überlebenschance.
-- Messung: `artifacts/chal7`, folgt.
+- Messung `artifacts/chal7` (30 min, Stufe 3, Änderungen 1–5): 0 Siege in 5 abgeschlossenen Runs. 4× Niederlage in der Liga, 1× gegen den 5. Arenaleiter.
+  - Das Team war ab Etappe 2 bis 3 voll, aber schwach. Durchschnittslevel am Ende jeder Etappe:
+
+    | Etappe | 1 | 3 | 5 | 7 | 9 (Liga) |
+    |---|---|---|---|---|---|
+    | `chal5` | 14 | 37 | 55 | 72 | 95 |
+    | `chal6` | 13 | 33 | 52 | 65 | 85 |
+    | `chal7` | 11 | 26 | 40 | 54 | 69 |
+  - Ursache: weniger Kämpfe (etwa 28 statt 34 pro Run), weil ein Fang so viel zählte wie vier Kämpfe. Dazu fielen schwache Mitglieder durch Flächenschaden um und bekamen keine Level mehr (D-047).
+
+### Änderung 6 (2026-11-28, D-047)
+- Der Level-Wert einer Route zählt nur das Start-Team. Ein neues Mitglied ist etwa einen Kampf wert (6 bzw. 3).
+- Messung: `artifacts/chal8`, folgt.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
 

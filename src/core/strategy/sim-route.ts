@@ -88,12 +88,14 @@ const NEXT_WEIGHT = 100;
 const PROGRESS_WEIGHT = 40;
 
 /**
- * Value of a new member while the team is not full (live finding chal6): a fresh catch is below the lead and pulls
- * the average level down, so without its own value a strong lead never caught anything and reached the league with
- * 2–3 members. Members 2–3 count more than 4–6.
+ * Value of a new member while the team is not full (live finding chal6, D-046): with a lead that wins every gym
+ * alone, catch nodes had no value and the team reached the league with 2–3 members. Sized like one won fight
+ * (+2 levels × FUTURE_LEVEL = 5) early and less later (D-047): at 20/12 (chal7) the bot skipped so many fights
+ * that the team reached the league ~25 levels lower. The route's level term counts only the members it starts
+ * with, so a fresh catch no longer drags the average down.
  */
-const NEW_MEMBER_EARLY = 20;
-const NEW_MEMBER_LATE = 12;
+const NEW_MEMBER_EARLY = 6;
+const NEW_MEMBER_LATE = 3;
 const JOINS: ReadonlySet<string> = new Set(['catch', 'legendary', 'shiny']);
 
 /** Team-building value of the catch-type nodes on a path, capped by the free slots. */
