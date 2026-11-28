@@ -262,3 +262,8 @@ Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/tr
   - Die Tages-Challenge lief beim ersten Versuch fehlerfrei durch. Das Spiel filtert den PC auf den Tages-Typ, und der Bot nahm daraus den besten Carry.
   - Schwachstelle in A: Slakoth ist am Anfang zerbrechlich. Zwei Runs endeten früh (Erika mit Slakoth Lv 10 und zwei frischen Fängen).
 
+### Änderung 10: Items für den Carry, Typ-Relikte nach Teamgröße (2026-11-28, D-051)
+- Prüfung der Picks in `chal11`: Relikte meist passend (Normal für Slaking, Geist fürs Geist-Team). Bei den Items gab es Fehler: Wahlband an Lapras, Seidenschal an Chaneira, Glücks-Ei am Carry in der Liga.
+- Jetzt bekommt der Carry ein klar besseres Item auch über eine freie Hand hinweg. Typ-Relikte zählen umso mehr, je mehr Mitglieder den Typ teilen.
+- Messung: `artifacts/chal12a` (Arena) und `artifacts/chal12b` (Tages-Challenge), parallel je 60 min.
+

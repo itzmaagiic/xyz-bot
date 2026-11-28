@@ -335,7 +335,10 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
                 ...rs0,
                 replace: rs0.replace.map(
                   (v, i) =>
-                    v + CARRY_RELIC_W * (carryRelicPriority(newId, carryR) - carryRelicPriority(ownIds[i], carryR)),
+                    v +
+                    CARRY_RELIC_W *
+                      (carryRelicPriority(newId, carryR, { team: run?.team ?? [] }) -
+                        carryRelicPriority(ownIds[i], carryR, { team: run?.team ?? [] })),
                 ),
               }
             : rs0;
@@ -376,7 +379,7 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       if (!cards.length) return { kind: 'wait', ms: 500, why: 'relics loading' };
       const rs = state.relicSim;
       const carry = FLAGS.carry ? run?.team[carryIndex(run?.team ?? [])] : undefined;
-      const prio = (id: string | null | undefined) => carryRelicPriority(id, carry);
+      const prio = (id: string | null | undefined) => carryRelicPriority(id, carry, { team: run?.team ?? [] });
       if (
         rs &&
         rs.offers.length === cards.length &&

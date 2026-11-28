@@ -2,7 +2,7 @@
 import { FLAGS } from '../flags';
 import type { Mon } from '../types';
 import { carryIndex } from './carry';
-import { itemValue, normalizeItemId, TYPE_BOOST_ITEMS } from './choices';
+import { ITEM_VALUES, itemValue, normalizeItemId, TYPE_BOOST_ITEMS } from './choices';
 import { bulk, effStats, monScore, moveOf, offense } from './evaluate';
 
 export interface BagEntry {
@@ -117,6 +117,25 @@ const holdsMega = (m: Mon) => !!m.heldMega || (!!m.heldItem && isMegaStoneId(m.h
 
 /** A held item is only given up for a clearly better one (and a Mega Stone never). */
 const REPLACE_MARGIN = 1;
+/** carry build (D-051): the carry trades its item for one worth at least this much more to it */
+const CARRY_SWAP_MARGIN = 0.5;
+
+/**
+ * Value of an item in the hands of one Pokémon (D-051): a Choice Band only helps a physical attacker, Specs a
+ * special one, a type item only the matching move type, the own Mega Stone is worth everything.
+ */
+export function holdValue(rawId: string | null | undefined, m: Mon): number {
+  if (!rawId) return 0;
+  const id = normalizeItemId(rawId);
+  if (isMegaStoneId(id)) return megaStoneFits(id, m) ? 20 : 0;
+  const mv = moveOf(m);
+  const t = TYPE_BOOST_ITEMS[id];
+  if (t) return mv.type === t ? 6.5 : 1;
+  if (id === 'choice_band') return mv.isSpecial ? 1 : 7.5;
+  if (id === 'choice_specs') return mv.isSpecial ? 7.5 : 1;
+  if (id === 'lucky_egg') return 4; // levels, but no help in the fight that decides the run
+  return ITEM_VALUES[id] ?? 3;
+}
 
 /**
  * Best holder for a held item among eligible team indices, or null = keep it in the bag.
@@ -130,6 +149,20 @@ export function chooseEquipHolder(
 ): { index: number; why: string } | null {
   const id = normalizeItemId(itemId);
   const stone = isMegaStoneId(id);
+  // carry build (D-051, chal11): the carry gets an item that is clearly better for it, even over a free hand –
+  // live, Lapras got the Choice Band and Blissey the Silk Scarf while Slaking held Leftovers
+  const carry = FLAGS.carry ? carryIndex(team) : -1;
+  if (
+    carry >= 0 &&
+    eligible.includes(carry) &&
+    !holdsMega(team[carry]!) &&
+    (!stone || megaStoneFits(id, team[carry]!))
+  ) {
+    const c = team[carry]!;
+    const gain = holdValue(id, c) - holdValue(c.heldItem, c);
+    if (gain > CARRY_SWAP_MARGIN)
+      return { index: carry, why: `${id} → ${c.name} (carry, +${gain.toFixed(1)} over ${c.heldItem ?? 'nothing'})` };
+  }
   const fits = eligible.filter((i) => team[i] && !holdsMega(team[i]!) && (!stone || megaStoneFits(id, team[i]!)));
   const free = fits.filter((i) => !team[i]!.heldItem);
   const worth = itemValue(id, team);

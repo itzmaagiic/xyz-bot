@@ -266,3 +266,62 @@ describe('PC starter: the best carry by its final form (D-050)', () => {
     expect(cards[c.index]!.speciesId).toBe(287);
   });
 });
+
+import { holdValue } from '../../src/core/strategy/items';
+
+describe('held items: the carry gets the best fitting item, even when it already holds one (D-051, chal11)', () => {
+  // live (chal11a): Lapras got the Choice Band and Blissey the Silk Scarf while Slaking held Leftovers
+  const slaking = mon({
+    speciesId: 289,
+    name: 'Slaking',
+    level: 60,
+    types: ['Normal'],
+    isStarter: true,
+    heldItem: 'leftovers',
+    baseStats: { hp: 150, atk: 160, def: 100, speed: 100, special: 95, spdef: 65 },
+  });
+  const lapras = mon({ speciesId: 131, name: 'Lapras', level: 55, types: ['Water', 'Ice'] });
+  const blissey = mon({ speciesId: 242, name: 'Blissey', level: 55, types: ['Normal'] });
+  it('item value depends on the holder: Choice Band for a physical attacker, a type item for its move type', () => {
+    expect(holdValue('choice_band', slaking)).toBeGreaterThan(holdValue('choice_specs', slaking));
+    expect(holdValue('silk_scarf', slaking)).toBeGreaterThan(holdValue('charcoal', slaking));
+  });
+  it('Choice Band and Silk Scarf go to the carry instead of a free member', () => {
+    withCarry(true, () => {
+      expect(chooseEquipHolder('choice_band', [lapras, slaking], [0, 1])).toMatchObject({ index: 1 });
+      // the carry trades a weak item for its type item (Leftovers vs. Silk Scarf is a near-tie and stays)
+      expect(chooseEquipHolder('silk_scarf', [blissey, { ...slaking, heldItem: 'amulet_coin' }], [0, 1])).toMatchObject(
+        {
+          index: 1,
+        },
+      );
+    });
+  });
+  it('a weaker item does not push out the carry’s better one; a Lucky Egg is replaced by a fight item', () => {
+    withCarry(true, () => {
+      const banded = { ...slaking, heldItem: 'choice_band' };
+      expect(chooseEquipHolder('leftovers', [lapras, banded], [0, 1])).toMatchObject({ index: 0 });
+      const egg = { ...slaking, heldItem: 'lucky_egg' };
+      expect(chooseEquipHolder('choice_band', [lapras, egg], [0, 1])).toMatchObject({ index: 1 });
+    });
+  });
+});
+
+describe('type relics count for every member that shares the type (D-051)', () => {
+  const giratina = mon({ speciesId: 487, name: 'Giratina', types: ['Ghost', 'Dragon'], isStarter: true });
+  const ghosts = ['Gengar', 'Spiritomb', 'Mismagius', 'Drifblim', 'Jellicent'].map((name, i) =>
+    mon({ speciesId: 900 + i, name, types: ['Ghost'] }),
+  );
+  it('on a Ghost team a Ghost relic beats a Dragon relic only Giratina uses', () => {
+    const team = [giratina, ...ghosts];
+    expect(carryRelicPriority('st_ghost_gem', giratina, { team })).toBeGreaterThan(
+      carryRelicPriority('st_dragon_gem', giratina, { team }),
+    );
+  });
+  it('a relic for a type the carry lacks still counts when much of the team has it', () => {
+    const slaking = mon({ speciesId: 289, name: 'Slaking', types: ['Normal'], isStarter: true });
+    const waters = [1, 2, 3].map((i) => mon({ speciesId: 700 + i, types: ['Water'] }));
+    expect(carryRelicPriority('st_water_x', slaking, { team: [slaking, ...waters] })).toBeGreaterThan(0);
+    expect(carryRelicPriority('st_water_x', slaking, { team: [slaking] })).toBe(0);
+  });
+});

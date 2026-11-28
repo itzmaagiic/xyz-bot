@@ -77,16 +77,25 @@ const TYPE_IDS: Record<string, RegExp> = {
 };
 const TYPE_RELIC = 4;
 
+/**
+ * Priority of a relic for the carry build. Type relics (D-051): base 4 for the carry's type, +0.5 for every other
+ * member sharing it (a Ghost relic on a Ghost team beats a Dragon relic only Giratina uses); a type the carry lacks
+ * counts 0.5 per member from two members on.
+ */
 export function carryRelicPriority(
   id: string | null | undefined,
   carry: Mon | undefined,
-  opts: { legendary?: boolean } = {},
+  opts: { legendary?: boolean; team?: readonly Mon[] } = {},
 ): number {
   if (!id || !carry) return 0;
   if (id in GENERIC) return GENERIC[id]!;
   if (/^legend_/.test(id)) return (opts.legendary ?? carry.legendary) ? 3 : 0;
   if (/^shiny_(dmg|def)$/.test(id)) return carry.isShiny ? 3 : 0;
-  for (const [type, re] of Object.entries(TYPE_IDS))
-    if (re.test(id)) return carry.types.includes(type) ? TYPE_RELIC : 0;
+  for (const [type, re] of Object.entries(TYPE_IDS)) {
+    if (!re.test(id)) continue;
+    const n = opts.team ? opts.team.filter((m) => m.types.includes(type)).length : carry.types.includes(type) ? 1 : 0;
+    if (carry.types.includes(type)) return Math.min(6, TYPE_RELIC + 0.5 * Math.max(0, n - 1));
+    return n >= 2 ? Math.min(3, 0.5 * n) : 0;
+  }
   return 0;
 }

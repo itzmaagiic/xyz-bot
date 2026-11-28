@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { FLAGS } from '../../src/core/flags';
 import { chooseItem, normalizeItemId } from '../../src/core/strategy/choices';
 import {
   chooseBagUse,
@@ -72,7 +73,16 @@ describe('bag use', () => {
   });
 });
 
-describe('targets and holders', () => {
+describe('targets and holders (role logic, without the carry build)', () => {
+  // the carry build (D-049/D-051) would make the highest member the carry; these check the plain role rules
+  let carryBefore = true;
+  beforeAll(() => {
+    carryBefore = FLAGS.carry;
+    FLAGS.carry = false;
+  });
+  afterAll(() => {
+    FLAGS.carry = carryBefore;
+  });
   const team = [phys, spec, tank];
   it('Sacred Ash revives the highest fainted member', () => {
     const t = [phys, { ...spec, currentHp: 0, level: 25 }, { ...tank, currentHp: 0, level: 18 }];

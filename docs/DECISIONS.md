@@ -466,3 +466,20 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Ein im Menü gewählter Starter hat weiter Vorrang. Die Option heißt jetzt „Bester Carry (automatisch)“.
 - Ergebnis für den PC des Spielstands: 1. Slakoth → Slaking (shiny, 50 Buff), 2. Regigigas, 3. Mampfaxo → Relaxo, 4. Giratina.
 - Prüfung: `tests/unit/carry.test.ts` („PC starter: the best carry by its final form“), dann Live-Messung in Arena- und Tages-Challenge.
+
+**D-051 – Der Carry bekommt die besten passenden Items, Typ-Relikte zählen je Teammitglied** (2026-11-28, Frage des Nutzers nach sinnvollen Relikten, Items und Synergien; Auswertung `chal11`)
+- Befund aus den Runs von `chal11`:
+  - Die Relikte passten meist: Normal-Relikte für Slaking (Poké Doll, Normal Tera Shard, Normalium Z, Life Orb), Geist-Relikte für das Geist-Team.
+  - Für Giratina (Geist/Drache) zählten Drachen-Relikte aber gleich viel wie Geist-Relikte. Dabei helfen Drachen-Relikte nur Giratina, Geist-Relikte allen sechs.
+  - **Items:** Lapras bekam das Wahlband und Chaneira den Seidenschal, während Slaking Überreste hielt. Ein Run ging mit dem Glücks-Ei am Carry in die Liga. Ursache: Freie Hände gingen immer vor, der Carry bekam nach seinem ersten Item nie ein besseres.
+- Entscheidung:
+  - **`holdValue(item, Pokémon)`:** Wert eines Items in der Hand eines bestimmten Pokémon.
+    - Wahlband nur für physische Angreifer, Wahlbrille nur für spezielle.
+    - Typ-Items nur für den passenden Attacken-Typ.
+    - Glücks-Ei zählt 4, weil es im entscheidenden Kampf nicht hilft.
+    - Der eigene Mega-Stein ist unantastbar.
+  - **Carry zuerst:** Ist ein Item für den Carry mindestens 0,5 mehr wert als sein jetziges, bekommt er es auch dann, wenn andere eine freie Hand haben. Das alte Item geht in die Tasche und später an ein anderes Mitglied (D-045).
+  - **Typ-Relikte:**
+    - Für den Typ des Carrys: Grundwert 4 plus 0,5 je weiteres Mitglied mit dem Typ, höchstens 6.
+    - Für einen Typ, den der Carry nicht hat: 0,5 je Mitglied ab zwei Mitgliedern, höchstens 3.
+- Prüfung: `tests/unit/carry.test.ts` („held items: the carry gets the best fitting item“, „type relics count for every member“), danach Messung `chal12a/b`.
