@@ -253,7 +253,7 @@ export function starSwaps(current: readonly number[], target: readonly number[])
  * Catch choice from simulation (index -1 = skip). Near-ties (≤ 0.03) are broken towards catching while the team
  * has room (an extra member is a backup the boss simulation barely sees early on) and then by offer level.
  */
-type Offer = { name: string; level: number; baseStats?: object };
+type Offer = { name: string; level: number; baseStats?: object; types?: readonly string[] };
 
 /** species strength: sum of the base stats (0 when unknown, e.g. a DOM-only card) */
 export function baseStatTotal(m: { baseStats?: object } | undefined): number {
@@ -269,6 +269,8 @@ export function chooseCatchSim(
   teamSize: number,
   maxTeamSize: number,
   team: readonly Offer[] = [],
+  /** carry build (D-049): near-ties go to a catch that shares a type with the carry (type bonus tiers) */
+  carryTypes: readonly string[] = [],
 ): { index: number; why: string } {
   if (!options.length) return { index: -1, why: 'no simulation' };
   const best = Math.max(...options.map((o) => o.value));
@@ -286,7 +288,9 @@ export function chooseCatchSim(
       const catchFirst = room || upgrade(take);
       return skipA === catchFirst ? 1 : -1;
     }
+    const shares = (i: number) => ((offer[i]?.types ?? []).some((t) => carryTypes.includes(t)) ? 1 : 0);
     return (
+      shares(b.index) - shares(a.index) ||
       baseStatTotal(offer[b.index]) - baseStatTotal(offer[a.index]) ||
       b.value - a.value ||
       (offer[b.index]?.level ?? 0) - (offer[a.index]?.level ?? 0)

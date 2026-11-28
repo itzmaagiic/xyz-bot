@@ -55,6 +55,8 @@ export interface Mon {
   /** best move as computed by the game itself (bridge) – optional in DOM fallback */
   move?: Move | null;
   isStarter?: boolean;
+  /** legendary species (bridge: LEGENDARY_ID_SET) – for relics like Legend Might */
+  legendary?: boolean;
   /** true when baseStats hold the displayed (level-adjusted) stats from a DOM card, not base stats */
   actualStats?: boolean;
 }

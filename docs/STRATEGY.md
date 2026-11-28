@@ -226,3 +226,7 @@ Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/tr
   - Statt jede Entscheidung einzeln zu simulieren, eine **feste Bauweise** verfolgen: Carry mit Level-Vorrang plus Relikt-Prioritäten (KP, Volltreffer, Schaden, Focus Sash) und einem Typ, der gestapelt wird.
   - Im PC des Spielstands liegt Slakoth (#287), die „Slaking carry“-Strategie lässt sich also direkt gegen Mega-Mewtu Y testen.
 
+### Änderung 8: Carry-Bauweise (2026-11-28, D-049)
+- Ein Pokémon trägt den Run. Level-Items und der Attacken-Lehrer gehen an den Carry, Relikte nach den Prioritäten des Carrys (KP, Volltreffer, Schaden, Überleben). Fänge mit dem Typ des Carrys werden bevorzugt.
+- Messung: `artifacts/chal10a` (Mega-Mewtu Y) und `artifacts/chal10b` (Slakoth) parallel, je 60 min, Stufe 3, 150 ms.
+

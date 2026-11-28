@@ -22,6 +22,7 @@ import { effectiveness } from '../data/typechart';
 import { chooseRoute, xpNeed } from './map';
 import { chooseCatchSim, chooseRouteSim, starSwaps } from './sim-route';
 import { chooseBagUse, chooseEquipHolder, chooseUsableTarget } from './items';
+import { carryIndex, carryRelicPriority, carryTypes } from './carry';
 import {
   choosePcStarter,
   chooseRelic,
@@ -61,6 +62,8 @@ export function newMemory(): EngineMemory {
 }
 
 const shown = (doc: Document, sel: string) => isShown(doc.querySelector(sel));
+/** weight of the carry's relic priority (0–5) next to simulated values (D-049): decides near-ties only */
+const CARRY_RELIC_W = 0.02;
 const pct = (x: number) => `${Math.round(x * 100)} %`;
 
 /** True when bridge data and DOM cards describe the same species in the same order. */
@@ -321,7 +324,21 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
         const incoming = parsed.find((_, i) => isNew(all[i]!));
         if (!incoming)
           return { kind: 'pause', why: 'relic replace dialog without the new relic', cause: 'inconsistent' };
-        const rs = state.relicSim;
+        const rs0 = state.relicSim;
+        // D-049: dropping a relic the carry needs costs, taking one it needs gains (ids: state.passives order)
+        const carryR = FLAGS.carry ? run?.team[carryIndex(run?.team ?? [])] : undefined;
+        const ownIds = run?.relics ?? [];
+        const newId = rs0?.offers.length ? (rs0.offers[rs0.offers.length - 1]!.id ?? null) : null;
+        const rs =
+          rs0 && carryR && ownIds.length === rs0.replace.length
+            ? {
+                ...rs0,
+                replace: rs0.replace.map(
+                  (v, i) =>
+                    v + CARRY_RELIC_W * (carryRelicPriority(newId, carryR) - carryRelicPriority(ownIds[i], carryR)),
+                ),
+              }
+            : rs0;
         if (rs?.replace.length && rs.replace.length === owned.length) {
           const bestI = rs.replace.reduce((b, v, i) => (v > rs.replace[b]! ? i : b), 0);
           const options = [
@@ -358,17 +375,24 @@ export function decide(state: GameState, doc: Document, s: BotSettings, mem: Eng
       const cards = readRelicCards(doc);
       if (!cards.length) return { kind: 'wait', ms: 500, why: 'relics loading' };
       const rs = state.relicSim;
-      if (rs && rs.offers.length === cards.length && rs.offers.some((o) => o.combat)) {
-        // simulated value first; team-type synergy only breaks near-ties (relics without combat effect)
+      const carry = FLAGS.carry ? run?.team[carryIndex(run?.team ?? [])] : undefined;
+      const prio = (id: string | null | undefined) => carryRelicPriority(id, carry);
+      if (
+        rs &&
+        rs.offers.length === cards.length &&
+        (rs.offers.some((o) => o.combat) || rs.offers.some((o) => prio(o.id) !== 0))
+      ) {
+        // simulated value first; the carry's needs (D-049) and team-type synergy break near-ties
         const team = run?.team ?? [];
-        const score = (i: number) => rs.offers[i]!.value + 0.004 * relicScore(cards[i]!, team);
+        const score = (i: number) =>
+          rs.offers[i]!.value + CARRY_RELIC_W * prio(rs.offers[i]!.id) + 0.004 * relicScore(cards[i]!, team);
         const best = cards.map((_, i) => i).reduce((b, i) => (score(i) > score(b) ? i : b), 0);
         const options = [
           ...cards.map((c, i) => ({
             id: `relic:${i}`,
             label: rs.offers[i]!.id ?? (c.types.join('/') || `relic ${i + 1}`),
             score: rs.offers[i]!.value,
-            factors: { synergy: relicScore(c, team) },
+            factors: { synergy: relicScore(c, team), carry: prio(rs.offers[i]!.id) },
           })),
           { id: 'relic:skip', label: 'skip', score: rs.baseline },
         ];
@@ -452,7 +476,9 @@ function decideMap(state: GameState, doc: Document, s: BotSettings, mem: EngineM
     }
   } else if (run && s.reorderTeam && !state.sim && mem.reorderFailures < 2) {
     // on the map the overall strongest member leads (regular fights are not the boss type)
-    const sw = leadSwap(run.team, []);
+    // D-049: a healthy carry stays in front – it is the one that wins the fights and gets the levels
+    const carryLeads = FLAGS.carry && carryIndex(run.team) === 0 && (run.team[0]?.currentHp ?? 0) > 0;
+    const sw = carryLeads ? null : leadSwap(run.team, []);
     const key = `map|${run.currentNodeId}|${run.team.map((m) => m.speciesId).join(',')}`;
     if (sw && !mem.reorderTried.has(key)) {
       mem.reorderTried.add(key);
@@ -537,7 +563,14 @@ function decideCatch(state: GameState, doc: Document): Decision {
   const offer = bridgeMatches ? run!.catchOffer! : domCards;
   const sim = bridgeMatches ? state.catchSim : null;
   if (sim?.length && run) {
-    const pick = chooseCatchSim(sim, offer, run.team.length, run.maxTeamSize, run.team);
+    const pick = chooseCatchSim(
+      sim,
+      offer,
+      run.team.length,
+      run.maxTeamSize,
+      run.team,
+      FLAGS.carry ? carryTypes(run.team) : [],
+    );
     const id = (i: number) => (i < 0 ? 'catch:skip' : `catch:${i}`);
     const options = sim.map((o) => ({
       id: id(o.index),
@@ -601,7 +634,11 @@ function decideEquip(doc: Document, run: RunState | null, kind: 'move-tutor' | '
   if (team.length) {
     if (kind === 'move-tutor') {
       const mons = eligible.map((i) => team[i]).filter((m): m is Mon => !!m);
-      if (mons.length === eligible.length) {
+      const carry = carryIndex(team);
+      if (FLAGS.carry && eligible.includes(carry)) {
+        pick = carry; // D-049: the carry learns first
+        why = `move tutor: ${team[carry]!.name} is the carry`;
+      } else if (mons.length === eligible.length) {
         const c = chooseHolder(mons, 'offense');
         pick = eligible[c.index]!;
         why = `move tutor: ${c.why}`;

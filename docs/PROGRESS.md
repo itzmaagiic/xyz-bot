@@ -13,7 +13,8 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
   - **Änderung 5 (D-046):** Neue Mitglieder haben auf der Route einen eigenen Wert. Messung `chal7`: Team voll, aber zu niedrige Level in der Liga (Ø 69 statt 95), weil der Bot zu viele Kämpfe ausließ.
   - **Änderung 6 (D-047):** Korrektur. Ein Fang ist etwa einen Kampf wert, und der Level-Wert zählt nur das Start-Team. Messung `chal8`: 1 Sieg in 4 Runs, Ø Lv 87 in der Liga.
   - **Änderung 7 (D-048):** Liga-Bewertung mit gemessenem Level-Fortschritt. Messung `chal9` (60 min): 0 von 8, kein messbarer Nutzen. Stand insgesamt: 3 Siege in rund 35 Runs.
-  - **Recherche Meta (2026-11-28, STRATEGY.md):** Bewährt sind eine feste Bauweise mit Carry und Typ-Stapel sowie Level als wichtigste Ressource. Nächstes Vorhaben: Bauweisen parallel messen, etwa Mega-Mewtu gegen Slaking-Carry.
+  - **Recherche Meta (2026-11-28, STRATEGY.md):** Bewährt sind eine feste Bauweise mit Carry und Typ-Stapel sowie Level als wichtigste Ressource.
+  - **Änderung 8 (D-049): Carry-Bauweise** umgesetzt und getestet. Messung parallel: Mega-Mewtu Y (`chal10a`) gegen Slakoth (`chal10b`), je 60 min.
   - P3a, P3b, P3c, Overlay (D-041) und Mart-Fund (D-042) sind erledigt, siehe „Erledigt“.
 
 ## Nächster Schritt

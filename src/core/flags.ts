@@ -16,6 +16,8 @@ const DEFAULT_FLAGS = {
   multiplicative: false,
   /** lookahead plays a typical next map (from the real end state) before the next boss */
   nextMapRoute: true,
+  /** carry build (D-049): levels, relics and catches serve one carry (the starter) */
+  carry: true,
 };
 
 export const FLAGS: typeof DEFAULT_FLAGS = {

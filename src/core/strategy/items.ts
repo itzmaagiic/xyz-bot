@@ -1,5 +1,7 @@
 /** Pure item logic: when to use bag items, who gets them, who should hold what. Ids = game ids (underscores). */
+import { FLAGS } from '../flags';
 import type { Mon } from '../types';
+import { carryIndex } from './carry';
 import { itemValue, normalizeItemId, TYPE_BOOST_ITEMS } from './choices';
 import { bulk, effStats, monScore, moveOf, offense } from './evaluate';
 
@@ -61,6 +63,10 @@ export function chooseUsableTarget(
   const cands = targetable.filter((i) => team[i]);
   if (!cands.length) return null;
   const by = (f: (m: Mon) => number) => cands.reduce((a, b) => (f(team[b]!) > f(team[a]!) ? b : a));
+  // carry build (D-049): levels, move tiers and the forced evolution go to the carry whenever the game allows it
+  const carry = carryIndex(team);
+  if (FLAGS.carry && carry >= 0 && cands.includes(carry) && ['rare_candy', 'tm_normal', 'moon_stone'].includes(id))
+    return { index: carry, why: `${id} → ${team[carry]!.name} (carry)` };
   let idx: number;
   switch (id) {
     case 'sacred_ash': {
@@ -143,7 +149,10 @@ export function chooseEquipHolder(
     idx = by((m) => bulk(m));
   else if (id === 'eviolite') idx = by((m) => bulk(m) * (m.level < 30 ? 1 : 0.5));
   else if (id === 'lucky_egg')
-    idx = by((m) => -m.level); // help the lowest catch up
+    idx =
+      FLAGS.carry && cands.includes(carryIndex(team))
+        ? carryIndex(team) // D-049: extra levels for the carry
+        : by((m) => -m.level); // help the lowest catch up
   else if (id === 'choice_scarf' || id === 'quick_claw') idx = by((m) => offense(m) / Math.max(1, effStats(m).spe));
   else idx = by((m) => offense(m));
   return { index: idx, why: `${id} → ${team[idx]!.name}` };

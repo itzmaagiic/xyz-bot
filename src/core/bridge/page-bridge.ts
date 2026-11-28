@@ -55,6 +55,17 @@ function num(v: unknown, d = 0): number {
 
 const TEAM_CAP = 6;
 
+declare const LEGENDARY_ID_SET: { has(id: number): boolean } | undefined;
+/** read-only: the game's own set of legendary species ids */
+function isLegendary(id: unknown): boolean {
+  try {
+    return typeof LEGENDARY_ID_SET !== 'undefined' && !!LEGENDARY_ID_SET && LEGENDARY_ID_SET.has(Number(id));
+  } catch (e) {
+    noteError('bridge:legendary', e);
+    return false;
+  }
+}
+
 export function serializeMon(m: any): Mon | null {
   if (!m || typeof m !== 'object') return null;
   const bs = m.baseStats ?? {};
@@ -93,6 +104,7 @@ export function serializeMon(m: any): Mon | null {
     moveTier,
     move,
     isStarter: !!m._isStarter,
+    legendary: isLegendary(m.speciesId),
   };
 }
 

@@ -433,3 +433,19 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - **Level-Grenze wie im Spiel:** keine im Endlos-Modus, 100 in der Story (`levelCap()`).
 - Begründung: Eine Bewertung, die schwache Teams für fast sicher hält, trifft keine Unterschiede. Gemessene Werte sind ehrlicher als eine Annahme.
 - Prüfung: `tests/unit/league.test.ts` („leagueBoost“), danach Messung `chal9`.
+
+**D-049 – Carry-Bauweise: Ein Pokémon trägt den Run** (2026-11-28, Wunsch des Nutzers nach der Meta-Recherche)
+- Befund:
+  - Nach 7 Änderungen an Einzelentscheidungen standen 3 Siege in rund 35 Runs. Die 60-Minuten-Messung `chal9` brachte 0 von 8.
+  - Die Community-Meta (pokelike-guide.fr, YouTube-Zusammenfassungen, STRATEGY.md „Meta“) empfiehlt eine feste Bauweise: „Slaking carries a whole run alone … max HP and crit passives first“. Dazu „levels are the strongest resource“.
+- Entscheidung (`src/core/strategy/carry.ts`, Schalter `FLAGS.carry`, Standard an):
+  - **Carry:** der Starter (`_isStarter`), sonst das höchste Level.
+  - **Relikte:** Prioritäten 0–5 für den Carry. Ganz oben stehen Focus Sash, Razor Claw, Power Bracer, Oran Berry, Big Root, HP Up und Stardust. Typ-Relikte zählen nur für den Typ des Carrys (4). Gegen einen Carry arbeiten Pure Incense, Lax Incense, Prism Scale und Eject Pack.
+    - Gewicht 0,02 je Punkt neben dem simulierten Wert: Bei echtem Risiko entscheidet die Simulation, bei Gleichstand der Carry.
+    - Beim Ersetzen zählt die Differenz zwischen neuem und abgelegtem Relikt.
+  - **Level und Stärke:** Sonderbonbon, Mondstein (erzwungene Entwicklung), TM, Glücks-Ei und der Attacken-Lehrer gehen an den Carry, wenn das Spiel es erlaubt.
+  - **Fänge:** Bei Gleichstand bevorzugt der Bot den Typ des Carrys, weil das den Typbonus stapelt, etwa Normal für Slaking (+25 % KP je Stufe) oder Psycho für Mewtu (Flächenschaden).
+  - **Reihenfolge:** Ein gesunder Carry vorne wird auf der Karte nicht nach hinten getauscht. Die Liga-Reihenfolge entscheidet weiter die Simulation (D-043).
+  - Legendär-Status kommt neu aus der Bridge (`LEGENDARY_ID_SET`, nur gelesen) für Legend Might und Legend Aegis.
+- Messung: zwei Messungen parallel mit je 60 Minuten, Stufe 3, Wartezeit 150 ms. A ist Mega-Mewtu Y (automatischer Starter), B ist Slakoth (`LIVE_STARTER=287`), die „Slaking carry“-Strategie aus dem Guide.
+- Prüfung: `tests/unit/carry.test.ts` mit Mutationsproben (Gewicht 0 bzw. Lehrer-Regel aus → Test rot).
