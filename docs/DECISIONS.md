@@ -452,3 +452,17 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
   - Legendär-Status kommt neu aus der Bridge (`LEGENDARY_ID_SET`, nur gelesen) für Legend Might und Legend Aegis.
 - Messung: zwei Messungen parallel mit je 60 Minuten, Stufe 3, Wartezeit 150 ms. A ist Mega-Mewtu Y (automatischer Starter), B ist Slakoth (`LIVE_STARTER=287`), die „Slaking carry“-Strategie aus dem Guide.
 - Prüfung: `tests/unit/carry.test.ts` mit Mutationsproben (Gewicht 0 bzw. Lehrer-Regel aus → Test rot).
+
+**D-050 – Starter automatisch: der beste Carry nach der Endform** (2026-11-28, Wunsch des Nutzers: „flexibel sein und auf alle sinnvollen Pokémon achten“)
+- Befund:
+  - „Automatisch“ nahm bisher das Pokémon mit der höchsten Basiswert-Summe der **gezeigten** Form. Der PC zeigt aber die Grundform einer Linie, also Slakoth mit BST 280 statt Slaking mit 670. Starke Spätentwickler fielen so durch, gewählt wurde Mega-Mewtu Y.
+  - In der Messung `chal10` gewann Slakoth als Carry 3 von 8 Runs, Mega-Mewtu 1 von 8.
+  - Bei Tages- und Wochen-Challenges filtert das Spiel den PC selbst. Bei Monotype zeigt es nur den Typ („gamePc.typeOnly“), bei der Baby-Challenge nur Babys, ohne Entwicklung (`challengeNoEvo`).
+- Entscheidung:
+  - **Carry-Potenzial** (`carryPotential`): KP × stärkerer Angriffswert × Wurzel der mittleren Verteidigung, geteilt durch 1000. Das ist der „offensive Tank“ aus dem Guide. Werte: Slaking 218, Arceus 158, Mewtu 155.
+  - **Bewertet wird die Endform der Linie** (`resolveEvoForLevel(id, 100)`, Bridge `speciesStats`, nur gelesen). Bei verbotener Entwicklung zählt die gezeigte Form.
+  - Dazu wie bisher Buff-Punkte (+0,5 % je Punkt), Shiny/Aurora (×1,08) und Mega-Stein (×1,12). Fehlen die Werte, steht die BST ein.
+  - Gewählt wird nur aus dem, was das Spiel zeigt. Bei „nur Typ X“ ist das also automatisch der beste Carry dieses Typs.
+  - Ein im Menü gewählter Starter hat weiter Vorrang. Die Option heißt jetzt „Bester Carry (automatisch)“.
+- Ergebnis für den PC des Spielstands: 1. Slakoth → Slaking (shiny, 50 Buff), 2. Regigigas, 3. Mampfaxo → Relaxo, 4. Giratina.
+- Prüfung: `tests/unit/carry.test.ts` („PC starter: the best carry by its final form“), dann Live-Messung in Arena- und Tages-Challenge.

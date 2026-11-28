@@ -110,7 +110,7 @@ export function buildSettingsForm(
     roster = [];
   }
   if (roster.length) {
-    const opts: [string, string][] = [['auto', 'Stärkster (automatisch)']];
+    const opts: [string, string][] = [['auto', 'Bester Carry (automatisch)']];
     if (s.chalStarter != null && !roster.some((r) => r.id === s.chalStarter))
       opts.push([String(s.chalStarter), `#${s.chalStarter}`]);
     for (const r of roster)

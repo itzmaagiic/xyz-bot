@@ -15,6 +15,7 @@ Alle nennenswerten Änderungen am Bot. Format nach [Keep a Changelog](https://ke
 - **Spielstärke:** Bei sicheren Bossen fängt der Bot die stärkere Art statt einer schwachen.
 - **Live-Funde behoben:** Ist ein Attacken-Lehrer ohne lernfähiges Mitglied, überspringt der Bot ihn. Den Bildschirm „Neues Pokémon!“ (Legendären-Knoten) nimmt er an.
 - **Liga** (D-043): Vor jedem Liga-Kampf simuliert der Bot nur noch die verbleibenden Gegner. Er stellt das Team so um, dass es am weitesten kommt, statt ein angeschlagenes Mitglied vorne zu lassen.
+- **Starter automatisch nach Carry-Eignung** (D-050): Der Bot bewertet jedes Pokémon im PC nach seiner Endform, also Slakoth als Slaking. Er wählt den besten „offensiven Tank“ (KP, Angriff, Verteidigung) samt Shiny, Buff-Punkten und Mega-Stein. Bei Tages- und Wochen-Challenges wählt er den besten der erlaubten Pokémon.
 - **Carry-Bauweise** (D-049): Ein Pokémon, der Starter, trägt den Run. Es bekommt Sonderbonbons, Glücks-Ei, TM und Attacken-Lehrer, dazu die Relikte, die es am Leben halten und stärker zuschlagen lassen. Fänge vom Typ des Carrys werden bevorzugt, weil sie den Typbonus stapeln.
 - **Liga-Bewertung realistischer** (D-048): Der Bot rechnet mit dem Level-Fortschritt, den seine Teams wirklich machen, statt mit einer festen Annahme. Im Endlos-Modus gibt es in der Simulation keine Level-Grenze von 100 mehr, wie im Spiel.
 - **Liga als Ziel** (D-044): In der Arena-Challenge bewertet der Bot Fänge und Relikte auch danach, wie weit das Team in der Liga käme. Die Liga steht schon beim Start des Runs fest.

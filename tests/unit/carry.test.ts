@@ -207,3 +207,62 @@ describe('lead on the map with the carry build (D-049, chal10b)', () => {
     );
   });
 });
+
+import { choosePcStarter, carryPotential, readPcCards } from '../../src/core/strategy/challenge';
+
+describe('PC starter: the best carry by its final form (D-050)', () => {
+  // real base stats (v3.8 dex): Slaking, Mewtwo, Arceus, Snorlax; roots as the PC shows them
+  const SLAKING = { hp: 150, atk: 160, def: 100, speed: 100, special: 95, spdef: 65 };
+  const MEWTWO = { hp: 106, atk: 110, def: 90, speed: 130, special: 154, spdef: 90 };
+  const ARCEUS = { hp: 120, atk: 120, def: 120, speed: 120, special: 120, spdef: 120 };
+  const SLAKOTH = { hp: 60, atk: 60, def: 60, speed: 30, special: 35, spdef: 35 };
+  const stats = {
+    287: {
+      bst: 280,
+      types: ['Normal'],
+      stats: SLAKOTH,
+      final: { id: 289, bst: 670, types: ['Normal'], stats: SLAKING },
+    },
+    150: { bst: 680, types: ['Psychic'], stats: MEWTWO },
+    493: { bst: 720, types: ['Normal'], stats: ARCEUS },
+  };
+  const card = (speciesId: number, o: Partial<{ shiny: boolean; buff: number; mega: boolean }> = {}) => ({
+    speciesId,
+    shiny: false,
+    aurora: false,
+    buff: 0,
+    mega: false,
+    ...o,
+  });
+
+  it('an offensive tank in its final form beats a higher base stat total (guide: "Slaking carries a run")', () => {
+    expect(carryPotential(SLAKING)).toBeGreaterThan(carryPotential(MEWTWO));
+    expect(carryPotential(SLAKING)).toBeGreaterThan(carryPotential(ARCEUS));
+    const c = choosePcStarter([card(150), card(493), card(287)], stats);
+    expect(c.index).toBe(2);
+    expect(c.why).toMatch(/Slakoth|#287/);
+    expect(c.why).toMatch(/289|Slaking/);
+  });
+
+  it('only what the game shows counts (daily monotype: the PC lists one type) – the best of those', () => {
+    const c = choosePcStarter([card(150, { shiny: true, buff: 50, mega: true })], stats);
+    expect(c.index).toBe(0);
+  });
+
+  it('without final-form data (or evolution forbidden) the current form is judged', () => {
+    const noFinal = { ...stats, 287: { bst: 280, types: ['Normal'], stats: SLAKOTH } };
+    expect(choosePcStarter([card(150), card(287)], noFinal).index).toBe(0);
+  });
+
+  it('shiny, vitamins and a mega stone still lift a carry, and a chosen species is respected', () => {
+    expect(choosePcStarter([card(150), card(150, { shiny: true, buff: 50 })], stats).index).toBe(1);
+    expect(choosePcStarter([card(287), card(150)], stats, 150).index).toBe(1);
+  });
+
+  it('the real PC grid parses and every card gets a score', () => {
+    const cards = readPcCards(loadFixture('chal-starter-pc'));
+    const c = choosePcStarter(cards, stats);
+    expect(c.options).toHaveLength(cards.length);
+    expect(cards[c.index]!.speciesId).toBe(287);
+  });
+});

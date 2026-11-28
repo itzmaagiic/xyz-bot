@@ -15,6 +15,19 @@ export interface PcCard {
 export interface SpeciesStats {
   bst: number;
   types: string[];
+  /** base stats of this form (bridge, __POKEDEX__) */
+  stats?: StatBlock;
+  /** final form of the line (resolveEvoForLevel(id, 100)); absent when it cannot evolve or evolving is forbidden */
+  final?: { id: number; name?: string; bst: number; types: string[]; stats?: StatBlock };
+}
+
+export interface StatBlock {
+  hp: number;
+  atk: number;
+  def: number;
+  speed: number;
+  special: number;
+  spdef: number;
 }
 
 /** Parses the PC starter grid (challenge starter screen). Language independent: sprite path, number, badge. */
@@ -34,12 +47,28 @@ export function readPcCards(doc: Document): PcCard[] {
 }
 
 /**
- * Starter value: base stat total dominates (a legendary at Lv 5 still out-scales everything), then vitamins
- * (each buff point ≈ +0.5 % stats), shiny (2 trait points) / aurora, and a mega stone that starts equipped.
+ * Carry potential of a stat block (D-050): an "offensive tank" – HP × the stronger attack stat × √ of the average
+ * defence, /1000. Community meta ("Slaking carries a whole run alone … max HP and crit first") and our own
+ * measurement (chal10: Slaking 3/8 wins, Mega Mewtwo Y 1/8) both favour bulk plus one big attack stat over a high
+ * base stat total. Slaking 218, Mewtwo 155, Arceus 158.
+ */
+export function carryPotential(b: StatBlock): number {
+  const off = Math.max(b.atk, b.special);
+  return (b.hp * off * Math.sqrt((b.def + b.spdef) / 2)) / 1000;
+}
+
+/** ~ a species with all base stats 50 (BST 300) – used when the dex entry is unknown */
+const UNKNOWN_POTENTIAL = carryPotential({ hp: 50, atk: 50, def: 50, speed: 50, special: 50, spdef: 50 });
+
+/**
+ * Starter value (D-050): the carry potential of the line's FINAL form (the PC lists line roots – Slakoth, not
+ * Slaking), else of the shown form; then vitamins (each buff point ≈ +0.5 % stats), shiny (+1 trait point) /
+ * aurora, and a mega stone that starts equipped. Without stat blocks the base stat total stands in.
  */
 export function pcStarterScore(c: PcCard, stats: SpeciesStats | undefined): number {
-  const bst = stats?.bst ?? 300;
-  return bst * (1 + c.buff / 200) * (c.shiny || c.aurora ? 1.08 : 1) * (c.mega ? 1.12 : 1);
+  const block = stats?.final?.stats ?? stats?.stats;
+  const base = block ? carryPotential(block) : stats?.bst ? UNKNOWN_POTENTIAL * (stats.bst / 300) : UNKNOWN_POTENTIAL;
+  return base * (1 + c.buff / 200) * (c.shiny || c.aurora ? 1.08 : 1) * (c.mega ? 1.12 : 1);
 }
 
 export function choosePcStarter(
@@ -65,9 +94,11 @@ export function choosePcStarter(
   const tags = [c.shiny ? 'shiny' : '', c.aurora ? 'aurora' : '', c.mega ? 'mega' : '', c.buff ? `${c.buff} buff` : '']
     .filter(Boolean)
     .join(', ');
+  const st = stats[c.speciesId];
+  const into = st?.final ? ` → #${st.final.id}${st.final.name ? ' ' + st.final.name : ''}` : '';
   return {
     index: best,
-    why: `${isPreferred ? 'chosen' : 'PC'} starter #${c.speciesId} (BST ${stats[c.speciesId]?.bst ?? '?'}${tags ? ', ' + tags : ''})`,
+    why: `${isPreferred ? 'chosen' : 'PC'} starter #${c.speciesId}${into} (carry ${Math.round(pcStarterScore(c, st))}, BST ${st?.final?.bst ?? st?.bst ?? '?'}${tags ? ', ' + tags : ''})`,
     options,
   };
 }

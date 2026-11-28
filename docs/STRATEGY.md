@@ -243,3 +243,7 @@ Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/tr
   - Bei A zieht Mega-Mewtu davon (Lv 93), der Rest bleibt zurück (Ø 74). Vier Runs endeten schon vor der Liga.
   - Das deckt sich mit dem Guide („Slaking carries a whole run alone“). Die Stichprobe ist noch klein (8 gegen 8), die Richtung ist aber deutlich.
 
+### Änderung 9: Starter nach Carry-Potenzial der Endform (2026-11-28, D-050)
+- „Automatisch“ wählt den besten Carry, bewertet nach der Endform als offensiver Tank (KP × Angriff × √Verteidigung). Bei Tages- und Wochen-Challenges ist das der beste der vom Spiel erlaubten Pokémon.
+- Messung: `artifacts/chal11a` (Arena, automatisch, erwartet Slakoth) und `artifacts/chal11b` (Tages-Challenge, automatisch), parallel je 60 min.
+

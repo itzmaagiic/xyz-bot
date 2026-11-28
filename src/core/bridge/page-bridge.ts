@@ -215,16 +215,48 @@ declare function openItemEquipModal(item: any, opts: any): void;
 declare const __POKEDEX__: Record<string, any>;
 
 /** Base stat totals and types from the game's own Pokédex table (for the PC starter choice). */
-function speciesStats(ids: number[]): Record<number, { bst: number; types: string[] }> {
-  const out: Record<number, { bst: number; types: string[] }> = {};
+declare function resolveEvoForLevel(id: number, level: number): number;
+
+type StatBlock = { hp: number; atk: number; def: number; speed: number; special: number; spdef: number };
+function statBlock(b: any): StatBlock {
+  return {
+    hp: num(b.hp),
+    atk: num(b.atk),
+    def: num(b.def),
+    speed: num(b.speed),
+    special: num(b.special),
+    spdef: num(b.spdef),
+  };
+}
+const sumStats = (b: StatBlock) => b.hp + b.atk + b.def + b.speed + b.special + b.spdef;
+
+/**
+ * Dex data for the PC starter choice (read only): stats of the shown form and of the line's final form
+ * (resolveEvoForLevel(id, 100)) – the PC lists line roots, so Slakoth must be judged as Slaking (D-050). No final
+ * form when the challenge forbids evolving (state.challengeNoEvo, e.g. baby challenges).
+ */
+function speciesStats(ids: number[]): Record<number, unknown> {
+  const dex = (typeof __POKEDEX__ !== 'undefined' && __POKEDEX__) || null;
+  const out: Record<number, unknown> = {};
+  const noEvo = typeof state !== 'undefined' && !!state?.challengeNoEvo;
   for (const id of ids.slice(0, 1000)) {
-    const e = (typeof __POKEDEX__ !== 'undefined' && __POKEDEX__?.[id]) || null;
+    const e = dex?.[id];
     if (!e?.baseStats) continue;
-    const b = e.baseStats;
-    out[id] = {
-      bst: num(b.hp) + num(b.atk) + num(b.def) + num(b.speed) + num(b.special) + num(b.spdef),
-      types: (e.types ?? []).map(String),
-    };
+    const stats = statBlock(e.baseStats);
+    let final: unknown;
+    if (!noEvo && typeof resolveEvoForLevel === 'function') {
+      try {
+        const f = Number(resolveEvoForLevel(id, 100));
+        const fe = f && f !== id ? dex?.[f] : null;
+        if (fe?.baseStats) {
+          const fs = statBlock(fe.baseStats);
+          final = { id: f, name: fe.name, bst: sumStats(fs), types: (fe.types ?? []).map(String), stats: fs };
+        }
+      } catch (err) {
+        noteError('bridge:evo', err);
+      }
+    }
+    out[id] = { bst: sumStats(stats), types: (e.types ?? []).map(String), stats, ...(final ? { final } : {}) };
   }
   return out;
 }
