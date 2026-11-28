@@ -279,3 +279,13 @@ Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/tr
   - **Muster über alle Slakoth-Messungen** (`chal10b`, `chal11a`, `chal12a`, zusammen 24 Runs): 10 Siege, aber 6 Runs endeten schon auf Etappe 1–2. Slakoth (BST 280) ist am Anfang zu schwach: einmal stand es allein vor der ersten Arena (Simulation 0 %), zweimal fiel das junge Team in einem normalen Kampf. Wer die Anfangsphase übersteht, gewinnt oft (10 von 18).
   - Giratina (keine Entwicklung, von Anfang an stark) hatte in der Tages-Challenge 1 frühe Niederlage in 16 Runs.
 
+### Starter-Vergleich Arena-Challenge, Stufe 3 (2026-11-28, `chal13a/b`, je 60 min, parallel)
+| Starter (Carry) | Abgeschlossene neue Runs | Siege | Frühe Niederlagen (Etappe 1–2) | Ø Level beim Liga-Start |
+|---|---|---|---|---|
+| Slakoth → Slaking (`chal10b`, `chal11a`, `chal12a`) | 24 | 10 (42 %) | 6 | ~98 |
+| Giratina (`chal13a`) | 8 | 2 | 0 | 86 |
+| Regigigas (`chal13b`) | 8 | **4 (50 %)** | **0** | 85 |
+- Starter ohne Entwicklung sterben nicht früh. Die frühen Niederlagen mit Slakoth lagen also an der schwachen Anfangsform.
+- Regigigas gewinnt mindestens so oft wie Slakoth, ohne das Risiko am Anfang. Giratina verliert in der Liga öfter.
+- Die Stichproben sind klein (8 Runs). Klar belegt ist nur der Unterschied bei den frühen Niederlagen.
+
