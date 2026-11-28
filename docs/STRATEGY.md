@@ -182,6 +182,8 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 | `chal9` | + 7 (60 min) | 0 / 8 |
 | `chal10a` | Carry Mega-Mewtu (60 min) | 1 / 8 |
 | `chal10b` | Carry Slakoth (60 min) | **3 / 8** |
+| `chal11a` | Starter automatisch → Slakoth (60 min) | **4 / 8** |
+| `chal11b` | Tages-Challenge Geist → Giratina (60 min) | **5 / 8** |
 - Bei 4 bis 5 Runs pro Messung sind die Unterschiede noch Zufall. Belegt sind vor allem die gefundenen Fehler, jeweils aus den Run-Logs. Für eine belastbare Quote braucht es längere Messungen.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
@@ -245,5 +247,18 @@ Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/tr
 
 ### Änderung 9: Starter nach Carry-Potenzial der Endform (2026-11-28, D-050)
 - „Automatisch“ wählt den besten Carry, bewertet nach der Endform als offensiver Tank (KP × Angriff × √Verteidigung). Bei Tages- und Wochen-Challenges ist das der beste der vom Spiel erlaubten Pokémon.
-- Messung: `artifacts/chal11a` (Arena, automatisch, erwartet Slakoth) und `artifacts/chal11b` (Tages-Challenge, automatisch), parallel je 60 min.
+- Messung parallel, je 60 min, 150 ms:
+
+  | | A: Arena-Challenge Stufe 3 (`chal11a`) | B: Tages-Challenge „nur Geist“ (`chal11b`) |
+  |---|---|---|
+  | Automatisch gewählt | Slakoth → Slaking (shiny, 50 Buff) | Giratina (shiny, 50 Buff), bester Geist-Carry |
+  | Abgeschlossene neue Runs | 8 | 8 |
+  | **Siege** | **4** | **5** |
+  | Niederlagen in der Liga | 2 | 3 |
+  | Frühere Niederlagen | 2 (Etappe 1 und 2, Slakoth noch schwach) | 0 |
+  | Ø Level in der Liga | 99 | 102 |
+  | Pausen, Fehler, unbekannte Bildschirme | keine | keine |
+  - **Bisher beste Quote: 9 Siege in 16 Runs (56 %)**, zum Vergleich etwa 9 % vor der Carry-Bauweise.
+  - Die Tages-Challenge lief beim ersten Versuch fehlerfrei durch. Das Spiel filtert den PC auf den Tages-Typ, und der Bot nahm daraus den besten Carry.
+  - Schwachstelle in A: Slakoth ist am Anfang zerbrechlich. Zwei Runs endeten früh (Erika mit Slakoth Lv 10 und zwei frischen Fängen).
 
