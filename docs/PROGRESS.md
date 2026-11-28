@@ -6,19 +6,10 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
 
 ## In Arbeit
 - **Fokus Challenge-Modus (D-040, Vorgabe des Nutzers vom 2026-11-27):** Nur noch Challenges, zuerst die Arena-Challenge. Story, Tower, Pokésort und P3d ruhen.
-  - **Stand der Spielstärke** (STRATEGY.md „Challenge-Modus“): Der Bot schafft die 8 Arenen sicher und verliert dann in der Liga. In der Messung `chal3` kamen 5 von 5 neuen Runs bis zur Liga, alle verloren dort. Die Vorschau auf die Liga ist viel zu optimistisch (~60–93 % statt 0 %).
-  - **Änderung 2 (D-043):** Fehler gefunden. Vor jedem Liga-Kampf wurden alle 5 Gegner neu simuliert, also stellte der Bot nie um. Behoben. In der Messung `chal4` gab es den ersten Challenge-Sieg (Team aus Legendären).
-  - **Änderung 3 (D-044):** Fänge und Relikte werden auch gegen die echte Liga bewertet, die ab dem Start feststeht. Messung `chal5` (Stufe 3): 1 Sieg in 5 Runs, vorher 0 von 5.
-  - **Änderung 4 (D-045):** Live-Fund. Der Bot ersetzte den Mega-Stein des Starters durch Items. Behoben. Messung `chal6`: Mega bleibt, aber der Bot fing kaum noch (Team von 1 bis Etappe 5).
-  - **Änderung 5 (D-046):** Neue Mitglieder haben auf der Route einen eigenen Wert. Messung `chal7`: Team voll, aber zu niedrige Level in der Liga (Ø 69 statt 95), weil der Bot zu viele Kämpfe ausließ.
-  - **Änderung 6 (D-047):** Korrektur. Ein Fang ist etwa einen Kampf wert, und der Level-Wert zählt nur das Start-Team. Messung `chal8`: 1 Sieg in 4 Runs, Ø Lv 87 in der Liga.
-  - **Änderung 7 (D-048):** Liga-Bewertung mit gemessenem Level-Fortschritt. Messung `chal9` (60 min): 0 von 8, kein messbarer Nutzen. Stand insgesamt: 3 Siege in rund 35 Runs.
-  - **Recherche Meta (2026-11-28, STRATEGY.md):** Bewährt sind eine feste Bauweise mit Carry und Typ-Stapel sowie Level als wichtigste Ressource.
-  - **Änderung 8 (D-049): Carry-Bauweise.** Parallel gemessen, je 60 min: Slakoth als Carry **3 von 8 Siegen**, Mega-Mewtu Y 1 von 8. Bisher beste Quote.
-  - **Änderung 9 (D-050):** Starter automatisch nach Carry-Potenzial der Endform, flexibel für jede Challenge-Art. Messung: Arena 4 von 8 Siegen (Slaking), Tages-Challenge „Geist“ 5 von 8 (Giratina), keine Pausen. **Bisher beste Quote: 56 %.**
-  - **Änderung 10 (D-051):** Der Carry bekommt die besten passenden Items, Typ-Relikte zählen je Teammitglied. Messung `chal12`: 7 von 16 Siegen (Schwankung). Schwachstelle: Slakoth verliert in 6 von 24 Runs schon auf Etappe 1–2.
-  - **Starter-Vergleich Arena (`chal13`):** Regigigas 4 von 8, Giratina 2 von 8, beide ohne frühe Niederlage (Slakoth: 10 von 24, 6 frühe).
-  - P3a, P3b, P3c, Overlay (D-041) und Mart-Fund (D-042) sind erledigt, siehe „Erledigt“.
+  - **Stand der Spielstärke** (STRATEGY.md „Challenge-Modus“): Carry-Bauweise (D-049 bis D-051) mit automatischer Starterwahl nach Carry-Potenzial. Siegquote auf Stufe 3 etwa 40–55 %, in der Tages-Challenge „Geist“ 9 von 16. Zuvor lag sie bei etwa 9 %.
+  - **Offene Schwachstellen:** Slakoth verliert in 6 von 24 Runs schon auf Etappe 1–2. Starter ohne Entwicklung (Regigigas 4 von 8, Giratina 2 von 8) sterben nicht früh. Die übrigen Niederlagen fallen in der Liga.
+  - **Nächstes:** Frühphase in die Starterwahl aufnehmen oder Slakoths Anfang absichern, dann die Liga-Niederlagen gezielt auswerten.
+  - Verlauf der Änderungen 1–10 mit Messungen: siehe „Erledigt“ und STRATEGY.md.
 
 ## Nächster Schritt
 1. **Phase 3 (Kern und Baseline-Run), weitere Inkremente in dieser Reihenfolge:**
@@ -136,6 +127,11 @@ Die kleinen Funde mit Fix-Idee kommen in ein späteres P3-Inkrement bzw. nach P5
 - backloggd.com ist aus der Cloud-Umgebung nicht erreichbar (DNS-Fehler). pokelike.xyz und cdn.playwright.dev sind erreichbar.
 
 ## Erledigt (neueste oben)
+- 2026-11-27/28 · Spielstärke Challenge, Änderungen 2–10 (D-043 bis D-051), Messungen `chal4`–`chal13`:
+  - D-043 Liga-Kette ab dem aktuellen Gegner, erster Sieg. D-044 Liga als Bewertungsziel. D-045 Mega-Steine schützen. D-046/D-047 Teamaufbau auf der Route (korrigiert). D-048 Liga-Projektion gemessen (ohne Nutzen).
+  - Recherche der Meta (STRATEGY.md): Carry plus Typ-Stapel, Level als wichtigste Ressource.
+  - D-049 Carry-Bauweise: Slakoth 3 von 8, Mega-Mewtu 1 von 8. D-050 Starter automatisch nach Carry-Potenzial der Endform: Arena 4 von 8, Tages-Challenge Geist 5 von 8. D-051 Carry-Items und Typ-Relikte je Team: 7 von 16 (Schwankung).
+  - Starter-Vergleich Arena (`chal13`): Regigigas 4 von 8, Giratina 2 von 8, beide ohne frühe Niederlage. Slakoth: 10 von 24, 6 frühe.
 - 2026-11-27 · Challenge-Fokus (D-040 bis D-042):
   - Baseline `chal1`: 8 Arenen mit simulierten 100 %, dann Niederlage in der Liga. Änderung 1 (Fänge nach Stärke der Art bei gesättigter Simulation), gemessen in `chal3`: stärkere Teams, Ergebnis unverändert (Liga).
   - Run-Logs enthalten Relikte, Challenge-Art und Ordensstufe sowie den Trace für die Relikt- und Starterwahl.
