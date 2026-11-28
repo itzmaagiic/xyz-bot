@@ -142,7 +142,14 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 
 ### Änderung 4 (2026-11-27, D-045)
 - Mega-Steine werden nie ersetzt und gehen nur an die passende Art. Gehaltene Items tauscht der Bot nur gegen klar bessere.
-- Messung: `artifacts/chal6`, folgt.
+- Messung `artifacts/chal6` (30 min, Stufe 3, Änderungen 1–4): 0 Siege in 4 abgeschlossenen Runs, 3× Niederlage in der Liga, 1× gegen den 8. Arenaleiter, 1 Run stand bei Messende in der Liga.
+  - Der Mega-Stein bleibt jetzt erhalten.
+  - **Neuer Engpass:** Weil Mega-Mewtu allein alle Arenen schafft, fing der Bot kaum noch. Teamgröße je Etappe in zwei Runs: `1,1,1,1,2,2,2,2,3` und `1,1,1,1,1,2,2,3,5`. Mit 2 bis 3 Mitgliedern ist die Liga nicht zu schlagen.
+  - Ursache: Fang-Knoten hatten in der Routenbewertung keinen Wert, und ein Fang senkt das Durchschnittslevel (D-046).
+
+### Änderung 5 (2026-11-28, D-046)
+- Fang-, Legendären- und Shiny-Knoten zählen auf der Route, solange das Team nicht voll ist: je 20 für Mitglied 2–3, je 12 für 4–6, gewichtet mit der Überlebenschance.
+- Messung: `artifacts/chal7`, folgt.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
 

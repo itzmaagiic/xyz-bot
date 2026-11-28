@@ -397,3 +397,16 @@ Format: **D-NNN – Titel** (Datum) · Entscheidung · Begründung · ggf. Folge
 - Begründung: Der Mega-Stein ist die größte Einzelstärke des PC-Starters. Ihn gegen ein Allzweck-Item zu tauschen, schwächt den ganzen Run.
 - Grenze: Die Zuordnung eines Steins zur Art läuft über den Namen. Spätere Formen derselben Linie (Taubsi zu Tauboss) passen deshalb auch. Das schadet nicht, der Stein wirkt nach der Entwicklung.
 - Prüfung: `tests/unit/items.test.ts` („held items never cost a Mega Stone“), `tests/unit/engine.test.ts` („equip dialog … to the bag“), dann Messung `chal6`.
+
+**D-046 – Neue Mitglieder haben auf der Route einen eigenen Wert** (2026-11-28, Änderung 5, Live-Fund `chal6`)
+- Befund:
+  - Seit Mega-Mewtu Y seinen Mega-Stein behält (D-045), gewinnt es jede simulierte Arena allein mit 100 %. Die Routenwahl mit voller Simulation zählte für Fang-Knoten nichts. Ein frischer Fang liegt unter dem Level des Starters und senkte sogar den Durchschnitt aller Level, der mit 2,5 je Level in den Wert eingeht.
+  - In `chal6` blieb das Team deshalb in 2 von 5 Runs bis Etappe 4 bzw. 5 bei einem einzigen Pokémon. Die Liga erreichte es mit 2 bis 3 bzw. 5 Mitgliedern. Ergebnis: 0 Siege in 4 abgeschlossenen Runs.
+- Entscheidung:
+  - `teamBuildValue` zählt die Knoten `catch`, `legendary` und `shiny` auf dem Pfad, höchstens so viele, wie Plätze frei sind.
+  - Mitglied 2 und 3 bringen je 20, Mitglied 4 bis 6 je 12. Das wird mit der Überlebenschance gewichtet, ein riskanter Fang-Pfad schlägt also keinen sicheren.
+  - Bei vollem Team hat ein Fang-Knoten keinen Zusatzwert.
+- Begründung:
+  - Die Liga besteht aus 5 Trainern mit je 6 Pokémon ohne Heilung. Ein Einzelkämpfer kann sie nicht schlagen, egal wie stark er ist.
+  - 20 gleicht den typischen Level-Nachteil eines Fangs aus (rund 5 Level Durchschnitt, also 12,5). Gegen Arena-Risiko kommt er nicht an.
+- Prüfung: `tests/unit/sim-route.test.ts` („team building“), danach Messung `chal7`.

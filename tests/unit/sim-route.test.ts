@@ -231,3 +231,49 @@ describe('hopeless chains', () => {
     expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 6, maxTeamSize: 6, nuzlocke: false }, sim)!.nodeId).toBe('c');
   });
 });
+
+describe('team building (live finding chal6, 2026-11-27)', () => {
+  // A strong lead (Mega Mewtwo Y) wins every simulated gym alone at 100 %. A fresh catch is lower than the lead and
+  // pulls the team's average level down, so without its own value the route never caught anything and the team
+  // reached the league with 2–3 members.
+  const map: GameMap = {
+    mapIndex: 2,
+    nodes: {
+      t: { id: 't', type: 'trainer', layer: 1, col: 0, visited: false, accessible: true },
+      c: { id: 'c', type: 'catch', layer: 1, col: 1, visited: false, accessible: true },
+      l: { id: 'l', type: 'legendary', layer: 1, col: 2, visited: false, accessible: true },
+      x: { id: 'x', type: 'boss', layer: 2, col: 0, visited: false, accessible: false },
+    },
+    edges: [
+      { from: 't', to: 'x' },
+      { from: 'c', to: 'x' },
+      { from: 'l', to: 'x' },
+    ],
+  };
+  const base = { nodeRates: {}, bossNoHeal: {}, bossHeal: {}, bossName: 'Chuck' };
+  const sim: SimData = {
+    ...base,
+    pathSim: {
+      't>x': { success: 1, next: 1, avgLevel: 20 },
+      'c>x': { success: 1, next: 1, avgLevel: 15 },
+    },
+  };
+  it('a lone carry still takes the catch while the gyms are safe', () => {
+    expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 1, maxTeamSize: 6, nuzlocke: false }, sim)!.nodeId).toBe('c');
+  });
+  it('a legendary node counts as a new member too', () => {
+    const s2: SimData = {
+      ...base,
+      pathSim: { 't>x': { success: 1, next: 1, avgLevel: 20 }, 'l>x': { success: 1, next: 1, avgLevel: 18 } },
+    };
+    expect(chooseRouteSim(map, ['t', 'l'], { teamSize: 2, maxTeamSize: 6, nuzlocke: false }, s2)!.nodeId).toBe('l');
+  });
+  it('with a full team the catch has no extra value; a risky catch route does not beat a safe one', () => {
+    expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 6, maxTeamSize: 6, nuzlocke: false }, sim)!.nodeId).toBe('t');
+    const risky: SimData = {
+      ...base,
+      pathSim: { 't>x': { success: 1, next: 1, avgLevel: 20 }, 'c>x': { success: 0.8, next: 0.8, avgLevel: 15 } },
+    };
+    expect(chooseRouteSim(map, ['t', 'c'], { teamSize: 1, maxTeamSize: 6, nuzlocke: false }, risky)!.nodeId).toBe('t');
+  });
+});

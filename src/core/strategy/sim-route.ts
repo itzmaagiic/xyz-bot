@@ -88,6 +88,24 @@ const NEXT_WEIGHT = 100;
 const PROGRESS_WEIGHT = 40;
 
 /**
+ * Value of a new member while the team is not full (live finding chal6): a fresh catch is below the lead and pulls
+ * the average level down, so without its own value a strong lead never caught anything and reached the league with
+ * 2–3 members. Members 2–3 count more than 4–6.
+ */
+const NEW_MEMBER_EARLY = 20;
+const NEW_MEMBER_LATE = 12;
+const JOINS: ReadonlySet<string> = new Set(['catch', 'legendary', 'shiny']);
+
+/** Team-building value of the catch-type nodes on a path, capped by the free slots. */
+export function teamBuildValue(path: readonly string[], map: GameMap, ctx: SimRouteContext): number {
+  const joins = path.filter((id) => JOINS.has(map.nodes[id]?.type ?? '')).length;
+  const added = Math.min(joins, Math.max(0, ctx.maxTeamSize - ctx.teamSize));
+  let v = 0;
+  for (let k = 1; k <= added; k++) v += ctx.teamSize + k <= 3 ? NEW_MEMBER_EARLY : NEW_MEMBER_LATE;
+  return v;
+}
+
+/**
  * Readiness for what comes next: 0.6 at the target level, +1/15 per level above/below, clamped to [0.2, 1.3].
  * Saturation keeps the bot from taking risks for levels it does not need.
  */
@@ -131,6 +149,7 @@ export function evaluatePath(
       : 100 * ps.success +
         NEXT_WEIGHT * ps.success * ps.next +
         bonus * ps.success +
+        teamBuildValue(path, map, ctx) * ps.success +
         FUTURE_LEVEL * ps.avgLevel * ps.success +
         // when a full clear is unlikely (e.g. the Elite Four chain), get as far as possible instead of choosing blindly
         PROGRESS_WEIGHT * (ps.progress ?? ps.success);
