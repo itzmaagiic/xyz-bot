@@ -16,7 +16,7 @@ _(Phase 0, 1 und 2 sind abgeschlossen, alle Review-Tore bestanden. Jetzt kommt P
   - **Recherche Meta (2026-11-28, STRATEGY.md):** Bewährt sind eine feste Bauweise mit Carry und Typ-Stapel sowie Level als wichtigste Ressource.
   - **Änderung 8 (D-049): Carry-Bauweise.** Parallel gemessen, je 60 min: Slakoth als Carry **3 von 8 Siegen**, Mega-Mewtu Y 1 von 8. Bisher beste Quote.
   - **Änderung 9 (D-050):** Starter automatisch nach Carry-Potenzial der Endform, flexibel für jede Challenge-Art. Messung: Arena 4 von 8 Siegen (Slaking), Tages-Challenge „Geist“ 5 von 8 (Giratina), keine Pausen. **Bisher beste Quote: 56 %.**
-  - **Änderung 10 (D-051):** Der Carry bekommt die besten passenden Items, Typ-Relikte zählen je Teammitglied. Messung `chal12a/b` läuft.
+  - **Änderung 10 (D-051):** Der Carry bekommt die besten passenden Items, Typ-Relikte zählen je Teammitglied. Messung `chal12`: 7 von 16 Siegen (Schwankung). Schwachstelle: Slakoth verliert in 6 von 24 Runs schon auf Etappe 1–2.
   - P3a, P3b, P3c, Overlay (D-041) und Mart-Fund (D-042) sind erledigt, siehe „Erledigt“.
 
 ## Nächster Schritt

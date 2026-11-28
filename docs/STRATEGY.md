@@ -184,6 +184,8 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 | `chal10b` | Carry Slakoth (60 min) | **3 / 8** |
 | `chal11a` | Starter automatisch → Slakoth (60 min) | **4 / 8** |
 | `chal11b` | Tages-Challenge Geist → Giratina (60 min) | **5 / 8** |
+| `chal12a` | + Carry-Items (Arena, Slaking) | 3 / 8 |
+| `chal12b` | + Carry-Items (Tages-Challenge, Giratina) | 4 / 8 |
 - Bei 4 bis 5 Runs pro Messung sind die Unterschiede noch Zufall. Belegt sind vor allem die gefundenen Fehler, jeweils aus den Run-Logs. Für eine belastbare Quote braucht es längere Messungen.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
@@ -265,5 +267,15 @@ Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/tr
 ### Änderung 10: Items für den Carry, Typ-Relikte nach Teamgröße (2026-11-28, D-051)
 - Prüfung der Picks in `chal11`: Relikte meist passend (Normal für Slaking, Geist fürs Geist-Team). Bei den Items gab es Fehler: Wahlband an Lapras, Seidenschal an Chaneira, Glücks-Ei am Carry in der Liga.
 - Jetzt bekommt der Carry ein klar besseres Item auch über eine freie Hand hinweg. Typ-Relikte zählen umso mehr, je mehr Mitglieder den Typ teilen.
-- Messung: `artifacts/chal12a` (Arena) und `artifacts/chal12b` (Tages-Challenge), parallel je 60 min.
+- Messung parallel, je 60 min:
+
+  | | A: Arena (`chal12a`, Slaking) | B: Tages-Challenge Geist (`chal12b`, Giratina) |
+  |---|---|---|
+  | Siege | 3 / 8 (vorher 4 / 8) | 4 / 8 (vorher 5 / 8) |
+  | Niederlagen in der Liga | 2 | 3 |
+  | Frühe Niederlagen | **3** (Etappe 1–2, Slakoth Lv 11–16) | 1 (Etappe 7) |
+  - Die Items sitzen jetzt richtig: Giratina trägt die Wahlbrille (spezieller Angreifer), Slaking den Experten-Gürtel, kein Glücks-Ei mehr in der Liga. Die Typ-Relikte passen zum Team.
+  - Das Ergebnis liegt im Rahmen der Schwankung (7 / 16 gegen 9 / 16). Ein Effekt ist nicht belegt.
+  - **Muster über alle Slakoth-Messungen** (`chal10b`, `chal11a`, `chal12a`, zusammen 24 Runs): 10 Siege, aber 6 Runs endeten schon auf Etappe 1–2. Slakoth (BST 280) ist am Anfang zu schwach: einmal stand es allein vor der ersten Arena (Simulation 0 %), zweimal fiel das junge Team in einem normalen Kampf. Wer die Anfangsphase übersteht, gewinnt oft (10 von 18).
+  - Giratina (keine Entwicklung, von Anfang an stark) hatte in der Tages-Challenge 1 frühe Niederlage in 16 Runs.
 
