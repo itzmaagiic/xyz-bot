@@ -180,6 +180,8 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 | `chal7` | + 5 | 0 / 5 |
 | `chal8` | + 6 | 1 / 4 |
 | `chal9` | + 7 (60 min) | 0 / 8 |
+| `chal10a` | Carry Mega-Mewtu (60 min) | 1 / 8 |
+| `chal10b` | Carry Slakoth (60 min) | **3 / 8** |
 - Bei 4 bis 5 Runs pro Messung sind die Unterschiede noch Zufall. Belegt sind vor allem die gefundenen Fehler, jeweils aus den Run-Logs. Für eine belastbare Quote braucht es längere Messungen.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
@@ -228,5 +230,16 @@ Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/tr
 
 ### Änderung 8: Carry-Bauweise (2026-11-28, D-049)
 - Ein Pokémon trägt den Run. Level-Items und der Attacken-Lehrer gehen an den Carry, Relikte nach den Prioritäten des Carrys (KP, Volltreffer, Schaden, Überleben). Fänge mit dem Typ des Carrys werden bevorzugt.
-- Messung: `artifacts/chal10a` (Mega-Mewtu Y) und `artifacts/chal10b` (Slakoth) parallel, je 60 min, Stufe 3, 150 ms.
+- Messung parallel, je 60 min, Stufe 3, 150 ms, mit der Korrektur zur Führung auf der Karte (D-049 Nachtrag):
+
+  | | A: Mega-Mewtu Y (`chal10a`) | B: Slakoth → Slaking (`chal10b`) |
+  |---|---|---|
+  | Abgeschlossene neue Runs | 8 | 8 |
+  | **Siege** | **1** | **3** |
+  | Niederlagen in der Liga | 3 | 4 |
+  | Frühere Niederlagen | 4 (Etappe 2, 6, 7, 8) | 1 (Etappe 1, Slakoth allein) |
+  | Ø Level in der Liga (Ø / bester) | 74 / 93 | 98 / 101 |
+  - **B ist klar besser.** 3 von 8 Siegen sind die beste Quote bisher (vorher etwa 9 %). Das Team levelt gleichmäßig und kommt mit Ø Lv 98 in die Liga.
+  - Bei A zieht Mega-Mewtu davon (Lv 93), der Rest bleibt zurück (Ø 74). Vier Runs endeten schon vor der Liga.
+  - Das deckt sich mit dem Guide („Slaking carries a whole run alone“). Die Stichprobe ist noch klein (8 gegen 8), die Richtung ist aber deutlich.
 
