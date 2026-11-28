@@ -274,6 +274,11 @@ Sie sind **nur Hinweise**. Maßgeblich ist das Spiel (§12). Alle Seiten sind ei
 
 Zu Nuzlocke: Das Wiki bestätigt nur „Besiegte sind weg“ (Nuzlocke-Challenge). pokelike-guide.fr nennt für den Story-Nuzlocke **beide** Regeln: „Permadeath“ und „One catch per zone“, nur in Gen I bis III. Wie der Code das umsetzt, wird in P4 geprüft (R-062).
 
+### 11a. Nachtrag Recherche 2026-11-28 (Challenge-Meta, R-064)
+- pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/traits/`, `/en/challenge/passive-items/`, `/en/tutos-youtube/`), gerendert am 2026-11-28, ohne Versionsangabe. Typbonus-Tabelle seit v2.1: 12 Stufen zu je 2 Punkten. Strategien und Relikt-Liste sind in STRATEGY.md „Meta aus Guides und Videos“ zusammengefasst.
+- pokelike.wiki `/guides/elite-four/` (Story-Liga, geprüft 17.09.2026): Vorbereitung vor jedem Trainer ohne Gratis-Heilung, Sacred Ash heilt ein Mitglied, Reihenfolge je Trainer neu planen.
+- Nicht lesbar (Netzwerk der Umgebung bzw. Abruf-Werkzeug): pokelike.fandom.com, pokelike.site, pokelikeguide.cc, Reddit, YouTube.
+
 ## 12. Phase-1-Befunde (Spielcode, nur lesend gelesen, v3.8 vom 2026-11-20, abgerufen am 2026-11-25)
 Quelle: `scripts/recon/read-game.mjs` (frisches Profil, Cloud-Endpunkte blockiert). Die Ausgabe landet in `artifacts/recon/read-game.json` und ist nicht eingecheckt.
 

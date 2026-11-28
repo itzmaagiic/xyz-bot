@@ -169,7 +169,7 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 ### Änderung 7 (2026-11-28, D-048)
 - Die Liga-Bewertung projiziert das Team mit dem gemessenen Fortschritt von rund 9,5 Level pro verbleibender Karte statt auf ein festes Ankunftslevel.
 - Im Endlos-Modus gibt es in der Simulation keine Level-Grenze mehr, wie im Spiel.
-- Messung: `artifacts/chal9`, folgt.
+- Messung `artifacts/chal9` (**60 min**, Stufe 3, Änderungen 1–7): **0 Siege** in 8 abgeschlossenen neuen Runs, 6× Niederlage in der Liga, 2× gegen den 7. Arenaleiter. Änderung 7 bringt also nichts Messbares.
 
 ### Zwischenstand Siege auf Stufe 3 (abgeschlossene neue Runs, je etwa 30 min)
 | Messung | Stand | Siege |
@@ -179,6 +179,7 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 | `chal6` | + 4 | 0 / 4 |
 | `chal7` | + 5 | 0 / 5 |
 | `chal8` | + 6 | 1 / 4 |
+| `chal9` | + 7 (60 min) | 0 / 8 |
 - Bei 4 bis 5 Runs pro Messung sind die Unterschiede noch Zufall. Belegt sind vor allem die gefundenen Fehler, jeweils aus den Run-Logs. Für eine belastbare Quote braucht es längere Messungen.
 
 ## Run-Logs lesen (P3b, D-005, D-038)
@@ -207,3 +208,21 @@ Die Stichproben sind klein; die Rangfolge A > {B…E} war aber über die ganze L
 3. Mehr Stichproben auf der Endmap (die Kettenwahrscheinlichkeit ist dort klein und verrauscht).
 4. Challenges/Battle Tower: Traits, Augments und Relics (`buildTraitsConfig` speist die Kampf-Engine, die Simulation lässt
    sich dort weiterverwenden).
+
+## Meta aus Guides und Videos (Recherche 2026-11-28)
+Quellen: pokelike-guide.fr (`/en/challenge/`, `/en/challenge/strategy/`, `/en/traits/`, `/en/challenge/passive-items/`, `/en/tutos-youtube/`), sie fasst YouTube-Videos von „Les Tutos de Lead“, „DeMoxGaMing“ und „JaggerGrimm“ zusammen. Dazu pokelike.wiki (`/guides/elite-four/`, `/traits/`). Fandom-Wiki, pokelike.site und pokelikeguide.cc waren aus der Umgebung nicht lesbar.
+- **Bewährte Wege durch die Challenge** (laut Guide, nicht selbst geprüft):
+  - **Ein Carry trägt den Run** („Slaking carry“): offensiver Tank. Zuerst Relikte für Max-KP und Volltreffer, Initiative ist zweitrangig. Wasser-Typbonus schwächt Angreifer. Legendäre als Verstärkung. Die letzte Hürde ist der letzte Top-4-Trainer mit Pokémon um Lv 150.
+  - **Eis-Monotype mit Snibunna:** früh per Mondstein entwickeln. Schlüssel-Relikte: Stealth Goggles (Unlicht-Volltreffer nach Level), Eject Pack (Schaden des aktiven Pokémon wird aufs Team verteilt, der Carry bleibt drin), Focus Sash, Black Sludge.
+  - **Käfer-Team als Level-Motor:** Silver Powder, Insect Plate, Shed Shell, Tanga Berry. „A Bug team out-levels the whole map by mid-run.“
+- **Typboni:** 1 Punkt je Typ und Pokémon, Shiny +1. Je 2 Punkte gibt es 1 Stufe, bis Stufe 12. Doppeltypen zählen für beide Linien.
+  - Psycho: Stufe × 10 % des Schadens auf alle Gegner.
+  - Stahl: bis −90 % Schaden.
+  - Normal: +25 % KP je Stufe.
+  - Käfer: Level-Gewinne.
+  - Unlicht: +25 % Volltreffer je Stufe.
+- **„Levels are the strongest resource in the game.“** Das passt zu unseren Messungen: Die Liga entscheidet sich am Level.
+- Folgerungen für den Bot:
+  - Statt jede Entscheidung einzeln zu simulieren, eine **feste Bauweise** verfolgen: Carry mit Level-Vorrang plus Relikt-Prioritäten (KP, Volltreffer, Schaden, Focus Sash) und einem Typ, der gestapelt wird.
+  - Im PC des Spielstands liegt Slakoth (#287), die „Slaking carry“-Strategie lässt sich also direkt gegen Mega-Mewtu Y testen.
+
